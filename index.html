@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mina Developer | Portfolio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+ --bg:#0a0f1c;--bg-2:#0f1628;--card:#141d33;--border:#22304f;
+ --blue:#3b82f6;--cyan:#22d3ee;--text:#e8eefc;--muted:#8a97b8;
+}
+html{scroll-behavior:smooth}
+body{font-family:Cairo,sans-serif;background:var(--bg);color:var(--text);line-height:1.7;overflow-x:hidden;min-height:100vh}
+
+/* ===== Intro ===== */
+.intro{position:fixed;inset:0;background:#050810;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;transition:opacity .8s ease, visibility .8s ease}
+.intro.hide{opacity:0;visibility:hidden}
+.intro-bg{position:absolute;inset:0;overflow:hidden}
+.intro-bg::before,.intro-bg::after{content:"";position:absolute;border-radius:50%;filter:blur(60px);opacity:.5}
+.intro-bg::before{width:350px;height:350px;background:var(--blue);top:20%;left:20%;animation:introFloat1 4s infinite ease-in-out}
+.intro-bg::after{width:300px;height:300px;background:var(--cyan);bottom:20%;right:20%;animation:introFloat2 4s infinite ease-in-out}
+@keyframes introFloat1{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(40px,-40px) scale(1.2)}}
+@keyframes introFloat2{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(-40px,40px) scale(1.2)}}
+.intro-name{position:relative;z-index:2;display:flex;gap:2px;flex-wrap:wrap;justify-content:center;padding:0 20px}
+.intro-letter{font-size:2.8rem;font-weight:900;opacity:0;transform:translateY(40px) rotateX(-90deg);animation:letterIn .5s cubic-bezier(.34,1.56,.64,1) forwards;background:linear-gradient(135deg,#fff,#22d3ee);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;display:inline-block}
+@keyframes letterIn{to{opacity:1;transform:translateY(0) rotateX(0)}}
+.intro-line{position:relative;z-index:2;width:0;height:3px;background:linear-gradient(90deg,var(--blue),var(--cyan));border-radius:3px;margin-top:20px;box-shadow:0 0 20px var(--cyan);animation:lineGrow .8s 2.2s cubic-bezier(.34,1.56,.64,1) forwards}
+@keyframes lineGrow{to{width:220px}}
+.intro-dot{position:relative;z-index:2;width:8px;height:8px;background:var(--cyan);border-radius:50%;margin-top:25px;box-shadow:0 0 20px var(--cyan);opacity:0;animation:dotPulse .6s 2.8s ease forwards}
+@keyframes dotPulse{0%{opacity:0;transform:scale(0)}50%{opacity:1;transform:scale(1.5)}100%{opacity:1;transform:scale(1)}}
+.intro-subtitle{position:relative;z-index:2;color:var(--muted);font-size:.85rem;margin-top:30px;letter-spacing:4px;opacity:0;animation:fadeInSub .6s 3s ease forwards}
+@keyframes fadeInSub{to{opacity:1}}
+
+/* ===== Main BG ===== */
+.bg-orbs{position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none}
+.orb{position:absolute;border-radius:50%;filter:blur(80px);opacity:.4}
+.orb-1{width:400px;height:400px;background:var(--blue);top:-100px;right:-100px;animation:float1 18s infinite ease-in-out}
+.orb-2{width:350px;height:350px;background:var(--cyan);bottom:-100px;left:-100px;animation:float2 22s infinite ease-in-out}
+@keyframes float1{0%,100%{transform:translate(0,0)}50%{transform:translate(-80px,60px)}}
+@keyframes float2{0%,100%{transform:translate(0,0)}50%{transform:translate(80px,-60px)}}
+
+.layout{position:relative;z-index:1;display:flex;flex-direction:column;min-height:100vh}
+
+/* ===== Topbar ===== */
+.topbar{background:rgba(10,15,28,0.95);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:15px 20px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:100}
+.topbar-logo{font-size:1.1rem;font-weight:900;background:linear-gradient(135deg,var(--blue),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.topbar-menu{background:rgba(34,211,238,0.1);border:1px solid rgba(34,211,238,0.4);color:var(--cyan);width:44px;height:44px;border-radius:12px;font-size:1.4rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s}
+.topbar-menu:active{transform:scale(.9);background:var(--cyan);color:var(--bg)}
+
+/* ===== Sidebar ===== */
+.sidebar{background:rgba(15,22,40,0.98);backdrop-filter:blur(12px);border-left:1px solid var(--border);padding:25px 20px;display:flex;flex-direction:column;position:fixed;top:0;right:0;bottom:0;width:290px;z-index:200;transform:translateX(100%);transition:transform .4s cubic-bezier(.34,1.56,.64,1);overflow-y:auto}
+.sidebar.open{transform:translateX(0)}
+.sidebar-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(3px);z-index:150;display:none}
+.sidebar-overlay.show{display:block}
+.sidebar-profile{text-align:center;padding-bottom:25px;border-bottom:1px solid var(--border);margin-bottom:25px}
+.sidebar-avatar{width:80px;height:80px;margin:0 auto 15px;border-radius:50%;background:linear-gradient(135deg,var(--blue),var(--cyan));display:flex;align-items:center;justify-content:center;font-size:2rem;font-weight:900;color:#fff;box-shadow:0 0 30px rgba(34,211,238,0.3)}
+.sidebar-name{font-size:1.15rem;font-weight:900;margin-bottom:5px}
+.sidebar-role{color:var(--muted);font-size:.8rem}
+.sidebar-status{display:inline-flex;align-items:center;gap:6px;margin-top:10px;padding:4px 12px;background:rgba(34,211,238,0.1);border:1px solid rgba(34,211,238,0.3);border-radius:20px;font-size:.7rem;color:var(--cyan);font-weight:700}
+.sidebar-status::before{content:"";width:6px;height:6px;background:var(--cyan);border-radius:50%;box-shadow:0 0 8px var(--cyan);animation:pulse 1.5s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.sidebar-nav{flex:1;display:flex;flex-direction:column;gap:6px}
+.nav-btn{background:transparent;border:1px solid transparent;color:var(--muted);padding:14px 15px;border-radius:12px;font:600 .9rem Cairo;text-align:right;cursor:pointer;display:flex;align-items:center;gap:12px;transition:all .3s;width:100%}
+.nav-btn:hover{background:rgba(34,211,238,0.05);color:var(--cyan)}
+.nav-btn.active{background:linear-gradient(135deg,rgba(59,130,246,0.2),rgba(34,211,238,0.15));color:var(--cyan);border-color:rgba(34,211,238,0.4)}
+.nav-btn .icon{width:22px;height:22px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.nav-btn .icon svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2}
+.sidebar-footer{padding-top:20px;border-top:1px solid var(--border);text-align:center}
+.sidebar-footer p{color:var(--muted);font-size:.75rem}
+.sidebar-footer p span{background:linear-gradient(135deg,var(--blue),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-weight:700}
+
+/* ===== Main ===== */
+.main{flex:1;padding:25px 20px;max-width:900px;margin:0 auto;width:100%}
+.page{display:none;animation:fadeIn .4s ease}
+.page.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(15px)}to{opacity:1;transform:translateY(0)}}
+.page-label{font-size:.75rem;font-weight:700;color:var(--cyan);letter-spacing:3px;margin-bottom:10px;display:inline-block}
+.page-title{font-size:1.7rem;font-weight:900;margin-bottom:15px;line-height:1.3;color:#fff}
+.page-title .gradient{background:linear-gradient(135deg,var(--blue),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.page-desc{color:var(--muted);font-size:.9rem;margin-bottom:25px;line-height:1.8}
+.card{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:22px;margin-bottom:16px;position:relative;overflow:hidden}
+.card p{color:var(--muted);font-size:.9rem;line-height:1.9;margin-bottom:12px}
+.card p:last-child{margin-bottom:0}
+.card p strong{color:var(--cyan);font-weight:700}
+.skills-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.skill{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px 12px;text-align:center}
+.skill-icon{font-size:1.8rem;margin-bottom:8px;display:block}
+.skill-name{font-weight:700;font-size:.85rem;color:var(--text)}
+.skill-bar{margin-top:10px;height:5px;background:var(--bg-2);border-radius:3px;overflow:hidden}
+.skill-bar-fill{height:100%;background:linear-gradient(90deg,var(--blue),var(--cyan));border-radius:3px}
+.projects-list{display:flex;flex-direction:column;gap:16px}
+.project{background:var(--card);border:1px solid var(--border);border-radius:18px;overflow:hidden;transition:all .3s}
+.project:active{border-color:var(--cyan)}
+.project-thumb{height:160px;background:linear-gradient(135deg,var(--bg-2),#1a2744);display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
+.project-thumb svg{width:55px;height:55px;stroke:var(--cyan);fill:none;stroke-width:1.5}
+.project-body{padding:20px}
+.project-tag{display:inline-block;padding:4px 12px;background:rgba(34,211,238,0.1);border:1px solid rgba(34,211,238,0.3);color:var(--cyan);border-radius:20px;font-size:.7rem;font-weight:700;margin-bottom:10px}
+.project-title{font-size:1.1rem;font-weight:900;margin-bottom:8px;color:#fff}
+.project-desc{color:var(--muted);font-size:.85rem;line-height:1.7;margin-bottom:15px}
+.project-link{color:var(--cyan);text-decoration:none;font-weight:700;font-size:.85rem;display:inline-flex;align-items:center;gap:6px}
+.contact-grid{display:flex;flex-direction:column;gap:12px}
+.contact-item{display:flex;align-items:center;gap:15px;padding:18px;background:var(--card);border:1px solid var(--border);border-radius:14px;color:var(--text);text-decoration:none;font-weight:600;font-size:.9rem;transition:all .3s}
+.contact-item:active{border-color:var(--cyan);background:rgba(34,211,238,0.05)}
+.contact-icon{width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,rgba(59,130,246,0.2),rgba(34,211,238,0.15));border:1px solid rgba(34,211,238,0.3);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.contact-icon svg{width:20px;height:20px;stroke:var(--cyan);fill:none;stroke-width:2}
+.contact-text{display:flex;flex-direction:column;flex:1}
+.contact-text small{color:var(--muted);font-size:.75rem;font-weight:400}
+.contact-text span{font-weight:700;font-size:.9rem}
+.contact-arrow{color:var(--cyan);font-size:1.2rem}
+
+/* ===== Responsive ===== */
+@media(min-width:900px){
+ .topbar{display:none}
+ .sidebar{display:flex;transform:translateX(0);position:fixed;width:300px}
+ .sidebar-overlay{display:none !important}
+ .main{margin-right:300px;padding:40px 50px;max-width:none}
+ .page-title{font-size:2.5rem}
+ .skills-grid{grid-template-columns:repeat(4,1fr)}
+ .projects-list{display:grid;grid-template-columns:repeat(2,1fr);gap:20px}
+ .contact-grid{display:grid;grid-template-columns:repeat(2,1fr)}
+ .intro-letter{font-size:5rem}
+}
+@media(max-width:400px){.intro-letter{font-size:2rem}}
+</style>
+</head>
+<body>
+
+<!-- Intro -->
+<div class="intro" id="intro">
+ <div class="intro-bg"></div>
+ <div class="intro-name" id="introName" dir="ltr"></div>
+ <div class="intro-line"></div>
+ <div class="intro-dot"></div>
+ <div class="intro-subtitle">FRONT-END DEVELOPER</div>
+</div>
+
+<div class="bg-orbs">
+ <div class="orb orb-1"></div>
+ <div class="orb orb-2"></div>
+</div>
+
+<div class="layout">
+ <div class="topbar">
+  <div class="topbar-logo">Mina.Dev</div>
+  <button class="topbar-menu" id="menuBtn">☰</button>
+ </div>
+ <div class="sidebar-overlay" id="overlay"></div>
+
+ <aside class="sidebar" id="sidebar">
+  <div class="sidebar-profile">
+   <div class="sidebar-avatar">M</div>
+   <div class="sidebar-name">Mina Developer</div>
+   <div class="sidebar-role">Front-End Developer</div>
+   <span class="sidebar-status">متاح للعمل</span>
+  </div>
+  <nav class="sidebar-nav">
+   <button class="nav-btn active" data-page="home"><span class="icon"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></span>الرئيسية</button>
+   <button class="nav-btn" data-page="about"><span class="icon"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>عني</button>
+   <button class="nav-btn" data-page="skills"><span class="icon"><svg viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg></span>المهارات</button>
+   <button class="nav-btn" data-page="projects"><span class="icon"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></span>المشاريع</button>
+   <button class="nav-btn" data-page="contact"><span class="icon"><svg viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></span>تواصل</button>
+  </nav>
+  <div class="sidebar-footer"><p>صُنع بـ ❤️ بواسطة <span>Mina</span></p></div>
+ </aside>
+
+ <main class="main">
+  <div class="page active" id="page-home">
+   <span class="page-label">— أهلاً بيك —</span>
+   <h1 class="page-title">أنا <span class="gradient">Mina Developer</span><br>ببني مواقع سريعة وعصرية</h1>
+   <p class="page-desc">مطور واجهات أمامية من سوهاج، مصر. متخصص في تحويل التصاميم إلى مواقع تفاعلية باستخدام HTML و CSS و JavaScript.</p>
+   <div class="card">
+    <p>بدأت رحلتي في البرمجة من <strong>الموبايل</strong>، وتعلمت بنفسي من المصادر المجانية. بحب أبني مواقع <strong>بسيطة، سريعة، وسهلة الاستخدام</strong>.</p>
+    <p>هدفي إني أساعد الشركات والمطاعم الصغيرة إن يكون عندها <strong>حضور أونلاين احترافي</strong>.</p>
+   </div>
+  </div>
+
+  <div class="page" id="page-about">
+   <span class="page-label">— عني —</span>
+   <h1 class="page-title">مين <span class="gradient">أنا؟</span></h1>
+   <p class="page-desc">قصة قصيرة عن رحلتي في عالم البرمجة.</p>
+   <div class="card">
+    <p>أنا <strong>مينا</strong>، مطور واجهات أمامية من <strong>سوهاج، مصر</strong>. بدأت رحلتي من الموبايل، وتعلمت بنفسي.</p>
+    <p>بحب أبني مواقع <strong>سريعة، بسيطة، وسهلة الاستخدام</strong>. أركز على تجربة المستخدم، وأهتم بأدق التفاصيل.</p>
+   </div>
+  </div>
+
+  <div class="page" id="page-skills">
+   <span class="page-label">— المهارات —</span>
+   <h1 class="page-title">التقنيات اللي <span class="gradient">بستخدمها</span></h1>
+   <p class="page-desc">المهارات اللي اتعلمتها خلال رحلتي في تطوير الويب.</p>
+   <div class="skills-grid">
+    <div class="skill"><span class="skill-icon">🌐</span><div class="skill-name">HTML5</div><div class="skill-bar"><div class="skill-bar-fill" style="width:95%"></div></div></div>
+    <div class="skill"><span class="skill-icon">🎨</span><div class="skill-name">CSS3</div><div class="skill-bar"><div class="skill-bar-fill" style="width:90%"></div></div></div>
+    <div class="skill"><span class="skill-icon">⚡</span><div class="skill-name">JavaScript</div><div class="skill-bar"><div class="skill-bar-fill" style="width:80%"></div></div></div>
+    <div class="skill"><span class="skill-icon">📱</span><div class="skill-name">Responsive</div><div class="skill-bar"><div class="skill-bar-fill" style="width:90%"></div></div></div>
+   </div>
+  </div>
+
+  <div class="page" id="page-projects">
+   <span class="page-label">— أعمالي —</span>
+   <h1 class="page-title">مشاريع <span class="gradient">عملتها</span></h1>
+   <p class="page-desc">مجموعة من المشاريع اللي اشتغلت عليها.</p>
+   <div class="projects-list">
+    <div class="project">
+     <div class="project-thumb"><svg viewBox="0 0 24 24"><path d="M3 3h18v18H3z"/><path d="M3 9h18"/><path d="M9 21V9"/></svg></div>
+     <div class="project-body">
+      <span class="project-tag">مطاعم</span>
+      <h3 class="project-title">منيو مطعم عويضة</h3>
+      <p class="project-desc">منيو إلكتروني تفاعلي لمطعم في سوهاج. يعرض الأصناف بالصور والأسعار، مع سلة تسوق وفلترة.</p>
+      <a href="https://restaurant-vercel.vercel.app" target="_blank" class="project-link">شوف المشروع ←</a>
+     </div>
+    </div>
+    <div class="project">
+     <div class="project-thumb"><svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></div>
+     <div class="project-body">
+      <span class="project-tag">شخصي</span>
+      <h3 class="project-title">الموقع الشخصي</h3>
+      <p class="project-desc">الموقع اللي إنت فيه دلوقتي! موقع شخصي بيعرض مهاراتي ومشاريعي.</p>
+      <a href="#" class="project-link">إنت هنا ←</a>
+     </div>
+    </div>
+   </div>
+  </div>
+
+  <div class="page" id="page-contact">
+   <span class="page-label">— تواصل —</span>
+   <h1 class="page-title">عايز <span class="gradient">نتكلم؟</span></h1>
+   <p class="page-desc">لو عندك مشروع، ابعتلي رسالة على واتساب أو ماسنجر.</p>
+   <div class="contact-grid">
+    <a href="https://wa.me/201554416094?text=السلام عليكم مينا، عايز أتكلم معاك في مشروع" target="_blank" class="contact-item">
+     <div class="contact-icon"><svg viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></div>
+     <div class="contact-text"><small>واتساب</small><span>ابعت رسالة</span></div>
+     <span class="contact-arrow">←</span>
+    </a>
+    <a href="https://m.me/minadev" target="_blank" class="contact-item">
+     <div class="contact-icon"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.13 2 11.25c0 2.91 1.36 5.51 3.5 7.25V22l3.2-1.76c1.04.29 2.15.44 3.3.44 5.52 0 10-4.13 10-9.25S17.52 2 12 2zm1 12.5l-2.5-2.5-4.5 2.5L11 9l2.5 2.5L18 9l-5 5.5z"/></svg></div>
+     <div class="contact-text"><small>ماسنجر</small><span>كلمني على فيسبوك</span></div>
+     <span class="contact-arrow">←</span>
+    </a>
+    <a href="tel:01554416094" class="contact-item">
+     <div class="contact-icon"><svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg></div>
+     <div class="contact-text"><small>اتصل بيا</small><span>01554416094</span></div>
+     <span class="contact-arrow">←</span>
+    </a>
+   </div>
+  </div>
+ </main>
+</div>
+
+<script>
+(function(){
+ var name = "Mina Developer";
+ var container = document.getElementById('introName');
+ var chars = name.split('');
+ chars.forEach(function(char, i){
+  var span = document.createElement('span');
+  span.className = 'intro-letter';
+  if(char === ' '){ span.innerHTML = '&nbsp;'; } else { span.textContent = char; }
+  span.style.animationDelay = (0.2 + i * 0.08) + 's';
+  container.appendChild(span);
+ });
+ setTimeout(function(){
+  document.getElementById('intro').classList.add('hide');
+  setTimeout(function(){ document.getElementById('intro').style.display = 'none'; }, 900);
+ }, 3500);
+})();
+
+var menuBtn = document.getElementById('menuBtn');
+var sidebar = document.getElementById('sidebar');
+var overlay = document.getElementById('overlay');
+menuBtn.addEventListener('click', function(){ sidebar.classList.toggle('open'); overlay.classList.toggle('show'); });
+overlay.addEventListener('click', function(){ sidebar.classList.remove('open'); overlay.classList.remove('show'); });
+
+var navBtns = document.querySelectorAll('.nav-btn');
+navBtns.forEach(function(btn){
+ btn.addEventListener('click', function(){
+  var pageId = this.getAttribute('data-page');
+  document.querySelectorAll('.page').forEach(function(p){ p.classList.remove('active'); });
+  document.getElementById('page-' + pageId).classList.add('active');
+  navBtns.forEach(function(b){ b.classList.remove('active'); });
+  this.classList.add('active');
+  sidebar.classList.remove('open');
+  overlay.classList.remove('show');
+  window.scrollTo({top:0, behavior:'smooth'});
+ });
+});
+</script>
+</body>
+</html>
