@@ -57,7 +57,27 @@ body{font-family:Cairo,sans-serif;background:var(--bg);color:var(--text);line-he
 .sidebar-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(3px);z-index:150;display:none}
 .sidebar-overlay.show{display:block}
 .sidebar-profile{text-align:center;padding-bottom:25px;border-bottom:1px solid var(--border);margin-bottom:25px}
-.sidebar-avatar{width:80px;height:80px;margin:0 auto 15px;border-radius:50%;background:linear-gradient(135deg,var(--blue),var(--cyan));display:flex;align-items:center;justify-content:center;font-size:2rem;font-weight:900;color:#fff;box-shadow:0 0 30px rgba(34,211,238,0.3)}
+.sidebar-avatar{
+ width:90px;height:90px;
+ margin:0 auto 15px;
+ border-radius:50%;
+ overflow:hidden;
+ background:linear-gradient(135deg,var(--blue),var(--cyan));
+ display:flex;
+ align-items:center;
+ justify-content:center;
+ font-size:2rem;
+ font-weight:900;
+ color:#fff;
+ box-shadow:0 0 30px rgba(34,211,238,0.5);
+ border:2px solid rgba(34,211,238,0.6);
+}
+.sidebar-avatar img{
+ width:100%;
+ height:100%;
+ object-fit:cover;
+ object-position:center;
+}
 .sidebar-name{font-size:1.15rem;font-weight:900;margin-bottom:5px}
 .sidebar-role{color:var(--muted);font-size:.8rem}
 .sidebar-status{display:inline-flex;align-items:center;gap:6px;margin-top:10px;padding:4px 12px;background:rgba(34,211,238,0.1);border:1px solid rgba(34,211,238,0.3);border-radius:20px;font-size:.7rem;color:var(--cyan);font-weight:700}
@@ -152,7 +172,10 @@ body{font-family:Cairo,sans-serif;background:var(--bg);color:var(--text);line-he
 
  <aside class="sidebar" id="sidebar">
   <div class="sidebar-profile">
-   <div class="sidebar-avatar">M</div>
+   <!-- الصورة هنا -->
+   <div class="sidebar-avatar">
+    <img src="mina.png" alt="Mina Developer">
+   </div>
    <div class="sidebar-name">Mina Developer</div>
    <div class="sidebar-role">Front-End Developer</div>
    <span class="sidebar-status">متاح للعمل</span>
