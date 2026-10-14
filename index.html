@@ -11,7 +11,7 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 :root{
-  --bg:#070b14;--bg-2:#0d1424;--card:#111a2e;--border:#1e2a44;
+  --bg:#070b14;--bg-2:#0d1424;--card:rgba(17, 26, 46, 0.6);--border:#1e2a44;
   --blue:#3b82f6;--cyan:#22d3ee;--purple:#a855f7;--pink:#ec4899;
   --text:#e8eefc;--muted:#8a97b8;
 }
@@ -21,6 +21,7 @@ body{
   line-height:1.7;overflow-x:hidden;min-height:100vh;
   position:relative;
 }
+::selection { background: var(--cyan); color: var(--bg); }
 
 /* ═══ خلفية متحركة ═══ */
 .bg-anim{position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none}
@@ -213,11 +214,12 @@ body{
 @keyframes gradientShift{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
 .page-desc{color:var(--muted);font-size:.92rem;margin-bottom:25px;line-height:1.9}
 
-/* ═══ Cards ═══ */
+/* ═══ Cards (Glassmorphism + Glow) ═══ */
 .card{
-  background:var(--card);border:1px solid var(--border);
+  background:var(--card);backdrop-filter:blur(12px);
+  border:1px solid var(--border);
   border-radius:18px;padding:24px;margin-bottom:16px;
-  position:relative;overflow:hidden;transition:all .4s;
+  position:relative;overflow:hidden;transition:all .4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 .card::before{
   content:"";position:absolute;top:0;left:0;right:0;height:2px;
@@ -225,7 +227,11 @@ body{
   transform:scaleX(0);transform-origin:right;transition:transform .5s;
 }
 .card:hover::before{transform:scaleX(1)}
-.card:hover{border-color:rgba(34,211,238,0.3);transform:translateY(-3px);box-shadow:0 10px 40px rgba(34,211,238,0.1)}
+.card:hover{
+  border-color:rgba(34,211,238,0.4);
+  transform:translateY(-5px);
+  box-shadow:0 15px 40px rgba(34,211,238,0.15), inset 0 0 20px rgba(34,211,238,0.05);
+}
 .card p{color:var(--muted);font-size:.92rem;line-height:2;margin-bottom:12px}
 .card p:last-child{margin-bottom:0}
 .card p strong{color:var(--cyan);font-weight:700}
@@ -233,16 +239,17 @@ body{
 /* ═══ Skills ═══ */
 .skills-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
 .skill{
-  background:var(--card);border:1px solid var(--border);
+  background:var(--card);backdrop-filter:blur(12px);
+  border:1px solid var(--border);
   border-radius:14px;padding:20px 12px;text-align:center;
   transition:all .4s;position:relative;overflow:hidden;cursor:default;
 }
 .skill::after{
   content:"";position:absolute;inset:0;
-  background:radial-gradient(circle at 50% 0%,rgba(34,211,238,0.1),transparent 70%);
+  background:radial-gradient(circle at 50% 0%,rgba(34,211,238,0.15),transparent 70%);
   opacity:0;transition:opacity .4s;
 }
-.skill:hover{border-color:rgba(34,211,238,0.5);transform:translateY(-5px) scale(1.03)}
+.skill:hover{border-color:rgba(34,211,238,0.5);transform:translateY(-5px) scale(1.03);box-shadow:0 10px 30px rgba(34,211,238,0.1)}
 .skill:hover::after{opacity:1}
 .skill-icon{font-size:2rem;margin-bottom:10px;display:block;transition:transform .4s}
 .skill:hover .skill-icon{transform:scale(1.2) rotate(-10deg)}
@@ -264,7 +271,8 @@ body{
 /* ═══ Projects ═══ */
 .projects-list{display:flex;flex-direction:column;gap:18px}
 .project{
-  background:var(--card);border:1px solid var(--border);
+  background:var(--card);backdrop-filter:blur(12px);
+  border:1px solid var(--border);
   border-radius:18px;overflow:hidden;transition:all .4s;
   position:relative;
 }
@@ -278,8 +286,8 @@ body{
 .project-thumb::before{
   content:"";position:absolute;inset:0;
   background:
-    radial-gradient(circle at 20% 80%,rgba(59,130,246,0.3),transparent 50%),
-    radial-gradient(circle at 80% 20%,rgba(34,211,238,0.3),transparent 50%);
+    radial-gradient(circle at 20% 80%,rgba(59,130,246,0.4),transparent 50%),
+    radial-gradient(circle at 80% 20%,rgba(34,211,238,0.4),transparent 50%);
   opacity:0;transition:opacity .5s;
 }
 .project:hover .project-thumb::before{opacity:1}
@@ -320,11 +328,12 @@ body{
 .project-link:hover{gap:12px}
 .project-link:hover::after{transform:scaleX(1)}
 
-/* ═══ Contact ═══ */
+/* ═══ Contact & WhatsApp Dropdown ═══ */
 .contact-grid{display:flex;flex-direction:column;gap:12px}
 .contact-item{
   display:flex;align-items:center;gap:15px;padding:20px;
-  background:var(--card);border:1px solid var(--border);
+  background:var(--card);backdrop-filter:blur(12px);
+  border:1px solid var(--border);
   border-radius:14px;color:var(--text);text-decoration:none;
   font-weight:600;font-size:.92rem;transition:all .4s;
   position:relative;overflow:hidden;
@@ -336,7 +345,7 @@ body{
 }
 .contact-item:hover{
   border-color:rgba(34,211,238,0.5);
-  background:rgba(34,211,238,0.05);
+  background:rgba(34,211,238,0.08);
   transform:translateX(-5px);
 }
 .contact-item:hover::before{transform:scaleY(1)}
@@ -359,13 +368,38 @@ body{
 .contact-arrow{color:var(--cyan);font-size:1.3rem;transition:transform .3s}
 .contact-item:hover .contact-arrow{transform:translateX(-5px)}
 
+/* WhatsApp Dropdown Custom */
+.whatsapp-wrapper { position: relative; width: 100%; }
+button.contact-item { width: 100%; text-align: right; font-family: inherit; cursor: pointer; outline: none; }
+.whatsapp-dropdown {
+  position: absolute; top: calc(100% + 8px); right: 0; left: 0;
+  background: rgba(13, 20, 36, 0.98); backdrop-filter: blur(20px);
+  border: 1px solid var(--cyan); border-radius: 16px;
+  padding: 10px; display: none; z-index: 100;
+  box-shadow: 0 15px 40px rgba(0,0,0,0.8), 0 0 20px rgba(34,211,238,0.2);
+  flex-direction: column; gap: 8px;
+}
+.whatsapp-dropdown.show { display: flex; animation: slideDown .3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+@keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+.whatsapp-dropdown a {
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px; border-radius: 12px; text-decoration: none;
+  color: var(--text); transition: all .3s; border: 1px solid transparent;
+}
+.whatsapp-dropdown a:hover { background: rgba(34,211,238,0.1); border-color: rgba(34,211,238,0.3); transform: translateX(-5px); }
+.whatsapp-dropdown a span { font-size: 1.5rem; }
+.whatsapp-dropdown a div { display: flex; flex-direction: column; }
+.whatsapp-dropdown a strong { font-size: 0.95rem; color: #fff; }
+.whatsapp-dropdown a small { font-size: 0.75rem; color: var(--muted); }
+
 /* ═══ Stats ═══ */
 .stats-grid{
   display:grid;grid-template-columns:repeat(3,1fr);gap:12px;
   margin-bottom:20px;
 }
 .stat{
-  background:var(--card);border:1px solid var(--border);
+  background:var(--card);backdrop-filter:blur(12px);
+  border:1px solid var(--border);
   border-radius:14px;padding:20px 12px;text-align:center;
   transition:all .3s;
 }
@@ -379,6 +413,10 @@ body{
 }
 .stat-label{color:var(--muted);font-size:.75rem;margin-top:8px;font-weight:600}
 
+/* ═══ Scroll Reveal Animation ═══ */
+.reveal { opacity: 0; transform: translateY(30px); transition: all 0.8s cubic-bezier(0.5, 0, 0, 1); }
+.reveal.visible { opacity: 1; transform: translateY(0); }
+
 /* ═══ Responsive ═══ */
 @media(min-width:900px){
   .topbar{display:none}
@@ -389,6 +427,7 @@ body{
   .skills-grid{grid-template-columns:repeat(4,1fr)}
   .projects-list{display:grid;grid-template-columns:repeat(2,1fr);gap:22px}
   .contact-grid{display:grid;grid-template-columns:repeat(2,1fr)}
+  .whatsapp-wrapper { grid-column: span 2; } /* جعل زر الواتساب ياخد مساحة أكبر في الشاشات الكبيرة */
   .intro-letter{font-size:6rem}
   .stats-grid{grid-template-columns:repeat(4,1fr)}
 }
@@ -445,11 +484,11 @@ body{
   <main class="main">
     <!-- Home -->
     <div class="page active" id="page-home">
-      <span class="page-label">— أهلاً بيك —</span>
-      <h1 class="page-title">أنا <span class="gradient">Mina Developer</span><br>ببني مواقع سريعة وعصرية</h1>
-      <p class="page-desc">مطور واجهات أمامية من سوهاج، مصر. متخصص في تحويل التصاميم إلى مواقع تفاعلية باستخدام HTML و CSS و JavaScript و React.</p>
+      <span class="page-label reveal">— أهلاً بيك —</span>
+      <h1 class="page-title reveal">أنا <span class="gradient">Mina Developer</span><br>ببني مواقع سريعة وعصرية</h1>
+      <p class="page-desc reveal">مطور واجهات أمامية من سوهاج، مصر. متخصص في تحويل التصاميم إلى مواقع تفاعلية باستخدام HTML و CSS و JavaScript و React.</p>
 
-      <div class="stats-grid">
+      <div class="stats-grid reveal">
         <div class="stat">
           <div class="stat-num">10+</div>
           <div class="stat-label">مشاريع</div>
@@ -464,7 +503,7 @@ body{
         </div>
       </div>
 
-      <div class="card">
+      <div class="card reveal">
         <p>بدأت رحلتي في البرمجة من <strong>الموبايل</strong>، وتعلمت بنفسي من المصادر المجانية. بحب أبني مواقع <strong>بسيطة، سريعة، وسهلة الاستخدام</strong>.</p>
         <p>هدفي إني أساعد الشركات والمطاعم الصغيرة إن يكون عندها <strong>حضور أونلاين احترافي</strong>.</p>
       </div>
@@ -472,10 +511,10 @@ body{
 
     <!-- About -->
     <div class="page" id="page-about">
-      <span class="page-label">— عني —</span>
-      <h1 class="page-title">مين <span class="gradient">أنا؟</span></h1>
-      <p class="page-desc">قصة قصيرة عن رحلتي في عالم البرمجة.</p>
-      <div class="card">
+      <span class="page-label reveal">— عني —</span>
+      <h1 class="page-title reveal">مين <span class="gradient">أنا؟</span></h1>
+      <p class="page-desc reveal">قصة قصيرة عن رحلتي في عالم البرمجة.</p>
+      <div class="card reveal">
         <p>أنا <strong>مينا</strong>، مطور واجهات أمامية من <strong>سوهاج، مصر</strong>. بدأت رحلتي من الموبايل، وتعلمت بنفسي من المصادر المجانية.</p>
         <p>بحب أبني مواقع <strong>سريعة، بسيطة، وسهلة الاستخدام</strong>. أركز على تجربة المستخدم، وأهتم بأدق التفاصيل.</p>
         <p>هدفي إني أشتغل مع <strong>شركات ومطاعم صغيرة</strong> وأساعدهم في بناء حضور أونلاين احترافي.</p>
@@ -484,36 +523,36 @@ body{
 
     <!-- Skills -->
     <div class="page" id="page-skills">
-      <span class="page-label">— المهارات —</span>
-      <h1 class="page-title">التقنيات اللي <span class="gradient">بستخدمها</span></h1>
-      <p class="page-desc">المهارات اللي اتعلمتها خلال رحلتي في تطوير الويب.</p>
+      <span class="page-label reveal">— المهارات —</span>
+      <h1 class="page-title reveal">التقنيات اللي <span class="gradient">بستخدمها</span></h1>
+      <p class="page-desc reveal">المهارات اللي اتعلمتها خلال رحلتي في تطوير الويب.</p>
       <div class="skills-grid">
-        <div class="skill">
+        <div class="skill reveal">
           <span class="skill-icon">🌐</span>
           <div class="skill-name">HTML5</div>
           <div class="skill-bar"><div class="skill-bar-fill" style="width:95%"></div></div>
         </div>
-        <div class="skill">
+        <div class="skill reveal">
           <span class="skill-icon">🎨</span>
           <div class="skill-name">CSS3</div>
           <div class="skill-bar"><div class="skill-bar-fill" style="width:90%"></div></div>
         </div>
-        <div class="skill">
+        <div class="skill reveal">
           <span class="skill-icon">⚡</span>
           <div class="skill-name">JavaScript</div>
           <div class="skill-bar"><div class="skill-bar-fill" style="width:80%"></div></div>
         </div>
-        <div class="skill">
+        <div class="skill reveal">
           <span class="skill-icon">⚛️</span>
           <div class="skill-name">React</div>
           <div class="skill-bar"><div class="skill-bar-fill" style="width:75%"></div></div>
         </div>
-        <div class="skill">
+        <div class="skill reveal">
           <span class="skill-icon">📱</span>
           <div class="skill-name">Responsive</div>
           <div class="skill-bar"><div class="skill-bar-fill" style="width:90%"></div></div>
         </div>
-        <div class="skill">
+        <div class="skill reveal">
           <span class="skill-icon">🔧</span>
           <div class="skill-name">Git</div>
           <div class="skill-bar"><div class="skill-bar-fill" style="width:80%"></div></div>
@@ -523,12 +562,12 @@ body{
 
     <!-- Projects -->
     <div class="page" id="page-projects">
-      <span class="page-label">— أعمالي —</span>
-      <h1 class="page-title">مشاريع <span class="gradient">عملتها</span></h1>
-      <p class="page-desc">مجموعة من المشاريع اللي اشتغلت عليها.</p>
+      <span class="page-label reveal">— أعمالي —</span>
+      <h1 class="page-title reveal">مشاريع <span class="gradient">عملتها</span></h1>
+      <p class="page-desc reveal">مجموعة من المشاريع اللي اشتغلت عليها.</p>
       <div class="projects-list">
 
-        <div class="project">
+        <div class="project reveal">
           <div class="project-thumb">
             <img src="awida-logo.png" alt="عويضة الجمهورية" class="project-logo">
           </div>
@@ -540,7 +579,7 @@ body{
           </div>
         </div>
 
-        <div class="project">
+        <div class="project reveal">
           <div class="project-thumb">
             <img src="letsgo-logo.png" alt="Lets Go Cafe" class="project-logo">
           </div>
@@ -552,7 +591,7 @@ body{
           </div>
         </div>
 
-        <div class="project">
+        <div class="project reveal">
           <div class="project-thumb">
             <svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
           </div>
@@ -569,22 +608,45 @@ body{
 
     <!-- Contact -->
     <div class="page" id="page-contact">
-      <span class="page-label">— تواصل —</span>
-      <h1 class="page-title">عايز <span class="gradient">نتكلم؟</span></h1>
-      <p class="page-desc">لو عندك مشروع، ابعتلي رسالة على واتساب (عادي أو أعمال) أو اتصل بيا مباشرة.</p>
+      <span class="page-label reveal">— تواصل —</span>
+      <h1 class="page-title reveal">عايز <span class="gradient">نتكلم؟</span></h1>
+      <p class="page-desc reveal">اختر وسيلة التواصل المناسبة ليك، وهرد عليك في أسرع وقت.</p>
+      
       <div class="contact-grid">
-        <a href="https://wa.me/201554416094?text=السلام عليكم مينا، عايز أتكلم معاك في مشروع" target="_blank" rel="noopener" class="contact-item">
-          <div class="contact-icon">
-            <svg viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+        <!-- WhatsApp Smart Button -->
+        <div class="whatsapp-wrapper reveal">
+          <button class="contact-item" id="whatsappToggle">
+            <div class="contact-icon">
+              <svg viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+            </div>
+            <div class="contact-text"><small>تواصل واتساب</small><span>اختر نوع الواتساب</span></div>
+            <span class="contact-arrow">←</span>
+          </button>
+          
+          <div class="whatsapp-dropdown" id="whatsappDropdown">
+            <a href="https://wa.me/201554416094?text=السلام عليكم مينا، عايز أتكلم معاك في مشروع (واتساب أعمال)" target="_blank" rel="noopener">
+              <span>💼</span>
+              <div>
+                <strong>واتساب الأعمال</strong>
+                <small>للمشاريع والاتفاقيات الرسمية</small>
+              </div>
+            </a>
+            <a href="https://wa.me/201554416094?text=السلام عليكم مينا، عايز أستفسر عن خدمة (واتساب عادي)" target="_blank" rel="noopener">
+              <span>💬</span>
+              <div>
+                <strong>واتساب العادي</strong>
+                <small>للاستفسارات السريعة والودية</small>
+              </div>
+            </a>
           </div>
-          <div class="contact-text"><small>واتساب (عادي أو أعمال)</small><span>ابعت رسالة</span></div>
-          <span class="contact-arrow">←</span>
-        </a>
-        <a href="tel:01554416094" class="contact-item">
+        </div>
+
+        <!-- Phone Call -->
+        <a href="tel:01554416094" class="contact-item reveal">
           <div class="contact-icon">
             <svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
           </div>
-          <div class="contact-text"><small>اتصل بيا</small><span>01554416094</span></div>
+          <div class="contact-text"><small>اتصال مباشر</small><span>01554416094</span></div>
           <span class="contact-arrow">←</span>
         </a>
       </div>
@@ -624,7 +686,7 @@ overlay.addEventListener('click', function(){
   overlay.classList.remove('show');
 });
 
-// ═══ Navigation ═══
+// ═══ Navigation & Scroll Reveal ═══
 var navBtns = document.querySelectorAll('.nav-btn');
 navBtns.forEach(function(btn){
   btn.addEventListener('click', function(){
@@ -637,6 +699,7 @@ navBtns.forEach(function(btn){
     overlay.classList.remove('show');
     window.scrollTo({top:0, behavior:'smooth'});
     
+    // إعادة تشغيل أنيميشن المهارات عند الدخول للصفحة
     if(pageId === 'skills'){
       setTimeout(function(){
         document.querySelectorAll('.skill-bar-fill').forEach(function(bar, i){
@@ -649,6 +712,45 @@ navBtns.forEach(function(btn){
         });
       }, 100);
     }
+  });
+});
+
+// ═══ WhatsApp Dropdown Toggle (Smart Contact) ═══
+var whatsappToggle = document.getElementById('whatsappToggle');
+var whatsappDropdown = document.getElementById('whatsappDropdown');
+
+if (whatsappToggle) {
+  whatsappToggle.addEventListener('click', function(e) {
+    e.stopPropagation(); // منع إغلاق القائمة فوراً
+    whatsappDropdown.classList.toggle('show');
+  });
+}
+
+// إغلاق القائمة لو المستخدم داس في أي مكان تاني
+document.addEventListener('click', function(e) {
+  if (whatsappDropdown && whatsappDropdown.classList.contains('show')) {
+    if (!e.target.closest('.whatsapp-wrapper')) {
+      whatsappDropdown.classList.remove('show');
+    }
+  }
+});
+
+// ═══ Scroll Reveal Observer (تأثير ظهور العناصر عند النزول) ═══
+document.addEventListener("DOMContentLoaded", function() {
+  var reveals = document.querySelectorAll(".reveal");
+  
+  var observer = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      if (entry.isIntersecting) {
+        entry.target.classList.add("visible");
+        // إيقاف المراقبة بعد الظهور عشان ميتكررش
+        observer.unobserve(entry.target); 
+      }
+    });
+  }, { threshold: 0.1, rootMargin: "0px 0px -50px 0px" });
+
+  reveals.forEach(function(reveal) {
+    observer.observe(reveal);
   });
 });
 </script>
