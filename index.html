@@ -287,6 +287,15 @@ body{
   position:relative;z-index:1;transition:transform .5s;
 }
 .project:hover .project-thumb svg{transform:scale(1.15) rotate(5deg)}
+.project-logo{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  position:relative;
+  z-index:1;
+  transition:transform .5s;
+}
+.project:hover .project-logo{transform:scale(1.05)}
 .project-body{padding:22px}
 .project-tag{
   display:inline-block;padding:5px 14px;
@@ -520,7 +529,7 @@ body{
 
         <div class="project">
           <div class="project-thumb">
-            <svg viewBox="0 0 24 24"><path d="M3 3h18v18H3z"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
+            <img src="awida-logo.png" alt="عويضة الجمهورية" class="project-logo">
           </div>
           <div class="project-body">
             <span class="project-tag">مطاعم • React</span>
@@ -627,11 +636,9 @@ navBtns.forEach(function(btn){
     overlay.classList.remove('show');
     window.scrollTo({top:0, behavior:'smooth'});
     
-    // ═══ تشغيل أنيميشن المهارات ═══
     if(pageId === 'skills'){
       setTimeout(function(){
         document.querySelectorAll('.skill-bar-fill').forEach(function(bar, i){
-          var width = bar.style.width;
           bar.style.transition = 'none';
           bar.style.transform = 'scaleX(0)';
           setTimeout(function(){
