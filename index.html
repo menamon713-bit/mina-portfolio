@@ -385,6 +385,7 @@ button.contact-item { width: 100%; text-align: right; font-family: inherit; curs
   display: flex; align-items: center; gap: 12px;
   padding: 14px; border-radius: 12px; text-decoration: none;
   color: var(--text); transition: all .3s; border: 1px solid transparent;
+  cursor: pointer;
 }
 .whatsapp-dropdown a:hover { background: rgba(34,211,238,0.1); border-color: rgba(34,211,238,0.3); transform: translateX(-5px); }
 .whatsapp-dropdown a span { font-size: 1.5rem; }
@@ -427,7 +428,7 @@ button.contact-item { width: 100%; text-align: right; font-family: inherit; curs
   .skills-grid{grid-template-columns:repeat(4,1fr)}
   .projects-list{display:grid;grid-template-columns:repeat(2,1fr);gap:22px}
   .contact-grid{display:grid;grid-template-columns:repeat(2,1fr)}
-  .whatsapp-wrapper { grid-column: span 2; } /* جعل زر الواتساب ياخد مساحة أكبر في الشاشات الكبيرة */
+  .whatsapp-wrapper { grid-column: span 2; }
   .intro-letter{font-size:6rem}
   .stats-grid{grid-template-columns:repeat(4,1fr)}
 }
@@ -624,14 +625,15 @@ button.contact-item { width: 100%; text-align: right; font-family: inherit; curs
           </button>
           
           <div class="whatsapp-dropdown" id="whatsappDropdown">
-            <a href="https://wa.me/201554416094?text=السلام عليكم مينا، عايز أتكلم معاك في مشروع (واتساب أعمال)" target="_blank" rel="noopener">
+            <!-- تم استخدام javascript:void(0) مع onclick لتشغيل الدالة المخصصة -->
+            <a href="javascript:void(0)" onclick="openWhatsApp('business')">
               <span>💼</span>
               <div>
                 <strong>واتساب الأعمال</strong>
                 <small>للمشاريع والاتفاقيات الرسمية</small>
               </div>
             </a>
-            <a href="https://wa.me/201554416094?text=السلام عليكم مينا، عايز أستفسر عن خدمة (واتساب عادي)" target="_blank" rel="noopener">
+            <a href="javascript:void(0)" onclick="openWhatsApp('normal')">
               <span>💬</span>
               <div>
                 <strong>واتساب العادي</strong>
@@ -735,6 +737,32 @@ document.addEventListener('click', function(e) {
   }
 });
 
+// ═══ دالة فتح الواتساب الذكي (تفتح التطبيق المحدد مباشرة) ═══
+function openWhatsApp(type) {
+  var phone = "201554416094";
+  var message = encodeURIComponent("السلام عليكم مينا، عايز أتكلم معاك في مشروع");
+  
+  // روابط التطبيقات المباشرة (URI Schemes)
+  var appUrl = type === 'business' 
+      ? "whatsapp-business://send?phone=" + phone + "&text=" + message 
+      : "whatsapp://send?phone=" + phone + "&text=" + message;
+      
+  // الرابط البديل (لو التطبيق مش منزل)
+  var webUrl = "https://wa.me/" + phone + "?text=" + message;
+  
+  var now = new Date().getTime();
+  
+  // محاولة فتح التطبيق المحدد
+  window.location.href = appUrl;
+  
+  // لو التطبيق مش موجود، المتصفح هيفضل في الصفحة، فبعد ثانية ونص هنحوله للويب
+  setTimeout(function() {
+      if (new Date().getTime() - now < 2000) { 
+          window.location.href = webUrl;
+      }
+  }, 1500);
+}
+
 // ═══ Scroll Reveal Observer (تأثير ظهور العناصر عند النزول) ═══
 document.addEventListener("DOMContentLoaded", function() {
   var reveals = document.querySelectorAll(".reveal");
@@ -743,7 +771,6 @@ document.addEventListener("DOMContentLoaded", function() {
     entries.forEach(function(entry) {
       if (entry.isIntersecting) {
         entry.target.classList.add("visible");
-        // إيقاف المراقبة بعد الظهور عشان ميتكررش
         observer.unobserve(entry.target); 
       }
     });
