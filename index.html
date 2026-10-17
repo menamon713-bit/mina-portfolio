@@ -469,7 +469,6 @@ button.contact-item { width: 100%; text-align: right; font-family: inherit; curs
   <aside class="sidebar" id="sidebar">
     <div class="sidebar-profile">
       <div class="sidebar-avatar">
-        <!-- تأكد إن الصورة الشخصية موجودة في نفس المجلد -->
         <img src="mina.png" alt="Mina Developer">
       </div>
       <div class="sidebar-name">Mina Developer</div>
@@ -575,7 +574,6 @@ button.contact-item { width: 100%; text-align: right; font-family: inherit; curs
         <!-- المشروع الأول: مطعم عويضة -->
         <div class="project reveal">
           <div class="project-thumb">
-            <!-- تأكد إن الصورة موجودة في نفس المجلد أو غيرها برابط صورة -->
             <img src="awida-logo.png" alt="عويضة الجمهورية" class="project-logo">
           </div>
           <div class="project-body">
@@ -584,9 +582,9 @@ button.contact-item { width: 100%; text-align: right; font-family: inherit; curs
             <p class="project-desc">موقع مطعم تفاعلي بـ React + Vite. فيه منيو بالبحث والفلترة، سلة تسوق، زر اتصال، وتصميم عصري.</p>
             
             <div class="project-links-wrapper">
-              <!-- غير اللينك ده لو غيرت الدومين في Vercel -->
-              <a href="https://spa-lilac.vercel.app/" target="_blank" rel="noopener" class="project-link">معاينة مباشرة ←</a>
-              <!-- حط لينك الريبو بتاعك على جيت هاب هنا -->
+              <!-- تم تعديل اللينك هنا -->
+              <a href="https://restaurant-spa-lilac.vercel.app/" target="_blank" rel="noopener" class="project-link">معاينة مباشرة ←</a>
+              <!-- متنساش تحط لينك الريبو بتاعك هنا -->
               <a href="https://github.com/menamon713-bit/اسم-المشروع" target="_blank" rel="noopener" class="project-link" style="color: var(--muted);">الكود المصدري ←</a>
             </div>
             
@@ -715,7 +713,6 @@ navBtns.forEach(function(btn){
     overlay.classList.remove('show');
     window.scrollTo({top:0, behavior:'smooth'});
     
-    // إعادة تشغيل أنيميشن المهارات عند الدخول للصفحة
     if(pageId === 'skills'){
       setTimeout(function(){
         document.querySelectorAll('.skill-bar-fill').forEach(function(bar, i){
