@@ -315,6 +315,9 @@ body{
 .project:hover .project-tag{background:rgba(34,211,238,0.2);transform:scale(1.05)}
 .project-title{font-size:1.15rem;font-weight:900;margin-bottom:8px;color:#fff}
 .project-desc{color:var(--muted);font-size:.85rem;line-height:1.8;margin-bottom:15px}
+
+/* تعديل الأزرار عشان تبقى جانب بعضها */
+.project-links-wrapper { display: flex; gap: 15px; align-items: center; flex-wrap: wrap; }
 .project-link{
   color:var(--cyan);text-decoration:none;font-weight:700;font-size:.88rem;
   display:inline-flex;align-items:center;gap:6px;transition:all .3s;
@@ -466,6 +469,7 @@ button.contact-item { width: 100%; text-align: right; font-family: inherit; curs
   <aside class="sidebar" id="sidebar">
     <div class="sidebar-profile">
       <div class="sidebar-avatar">
+        <!-- تأكد إن الصورة الشخصية موجودة في نفس المجلد -->
         <img src="mina.png" alt="Mina Developer">
       </div>
       <div class="sidebar-name">Mina Developer</div>
@@ -568,18 +572,28 @@ button.contact-item { width: 100%; text-align: right; font-family: inherit; curs
       <p class="page-desc reveal">مجموعة من المشاريع اللي اشتغلت عليها.</p>
       <div class="projects-list">
 
+        <!-- المشروع الأول: مطعم عويضة -->
         <div class="project reveal">
           <div class="project-thumb">
+            <!-- تأكد إن الصورة موجودة في نفس المجلد أو غيرها برابط صورة -->
             <img src="awida-logo.png" alt="عويضة الجمهورية" class="project-logo">
           </div>
           <div class="project-body">
             <span class="project-tag">مطاعم • React</span>
             <h3 class="project-title">Restaurant SPA — مطعم عويضة</h3>
             <p class="project-desc">موقع مطعم تفاعلي بـ React + Vite. فيه منيو بالبحث والفلترة، سلة تسوق، زر اتصال، وتصميم عصري.</p>
-            <a href="https://restaurant-spa-lilac.vercel.app/" target="_blank" rel="noopener" class="project-link">شوف المشروع ←</a>
+            
+            <div class="project-links-wrapper">
+              <!-- غير اللينك ده لو غيرت الدومين في Vercel -->
+              <a href="https://spa-lilac.vercel.app/" target="_blank" rel="noopener" class="project-link">معاينة مباشرة ←</a>
+              <!-- حط لينك الريبو بتاعك على جيت هاب هنا -->
+              <a href="https://github.com/menamon713-bit/اسم-المشروع" target="_blank" rel="noopener" class="project-link" style="color: var(--muted);">الكود المصدري ←</a>
+            </div>
+            
           </div>
         </div>
 
+        <!-- المشروع الثاني: Lets Go -->
         <div class="project reveal">
           <div class="project-thumb">
             <img src="letsgo-logo.png" alt="Lets Go Cafe" class="project-logo">
@@ -592,6 +606,7 @@ button.contact-item { width: 100%; text-align: right; font-family: inherit; curs
           </div>
         </div>
 
+        <!-- المشروع الثالث: شخصي -->
         <div class="project reveal">
           <div class="project-thumb">
             <svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
@@ -625,7 +640,6 @@ button.contact-item { width: 100%; text-align: right; font-family: inherit; curs
           </button>
           
           <div class="whatsapp-dropdown" id="whatsappDropdown">
-            <!-- تم استخدام javascript:void(0) مع onclick لتشغيل الدالة المخصصة -->
             <a href="javascript:void(0)" onclick="openWhatsApp('business')">
               <span>💼</span>
               <div>
@@ -723,12 +737,11 @@ var whatsappDropdown = document.getElementById('whatsappDropdown');
 
 if (whatsappToggle) {
   whatsappToggle.addEventListener('click', function(e) {
-    e.stopPropagation(); // منع إغلاق القائمة فوراً
+    e.stopPropagation();
     whatsappDropdown.classList.toggle('show');
   });
 }
 
-// إغلاق القائمة لو المستخدم داس في أي مكان تاني
 document.addEventListener('click', function(e) {
   if (whatsappDropdown && whatsappDropdown.classList.contains('show')) {
     if (!e.target.closest('.whatsapp-wrapper')) {
@@ -737,25 +750,21 @@ document.addEventListener('click', function(e) {
   }
 });
 
-// ═══ دالة فتح الواتساب الذكي (تفتح التطبيق المحدد مباشرة) ═══
+// ═══ دالة فتح الواتساب الذكي ═══
 function openWhatsApp(type) {
   var phone = "201554416094";
   var message = encodeURIComponent("السلام عليكم مينا، عايز أتكلم معاك في مشروع");
   
-  // روابط التطبيقات المباشرة (URI Schemes)
   var appUrl = type === 'business' 
       ? "whatsapp-business://send?phone=" + phone + "&text=" + message 
       : "whatsapp://send?phone=" + phone + "&text=" + message;
       
-  // الرابط البديل (لو التطبيق مش منزل)
   var webUrl = "https://wa.me/" + phone + "?text=" + message;
   
   var now = new Date().getTime();
   
-  // محاولة فتح التطبيق المحدد
   window.location.href = appUrl;
   
-  // لو التطبيق مش موجود، المتصفح هيفضل في الصفحة، فبعد ثانية ونص هنحوله للويب
   setTimeout(function() {
       if (new Date().getTime() - now < 2000) { 
           window.location.href = webUrl;
@@ -763,7 +772,7 @@ function openWhatsApp(type) {
   }, 1500);
 }
 
-// ═══ Scroll Reveal Observer (تأثير ظهور العناصر عند النزول) ═══
+// ═══ Scroll Reveal Observer ═══
 document.addEventListener("DOMContentLoaded", function() {
   var reveals = document.querySelectorAll(".reveal");
   
