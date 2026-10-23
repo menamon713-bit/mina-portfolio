@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Mina Developer | Front-End Developer</title>
+<title>Mina Developer | Front-End & Security Developer</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'><stop offset='0%25' style='stop-color:%233b82f6'/><stop offset='100%25' style='stop-color:%2322d3ee'/></linearGradient></defs><rect width='100' height='100' rx='22' fill='url(%23g)'/><text x='50' y='55' text-anchor='middle' font-family='Arial,sans-serif' font-size='68' font-weight='900' fill='white'>M</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -13,26 +13,15 @@
 :root{
   --bg:#070b14;--bg-2:#0d1424;--card:rgba(17, 26, 46, 0.6);--border:#1e2a44;
   --blue:#3b82f6;--cyan:#22d3ee;--purple:#a855f7;--pink:#ec4899;
-  --text:#e8eefc;--muted:#8a97b8;
+  --text:#e8eefc;--muted:#8a97b8;--red:#ff304b;
 }
 html{scroll-behavior:smooth}
-body{
-  font-family:Cairo,sans-serif;background:var(--bg);color:var(--text);
-  line-height:1.7;overflow-x:hidden;min-height:100vh;
-  position:relative;
-}
+body{font-family:Cairo,sans-serif;background:var(--bg);color:var(--text);line-height:1.7;overflow-x:hidden;min-height:100vh;position:relative;}
 ::selection { background: var(--cyan); color: var(--bg); }
 
 /* ═══ خلفية متحركة ═══ */
 .bg-anim{position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none}
-.grid-lines{
-  position:absolute;inset:0;
-  background-image:
-    linear-gradient(rgba(34,211,238,0.03) 1px,transparent 1px),
-    linear-gradient(90deg,rgba(34,211,238,0.03) 1px,transparent 1px);
-  background-size:50px 50px;
-  animation:gridMove 20s linear infinite;
-}
+.grid-lines{position:absolute;inset:0;background-image:linear-gradient(rgba(34,211,238,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(34,211,238,0.03) 1px,transparent 1px);background-size:50px 50px;animation:gridMove 20s linear infinite;}
 @keyframes gridMove{from{background-position:0 0}to{background-position:50px 50px}}
 .orb{position:absolute;border-radius:50%;filter:blur(80px);opacity:.4}
 .orb-1{width:400px;height:400px;background:var(--blue);top:-100px;right:-100px;animation:float1 18s infinite ease-in-out}
@@ -43,11 +32,7 @@ body{
 @keyframes float3{0%,100%{transform:translate(-50%,-50%) scale(1)}50%{transform:translate(-50%,-50%) scale(1.3)}}
 
 /* ═══ Intro ═══ */
-.intro{
-  position:fixed;inset:0;background:#03060c;z-index:9999;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  overflow:hidden;transition:opacity .8s ease,visibility .8s ease;
-}
+.intro{position:fixed;inset:0;background:#03060c;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;transition:opacity .8s ease,visibility .8s ease;}
 .intro.hide{opacity:0;visibility:hidden}
 .intro-bg{position:absolute;inset:0;overflow:hidden}
 .intro-bg::before,.intro-bg::after{content:"";position:absolute;border-radius:50%;filter:blur(80px);opacity:.6}
@@ -55,314 +40,116 @@ body{
 .intro-bg::after{width:350px;height:350px;background:var(--cyan);bottom:20%;right:10%;animation:introFloat2 4s infinite ease-in-out}
 @keyframes introFloat1{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(50px,-50px) scale(1.3)}}
 @keyframes introFloat2{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(-50px,50px) scale(1.3)}}
-.intro-name{
-  position:relative;z-index:2;display:flex;gap:2px;flex-wrap:wrap;
-  justify-content:center;padding:0 20px;perspective:1000px;
-}
-.intro-letter{
-  font-family:'Space Grotesk',sans-serif;
-  font-size:3rem;font-weight:700;
-  opacity:0;transform:translateY(60px) rotateX(-90deg);
-  animation:letterIn .6s cubic-bezier(.34,1.56,.64,1) forwards;
-  background:linear-gradient(135deg,#fff 0%,var(--cyan) 50%,var(--purple) 100%);
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
-  display:inline-block;
-}
+.intro-name{position:relative;z-index:2;display:flex;gap:2px;flex-wrap:wrap;justify-content:center;padding:0 20px;perspective:1000px;}
+.intro-letter{font-family:'Space Grotesk',sans-serif;font-size:3rem;font-weight:700;opacity:0;transform:translateY(60px) rotateX(-90deg);animation:letterIn .6s cubic-bezier(.34,1.56,.64,1) forwards;background:linear-gradient(135deg,#fff 0%,var(--cyan) 50%,var(--purple) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;display:inline-block;}
 @keyframes letterIn{to{opacity:1;transform:translateY(0) rotateX(0)}}
-.intro-line{
-  position:relative;z-index:2;width:0;height:3px;
-  background:linear-gradient(90deg,var(--blue),var(--cyan),var(--purple));
-  border-radius:3px;margin-top:25px;
-  box-shadow:0 0 25px var(--cyan);
-  animation:lineGrow .9s 2.4s cubic-bezier(.34,1.56,.64,1) forwards;
-}
+.intro-line{position:relative;z-index:2;width:0;height:3px;background:linear-gradient(90deg,var(--blue),var(--cyan),var(--purple));border-radius:3px;margin-top:25px;box-shadow:0 0 25px var(--cyan);animation:lineGrow .9s 2.4s cubic-bezier(.34,1.56,.64,1) forwards;}
 @keyframes lineGrow{to{width:250px}}
-.intro-dot{
-  position:relative;z-index:2;width:10px;height:10px;background:var(--cyan);
-  border-radius:50%;margin-top:30px;
-  box-shadow:0 0 25px var(--cyan);
-  opacity:0;animation:dotPulse .7s 3s ease forwards;
-}
+.intro-dot{position:relative;z-index:2;width:10px;height:10px;background:var(--cyan);border-radius:50%;margin-top:30px;box-shadow:0 0 25px var(--cyan);opacity:0;animation:dotPulse .7s 3s ease forwards;}
 @keyframes dotPulse{0%{opacity:0;transform:scale(0)}50%{opacity:1;transform:scale(1.6)}100%{opacity:1;transform:scale(1)}}
-.intro-subtitle{
-  position:relative;z-index:2;color:var(--muted);font-size:.8rem;
-  margin-top:35px;letter-spacing:6px;opacity:0;
-  animation:fadeInSub .7s 3.3s ease forwards;
-}
+.intro-subtitle{position:relative;z-index:2;color:var(--muted);font-size:.8rem;margin-top:35px;letter-spacing:6px;opacity:0;animation:fadeInSub .7s 3.3s ease forwards;}
 @keyframes fadeInSub{to{opacity:1}}
 
-/* ═══ Layout ═══ */
+/* ═══ Layout & Topbar & Sidebar ═══ */
 .layout{position:relative;z-index:1;display:flex;flex-direction:column;min-height:100vh}
-
-/* ═══ Topbar ═══ */
-.topbar{
-  background:rgba(7,11,20,0.85);backdrop-filter:blur(15px);
-  border-bottom:1px solid var(--border);padding:16px 20px;
-  display:flex;justify-content:space-between;align-items:center;
-  position:sticky;top:0;z-index:100;
-}
-.topbar-logo{
-  font-family:'Space Grotesk',sans-serif;font-size:1.15rem;font-weight:700;
-  background:linear-gradient(135deg,var(--blue),var(--cyan));
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
-}
-.topbar-menu{
-  background:rgba(34,211,238,0.08);border:1px solid rgba(34,211,238,0.4);
-  color:var(--cyan);width:44px;height:44px;border-radius:12px;
-  font-size:1.4rem;cursor:pointer;
-  display:flex;align-items:center;justify-content:center;transition:all .3s;
-}
-.topbar-menu:hover,.topbar-menu:active{
-  transform:scale(.95) rotate(90deg);background:var(--cyan);color:var(--bg);
-}
-
-/* ═══ Sidebar ═══ */
-.sidebar{
-  background:rgba(13,20,36,0.97);backdrop-filter:blur(15px);
-  border-left:1px solid var(--border);padding:25px 20px;
-  display:flex;flex-direction:column;
-  position:fixed;top:0;right:0;bottom:0;width:290px;z-index:200;
-  transform:translateX(100%);
-  transition:transform .5s cubic-bezier(.34,1.56,.64,1);
-  overflow-y:auto;
-}
+.topbar{background:rgba(7,11,20,0.85);backdrop-filter:blur(15px);border-bottom:1px solid var(--border);padding:16px 20px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:100;}
+.topbar-logo{font-family:'Space Grotesk',sans-serif;font-size:1.15rem;font-weight:700;background:linear-gradient(135deg,var(--blue),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.topbar-menu{background:rgba(34,211,238,0.08);border:1px solid rgba(34,211,238,0.4);color:var(--cyan);width:44px;height:44px;border-radius:12px;font-size:1.4rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .3s;}
+.topbar-menu:hover,.topbar-menu:active{transform:scale(.95) rotate(90deg);background:var(--cyan);color:var(--bg);}
+.sidebar{background:rgba(13,20,36,0.97);backdrop-filter:blur(15px);border-left:1px solid var(--border);padding:25px 20px;display:flex;flex-direction:column;position:fixed;top:0;right:0;bottom:0;width:290px;z-index:200;transform:translateX(100%);transition:transform .5s cubic-bezier(.34,1.56,.64,1);overflow-y:auto;}
 .sidebar.open{transform:translateX(0)}
-.sidebar-overlay{
-  position:fixed;inset:0;background:rgba(0,0,0,0.7);
-  backdrop-filter:blur(4px);z-index:150;display:none;
-  opacity:0;transition:opacity .3s;
-}
+.sidebar-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(4px);z-index:150;display:none;opacity:0;transition:opacity .3s;}
 .sidebar-overlay.show{display:block;opacity:1}
 .sidebar-profile{text-align:center;padding-bottom:25px;border-bottom:1px solid var(--border);margin-bottom:25px}
-.sidebar-avatar{
-  width:95px;height:95px;margin:0 auto 15px;border-radius:50%;
-  overflow:hidden;
-  background:linear-gradient(135deg,var(--blue),var(--cyan),var(--purple));
-  display:flex;align-items:center;justify-content:center;
-  font-size:2rem;font-weight:900;color:#fff;
-  box-shadow:0 0 40px rgba(34,211,238,0.4);
-  border:2px solid rgba(34,211,238,0.6);
-  position:relative;
-  animation:avatarPulse 3s infinite ease-in-out;
-}
+.sidebar-avatar{width:95px;height:95px;margin:0 auto 15px;border-radius:50%;overflow:hidden;background:linear-gradient(135deg,var(--blue),var(--cyan),var(--purple));display:flex;align-items:center;justify-content:center;font-size:2rem;font-weight:900;color:#fff;box-shadow:0 0 40px rgba(34,211,238,0.4);border:2px solid rgba(34,211,238,0.6);position:relative;animation:avatarPulse 3s infinite ease-in-out;}
 @keyframes avatarPulse{0%,100%{box-shadow:0 0 40px rgba(34,211,238,0.4)}50%{box-shadow:0 0 60px rgba(34,211,238,0.7)}}
 .sidebar-avatar img{width:100%;height:100%;object-fit:cover;object-position:center}
 .sidebar-name{font-size:1.15rem;font-weight:900;margin-bottom:5px}
 .sidebar-role{color:var(--muted);font-size:.8rem}
-.sidebar-status{
-  display:inline-flex;align-items:center;gap:6px;margin-top:12px;
-  padding:5px 14px;background:rgba(34,211,238,0.1);
-  border:1px solid rgba(34,211,238,0.3);border-radius:20px;
-  font-size:.7rem;color:var(--cyan);font-weight:700;
-}
-.sidebar-status::before{
-  content:"";width:6px;height:6px;background:var(--cyan);border-radius:50%;
-  box-shadow:0 0 8px var(--cyan);animation:pulse 1.5s infinite;
-}
+.sidebar-status{display:inline-flex;align-items:center;gap:6px;margin-top:12px;padding:5px 14px;background:rgba(34,211,238,0.1);border:1px solid rgba(34,211,238,0.3);border-radius:20px;font-size:.7rem;color:var(--cyan);font-weight:700;}
+.sidebar-status::before{content:"";width:6px;height:6px;background:var(--cyan);border-radius:50%;box-shadow:0 0 8px var(--cyan);animation:pulse 1.5s infinite;}
 @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.8)}}
 .sidebar-nav{flex:1;display:flex;flex-direction:column;gap:6px}
-.nav-btn{
-  background:transparent;border:1px solid transparent;color:var(--muted);
-  padding:14px 15px;border-radius:12px;font:600 .9rem Cairo;
-  text-align:right;cursor:pointer;display:flex;align-items:center;gap:12px;
-  transition:all .3s;width:100%;position:relative;overflow:hidden;
-}
-.nav-btn::before{
-  content:"";position:absolute;right:0;top:0;bottom:0;width:3px;
-  background:linear-gradient(180deg,var(--blue),var(--cyan));
-  transform:translateX(3px);transition:transform .3s;
-}
+.nav-btn{background:transparent;border:1px solid transparent;color:var(--muted);padding:14px 15px;border-radius:12px;font:600 .9rem Cairo;text-align:right;cursor:pointer;display:flex;align-items:center;gap:12px;transition:all .3s;width:100%;position:relative;overflow:hidden;}
+.nav-btn::before{content:"";position:absolute;right:0;top:0;bottom:0;width:3px;background:linear-gradient(180deg,var(--blue),var(--cyan));transform:translateX(3px);transition:transform .3s;}
 .nav-btn:hover{background:rgba(34,211,238,0.06);color:var(--cyan);transform:translateX(-5px)}
 .nav-btn:hover::before{transform:translateX(0)}
-.nav-btn.active{
-  background:linear-gradient(135deg,rgba(59,130,246,0.2),rgba(34,211,238,0.15));
-  color:var(--cyan);border-color:rgba(34,211,238,0.4);
-}
+.nav-btn.active{background:linear-gradient(135deg,rgba(59,130,246,0.2),rgba(34,211,238,0.15));color:var(--cyan);border-color:rgba(34,211,238,0.4);}
 .nav-btn.active::before{transform:translateX(0)}
 .nav-btn .icon{width:22px;height:22px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .nav-btn .icon svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2}
 .sidebar-footer{padding-top:20px;border-top:1px solid var(--border);text-align:center}
 .sidebar-footer p{color:var(--muted);font-size:.75rem}
-.sidebar-footer p span{
-  background:linear-gradient(135deg,var(--blue),var(--cyan));
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
-  font-weight:700;
-}
+.sidebar-footer p span{background:linear-gradient(135deg,var(--blue),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-weight:700;}
 
 /* ═══ Main ═══ */
 .main{flex:1;padding:25px 20px;max-width:900px;margin:0 auto;width:100%}
 .page{display:none;animation:fadeIn .5s ease}
 .page.active{display:block}
 @keyframes fadeIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
-.page-label{
-  font-size:.75rem;font-weight:700;color:var(--cyan);
-  letter-spacing:3px;margin-bottom:10px;display:inline-block;
-  position:relative;padding-right:15px;
-}
-.page-label::before{
-  content:"";position:absolute;right:0;top:50%;transform:translateY(-50%);
-  width:8px;height:8px;background:var(--cyan);border-radius:50%;
-  box-shadow:0 0 10px var(--cyan);animation:pulse 1.5s infinite;
-}
+.page-label{font-size:.75rem;font-weight:700;color:var(--cyan);letter-spacing:3px;margin-bottom:10px;display:inline-block;position:relative;padding-right:15px;}
+.page-label::before{content:"";position:absolute;right:0;top:50%;transform:translateY(-50%);width:8px;height:8px;background:var(--cyan);border-radius:50%;box-shadow:0 0 10px var(--cyan);animation:pulse 1.5s infinite;}
 .page-title{font-size:1.8rem;font-weight:900;margin-bottom:15px;line-height:1.3;color:#fff}
-.page-title .gradient{
-  background:linear-gradient(135deg,var(--blue),var(--cyan),var(--purple));
-  background-size:200% 200%;
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
-  animation:gradientShift 4s ease infinite;
-}
+.page-title .gradient{background:linear-gradient(135deg,var(--blue),var(--cyan),var(--purple));background-size:200% 200%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:gradientShift 4s ease infinite;}
 @keyframes gradientShift{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
 .page-desc{color:var(--muted);font-size:.92rem;margin-bottom:25px;line-height:1.9}
 
-/* ═══ Cards (Glassmorphism + Glow) ═══ */
-.card{
-  background:var(--card);backdrop-filter:blur(12px);
-  border:1px solid var(--border);
-  border-radius:18px;padding:24px;margin-bottom:16px;
-  position:relative;overflow:hidden;transition:all .4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-}
-.card::before{
-  content:"";position:absolute;top:0;left:0;right:0;height:2px;
-  background:linear-gradient(90deg,var(--blue),var(--cyan),var(--purple));
-  transform:scaleX(0);transform-origin:right;transition:transform .5s;
-}
+/* ═══ Cards ═══ */
+.card{background:var(--card);backdrop-filter:blur(12px);border:1px solid var(--border);border-radius:18px;padding:24px;margin-bottom:16px;position:relative;overflow:hidden;transition:all .4s cubic-bezier(0.175, 0.885, 0.32, 1.275);}
+.card::before{content:"";position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--blue),var(--cyan),var(--purple));transform:scaleX(0);transform-origin:right;transition:transform .5s;}
 .card:hover::before{transform:scaleX(1)}
-.card:hover{
-  border-color:rgba(34,211,238,0.4);
-  transform:translateY(-5px);
-  box-shadow:0 15px 40px rgba(34,211,238,0.15), inset 0 0 20px rgba(34,211,238,0.05);
-}
+.card:hover{border-color:rgba(34,211,238,0.4);transform:translateY(-5px);box-shadow:0 15px 40px rgba(34,211,238,0.15), inset 0 0 20px rgba(34,211,238,0.05);}
 .card p{color:var(--muted);font-size:.92rem;line-height:2;margin-bottom:12px}
 .card p:last-child{margin-bottom:0}
 .card p strong{color:var(--cyan);font-weight:700}
 
-/* ═══ Skills ═══ */
+/* ═══ Skills & Projects & Stats ═══ */
 .skills-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
-.skill{
-  background:var(--card);backdrop-filter:blur(12px);
-  border:1px solid var(--border);
-  border-radius:14px;padding:20px 12px;text-align:center;
-  transition:all .4s;position:relative;overflow:hidden;cursor:default;
-}
-.skill::after{
-  content:"";position:absolute;inset:0;
-  background:radial-gradient(circle at 50% 0%,rgba(34,211,238,0.15),transparent 70%);
-  opacity:0;transition:opacity .4s;
-}
+.skill{background:var(--card);backdrop-filter:blur(12px);border:1px solid var(--border);border-radius:14px;padding:20px 12px;text-align:center;transition:all .4s;position:relative;overflow:hidden;cursor:default;}
+.skill::after{content:"";position:absolute;inset:0;background:radial-gradient(circle at 50% 0%,rgba(34,211,238,0.15),transparent 70%);opacity:0;transition:opacity .4s;}
 .skill:hover{border-color:rgba(34,211,238,0.5);transform:translateY(-5px) scale(1.03);box-shadow:0 10px 30px rgba(34,211,238,0.1)}
 .skill:hover::after{opacity:1}
 .skill-icon{font-size:2rem;margin-bottom:10px;display:block;transition:transform .4s}
 .skill:hover .skill-icon{transform:scale(1.2) rotate(-10deg)}
 .skill-name{font-weight:700;font-size:.88rem;color:var(--text);margin-bottom:12px}
 .skill-bar{height:5px;background:var(--bg-2);border-radius:3px;overflow:hidden}
-.skill-bar-fill{
-  height:100%;background:linear-gradient(90deg,var(--blue),var(--cyan));
-  border-radius:3px;position:relative;
-  transform-origin:right;transform:scaleX(0);
-  transition:transform 1s cubic-bezier(.34,1.56,.64,1);
-}
-.skill-bar-fill::after{
-  content:"";position:absolute;inset:0;
-  background:linear-gradient(90deg,transparent,rgba(255,255,255,0.3),transparent);
-  animation:shimmer 2s infinite;
-}
+.skill-bar-fill{height:100%;background:linear-gradient(90deg,var(--blue),var(--cyan));border-radius:3px;position:relative;transform-origin:right;transform:scaleX(0);transition:transform 1s cubic-bezier(.34,1.56,.64,1);}
+.skill-bar-fill::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.3),transparent);animation:shimmer 2s infinite;}
 @keyframes shimmer{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
-
-/* ═══ Projects ═══ */
 .projects-list{display:flex;flex-direction:column;gap:18px}
-.project{
-  background:var(--card);backdrop-filter:blur(12px);
-  border:1px solid var(--border);
-  border-radius:18px;overflow:hidden;transition:all .4s;
-  position:relative;
-}
+.project{background:var(--card);backdrop-filter:blur(12px);border:1px solid var(--border);border-radius:18px;overflow:hidden;transition:all .4s;position:relative;}
 .project:hover{border-color:var(--cyan);transform:translateY(-5px);box-shadow:0 15px 50px rgba(34,211,238,0.15)}
-.project-thumb{
-  height:170px;
-  background:linear-gradient(135deg,var(--bg-2),#1a2744);
-  display:flex;align-items:center;justify-content:center;
-  position:relative;overflow:hidden;
-}
-.project-thumb::before{
-  content:"";position:absolute;inset:0;
-  background:
-    radial-gradient(circle at 20% 80%,rgba(59,130,246,0.4),transparent 50%),
-    radial-gradient(circle at 80% 20%,rgba(34,211,238,0.4),transparent 50%);
-  opacity:0;transition:opacity .5s;
-}
+.project-thumb{height:170px;background:linear-gradient(135deg,var(--bg-2),#1a2744);display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;}
+.project-thumb::before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 20% 80%,rgba(59,130,246,0.4),transparent 50%),radial-gradient(circle at 80% 20%,rgba(34,211,238,0.4),transparent 50%);opacity:0;transition:opacity .5s;}
 .project:hover .project-thumb::before{opacity:1}
-.project-thumb svg{
-  width:60px;height:60px;stroke:var(--cyan);fill:none;stroke-width:1.5;
-  position:relative;z-index:1;transition:transform .5s;
-}
+.project-thumb svg{width:60px;height:60px;stroke:var(--cyan);fill:none;stroke-width:1.5;position:relative;z-index:1;transition:transform .5s;}
 .project:hover .project-thumb svg{transform:scale(1.15) rotate(5deg)}
-.project-logo{
-  width:100%;
-  height:100%;
-  object-fit:cover;
-  position:relative;
-  z-index:1;
-  transition:transform .5s;
-}
+.project-logo{width:100%;height:100%;object-fit:cover;position:relative;z-index:1;transition:transform .5s;}
 .project:hover .project-logo{transform:scale(1.05)}
 .project-body{padding:22px}
-.project-tag{
-  display:inline-block;padding:5px 14px;
-  background:rgba(34,211,238,0.1);border:1px solid rgba(34,211,238,0.3);
-  color:var(--cyan);border-radius:20px;font-size:.7rem;font-weight:700;
-  margin-bottom:10px;transition:all .3s;
-}
+.project-tag{display:inline-block;padding:5px 14px;background:rgba(34,211,238,0.1);border:1px solid rgba(34,211,238,0.3);color:var(--cyan);border-radius:20px;font-size:.7rem;font-weight:700;margin-bottom:10px;transition:all .3s;}
 .project:hover .project-tag{background:rgba(34,211,238,0.2);transform:scale(1.05)}
 .project-title{font-size:1.15rem;font-weight:900;margin-bottom:8px;color:#fff}
 .project-desc{color:var(--muted);font-size:.85rem;line-height:1.8;margin-bottom:15px}
-
-/* تعديل الأزرار عشان تبقى جانب بعضها */
 .project-links-wrapper { display: flex; gap: 15px; align-items: center; flex-wrap: wrap; }
-.project-link{
-  color:var(--cyan);text-decoration:none;font-weight:700;font-size:.88rem;
-  display:inline-flex;align-items:center;gap:6px;transition:all .3s;
-  position:relative;
-}
-.project-link::after{
-  content:"";position:absolute;bottom:-2px;right:0;left:0;height:1px;
-  background:var(--cyan);transform:scaleX(0);transform-origin:right;
-  transition:transform .3s;
-}
+.project-link{color:var(--cyan);text-decoration:none;font-weight:700;font-size:.88rem;display:inline-flex;align-items:center;gap:6px;transition:all .3s;position:relative;}
+.project-link::after{content:"";position:absolute;bottom:-2px;right:0;left:0;height:1px;background:var(--cyan);transform:scaleX(0);transform-origin:right;transition:transform .3s;}
 .project-link:hover{gap:12px}
 .project-link:hover::after{transform:scaleX(1)}
+.stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;}
+.stat{background:var(--card);backdrop-filter:blur(12px);border:1px solid var(--border);border-radius:14px;padding:20px 12px;text-align:center;transition:all .3s;}
+.stat:hover{border-color:rgba(34,211,238,0.4);transform:translateY(-3px)}
+.stat-num{font-family:'Space Grotesk',sans-serif;font-size:1.8rem;font-weight:700;background:linear-gradient(135deg,var(--blue),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1;}
+.stat-label{color:var(--muted);font-size:.75rem;margin-top:8px;font-weight:600}
 
-/* ═══ Contact & WhatsApp Dropdown ═══ */
+/* ═══ Contact ═══ */
 .contact-grid{display:flex;flex-direction:column;gap:12px}
-.contact-item{
-  display:flex;align-items:center;gap:15px;padding:20px;
-  background:var(--card);backdrop-filter:blur(12px);
-  border:1px solid var(--border);
-  border-radius:14px;color:var(--text);text-decoration:none;
-  font-weight:600;font-size:.92rem;transition:all .4s;
-  position:relative;overflow:hidden;
-}
-.contact-item::before{
-  content:"";position:absolute;right:0;top:0;bottom:0;width:3px;
-  background:linear-gradient(180deg,var(--blue),var(--cyan));
-  transform:scaleY(0);transform-origin:bottom;transition:transform .4s;
-}
-.contact-item:hover{
-  border-color:rgba(34,211,238,0.5);
-  background:rgba(34,211,238,0.08);
-  transform:translateX(-5px);
-}
+.contact-item{display:flex;align-items:center;gap:15px;padding:20px;background:var(--card);backdrop-filter:blur(12px);border:1px solid var(--border);border-radius:14px;color:var(--text);text-decoration:none;font-weight:600;font-size:.92rem;transition:all .4s;position:relative;overflow:hidden;}
+.contact-item::before{content:"";position:absolute;right:0;top:0;bottom:0;width:3px;background:linear-gradient(180deg,var(--blue),var(--cyan));transform:scaleY(0);transform-origin:bottom;transition:transform .4s;}
+.contact-item:hover{border-color:rgba(34,211,238,0.5);background:rgba(34,211,238,0.08);transform:translateX(-5px);}
 .contact-item:hover::before{transform:scaleY(1)}
-.contact-icon{
-  width:48px;height:48px;border-radius:12px;
-  background:linear-gradient(135deg,rgba(59,130,246,0.2),rgba(34,211,238,0.15));
-  border:1px solid rgba(34,211,238,0.3);
-  display:flex;align-items:center;justify-content:center;flex-shrink:0;
-  transition:all .4s;
-}
-.contact-item:hover .contact-icon{
-  background:linear-gradient(135deg,var(--blue),var(--cyan));
-  transform:rotate(-10deg) scale(1.1);
-}
+.contact-icon{width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,rgba(59,130,246,0.2),rgba(34,211,238,0.15));border:1px solid rgba(34,211,238,0.3);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .4s;}
+.contact-item:hover .contact-icon{background:linear-gradient(135deg,var(--blue),var(--cyan));transform:rotate(-10deg) scale(1.1);}
 .contact-icon svg{width:22px;height:22px;stroke:var(--cyan);fill:none;stroke-width:2;transition:stroke .4s}
 .contact-item:hover .contact-icon svg{stroke:#fff}
 .contact-text{display:flex;flex-direction:column;flex:1}
@@ -370,52 +157,17 @@ body{
 .contact-text span{font-weight:700;font-size:.95rem}
 .contact-arrow{color:var(--cyan);font-size:1.3rem;transition:transform .3s}
 .contact-item:hover .contact-arrow{transform:translateX(-5px)}
-
-/* WhatsApp Dropdown Custom */
 .whatsapp-wrapper { position: relative; width: 100%; }
 button.contact-item { width: 100%; text-align: right; font-family: inherit; cursor: pointer; outline: none; }
-.whatsapp-dropdown {
-  position: absolute; top: calc(100% + 8px); right: 0; left: 0;
-  background: rgba(13, 20, 36, 0.98); backdrop-filter: blur(20px);
-  border: 1px solid var(--cyan); border-radius: 16px;
-  padding: 10px; display: none; z-index: 100;
-  box-shadow: 0 15px 40px rgba(0,0,0,0.8), 0 0 20px rgba(34,211,238,0.2);
-  flex-direction: column; gap: 8px;
-}
+.whatsapp-dropdown {position: absolute; top: calc(100% + 8px); right: 0; left: 0;background: rgba(13, 20, 36, 0.98); backdrop-filter: blur(20px);border: 1px solid var(--cyan); border-radius: 16px;padding: 10px; display: none; z-index: 100;box-shadow: 0 15px 40px rgba(0,0,0,0.8), 0 0 20px rgba(34,211,238,0.2);flex-direction: column; gap: 8px;}
 .whatsapp-dropdown.show { display: flex; animation: slideDown .3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
 @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
-.whatsapp-dropdown a {
-  display: flex; align-items: center; gap: 12px;
-  padding: 14px; border-radius: 12px; text-decoration: none;
-  color: var(--text); transition: all .3s; border: 1px solid transparent;
-  cursor: pointer;
-}
+.whatsapp-dropdown a {display: flex; align-items: center; gap: 12px;padding: 14px; border-radius: 12px; text-decoration: none;color: var(--text); transition: all .3s; border: 1px solid transparent;cursor: pointer;}
 .whatsapp-dropdown a:hover { background: rgba(34,211,238,0.1); border-color: rgba(34,211,238,0.3); transform: translateX(-5px); }
 .whatsapp-dropdown a span { font-size: 1.5rem; }
 .whatsapp-dropdown a div { display: flex; flex-direction: column; }
 .whatsapp-dropdown a strong { font-size: 0.95rem; color: #fff; }
 .whatsapp-dropdown a small { font-size: 0.75rem; color: var(--muted); }
-
-/* ═══ Stats ═══ */
-.stats-grid{
-  display:grid;grid-template-columns:repeat(3,1fr);gap:12px;
-  margin-bottom:20px;
-}
-.stat{
-  background:var(--card);backdrop-filter:blur(12px);
-  border:1px solid var(--border);
-  border-radius:14px;padding:20px 12px;text-align:center;
-  transition:all .3s;
-}
-.stat:hover{border-color:rgba(34,211,238,0.4);transform:translateY(-3px)}
-.stat-num{
-  font-family:'Space Grotesk',sans-serif;
-  font-size:1.8rem;font-weight:700;
-  background:linear-gradient(135deg,var(--blue),var(--cyan));
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
-  line-height:1;
-}
-.stat-label{color:var(--muted);font-size:.75rem;margin-top:8px;font-weight:600}
 
 /* ═══ Scroll Reveal Animation ═══ */
 .reveal { opacity: 0; transform: translateY(30px); transition: all 0.8s cubic-bezier(0.5, 0, 0, 1); }
@@ -449,7 +201,7 @@ button.contact-item { width: 100%; text-align: right; font-family: inherit; curs
   <div class="intro-name" id="introName" dir="ltr"></div>
   <div class="intro-line"></div>
   <div class="intro-dot"></div>
-  <div class="intro-subtitle">FRONT-END DEVELOPER</div>
+  <div class="intro-subtitle">FULL-STACK & SECURITY DEVELOPER</div>
 </div>
 
 <div class="bg-anim">
@@ -472,7 +224,7 @@ button.contact-item { width: 100%; text-align: right; font-family: inherit; curs
         <img src="mina.png" alt="Mina Developer">
       </div>
       <div class="sidebar-name">Mina Developer</div>
-      <div class="sidebar-role">Front-End Developer</div>
+      <div class="sidebar-role">Full-Stack & Security Dev</div>
       <span class="sidebar-status">متاح للعمل</span>
     </div>
     <nav class="sidebar-nav">
@@ -489,27 +241,18 @@ button.contact-item { width: 100%; text-align: right; font-family: inherit; curs
     <!-- Home -->
     <div class="page active" id="page-home">
       <span class="page-label reveal">— أهلاً بيك —</span>
-      <h1 class="page-title reveal">أنا <span class="gradient">Mina Developer</span><br>ببني مواقع سريعة وعصرية</h1>
-      <p class="page-desc reveal">مطور واجهات أمامية من سوهاج، مصر. متخصص في تحويل التصاميم إلى مواقع تفاعلية باستخدام HTML و CSS و JavaScript و React.</p>
+      <h1 class="page-title reveal">أنا <span class="gradient">Mina Developer</span><br>ببني مواقع وأنظمة آمنة</h1>
+      <p class="page-desc reveal">مطور Full-Stack ومهتم بالأمن السيبراني. ببني تطبيقات ويب متكاملة وآمنة.</p>
 
       <div class="stats-grid reveal">
-        <div class="stat">
-          <div class="stat-num">10+</div>
-          <div class="stat-label">مشاريع</div>
-        </div>
-        <div class="stat">
-          <div class="stat-num">1+</div>
-          <div class="stat-label">سنوات خبرة</div>
-        </div>
-        <div class="stat">
-          <div class="stat-num">5+</div>
-          <div class="stat-label">عملاء</div>
-        </div>
+        <div class="stat"><div class="stat-num">10+</div><div class="stat-label">مشاريع</div></div>
+        <div class="stat"><div class="stat-num">1+</div><div class="stat-label">سنوات خبرة</div></div>
+        <div class="stat"><div class="stat-num">5+</div><div class="stat-label">عملاء</div></div>
       </div>
 
       <div class="card reveal">
-        <p>بدأت رحلتي في البرمجة من <strong>الموبايل</strong>، وتعلمت بنفسي من المصادر المجانية. بحب أبني مواقع <strong>بسيطة، سريعة، وسهلة الاستخدام</strong>.</p>
-        <p>هدفي إني أساعد الشركات والمطاعم الصغيرة إن يكون عندها <strong>حضور أونلاين احترافي</strong>.</p>
+        <p>بدأت رحلتي في البرمجة من <strong>الموبايل</strong>، وتعلمت بنفسي من المصادر المجانية. بحب أبني مواقع <strong>سريعة، آمنة، وسهلة الاستخدام</strong>.</p>
+        <p>هدفي إني أساعد الشركات والمطاعم الصغيرة إن يكون عندها <strong>حضور أونلاين احترافي</strong>، وأبني أنظمة ويب متكاملة.</p>
       </div>
     </div>
 
@@ -517,11 +260,11 @@ button.contact-item { width: 100%; text-align: right; font-family: inherit; curs
     <div class="page" id="page-about">
       <span class="page-label reveal">— عني —</span>
       <h1 class="page-title reveal">مين <span class="gradient">أنا؟</span></h1>
-      <p class="page-desc reveal">قصة قصيرة عن رحلتي في عالم البرمجة.</p>
+      <p class="page-desc reveal">قصة قصيرة عن رحلتي في عالم البرمجة والأمن.</p>
       <div class="card reveal">
-        <p>أنا <strong>مينا</strong>، مطور واجهات أمامية من <strong>سوهاج، مصر</strong>. بدأت رحلتي من الموبايل، وتعلمت بنفسي من المصادر المجانية.</p>
-        <p>بحب أبني مواقع <strong>سريعة، بسيطة، وسهلة الاستخدام</strong>. أركز على تجربة المستخدم، وأهتم بأدق التفاصيل.</p>
-        <p>هدفي إني أشتغل مع <strong>شركات ومطاعم صغيرة</strong> وأساعدهم في بناء حضور أونلاين احترافي.</p>
+        <p>أنا <strong>مينا</strong>، مطور Full-Stack ومهتم بالأمن السيبراني من <strong>سوهاج، مصر</strong>. بدأت رحلتي من الموبايل، وتعلمت بنفسي من المصادر المجانية.</p>
+        <p>بحب أبني تطبيقات ويب <strong>سريعة، آمنة، وسهلة الاستخدام</strong>. أركز على تجربة المستخدم، وأهتم بأدق التفاصيل الأمنية.</p>
+        <p>هدفي إني أشتغل مع <strong>شركات ومطاعم صغيرة</strong> وأساعدهم في بناء حضور أونلاين احترافي، وأبني أنظمة Full Stack كاملة.</p>
       </div>
     </div>
 
@@ -529,38 +272,16 @@ button.contact-item { width: 100%; text-align: right; font-family: inherit; curs
     <div class="page" id="page-skills">
       <span class="page-label reveal">— المهارات —</span>
       <h1 class="page-title reveal">التقنيات اللي <span class="gradient">بستخدمها</span></h1>
-      <p class="page-desc reveal">المهارات اللي اتعلمتها خلال رحلتي في تطوير الويب.</p>
+      <p class="page-desc reveal">المهارات اللي اتعلمتها خلال رحلتي.</p>
       <div class="skills-grid">
-        <div class="skill reveal">
-          <span class="skill-icon">🌐</span>
-          <div class="skill-name">HTML5</div>
-          <div class="skill-bar"><div class="skill-bar-fill" style="width:95%"></div></div>
-        </div>
-        <div class="skill reveal">
-          <span class="skill-icon">🎨</span>
-          <div class="skill-name">CSS3</div>
-          <div class="skill-bar"><div class="skill-bar-fill" style="width:90%"></div></div>
-        </div>
-        <div class="skill reveal">
-          <span class="skill-icon">⚡</span>
-          <div class="skill-name">JavaScript</div>
-          <div class="skill-bar"><div class="skill-bar-fill" style="width:80%"></div></div>
-        </div>
-        <div class="skill reveal">
-          <span class="skill-icon">⚛️</span>
-          <div class="skill-name">React</div>
-          <div class="skill-bar"><div class="skill-bar-fill" style="width:75%"></div></div>
-        </div>
-        <div class="skill reveal">
-          <span class="skill-icon">📱</span>
-          <div class="skill-name">Responsive</div>
-          <div class="skill-bar"><div class="skill-bar-fill" style="width:90%"></div></div>
-        </div>
-        <div class="skill reveal">
-          <span class="skill-icon">🔧</span>
-          <div class="skill-name">Git</div>
-          <div class="skill-bar"><div class="skill-bar-fill" style="width:80%"></div></div>
-        </div>
+        <div class="skill reveal"><span class="skill-icon">🌐</span><div class="skill-name">HTML5</div><div class="skill-bar"><div class="skill-bar-fill" style="width:95%"></div></div></div>
+        <div class="skill reveal"><span class="skill-icon">🎨</span><div class="skill-name">CSS3</div><div class="skill-bar"><div class="skill-bar-fill" style="width:90%"></div></div></div>
+        <div class="skill reveal"><span class="skill-icon">⚡</span><div class="skill-name">JavaScript</div><div class="skill-bar"><div class="skill-bar-fill" style="width:85%"></div></div></div>
+        <div class="skill reveal"><span class="skill-icon">⚛️</span><div class="skill-name">React</div><div class="skill-bar"><div class="skill-bar-fill" style="width:75%"></div></div></div>
+        <div class="skill reveal"><span class="skill-icon">🔧</span><div class="skill-name">Node.js</div><div class="skill-bar"><div class="skill-bar-fill" style="width:70%"></div></div></div>
+        <div class="skill reveal"><span class="skill-icon">🛡️</span><div class="skill-name">Cybersecurity</div><div class="skill-bar"><div class="skill-bar-fill" style="width:80%"></div></div></div>
+        <div class="skill reveal"><span class="skill-icon">🐍</span><div class="skill-name">Python</div><div class="skill-bar"><div class="skill-bar-fill" style="width:75%"></div></div></div>
+        <div class="skill reveal"><span class="skill-icon">💾</span><div class="skill-name">Databases</div><div class="skill-bar"><div class="skill-bar-fill" style="width:70%"></div></div></div>
       </div>
     </div>
 
@@ -571,7 +292,38 @@ button.contact-item { width: 100%; text-align: right; font-family: inherit; curs
       <p class="page-desc reveal">مجموعة من المشاريع اللي اشتغلت عليها.</p>
       <div class="projects-list">
 
-        <!-- المشروع الأول: مطعم عويضة -->
+        <!-- 1. منصة Cyber Academy (Full Stack) -->
+        <div class="project reveal">
+          <div class="project-thumb" style="background: linear-gradient(135deg, #0d1424, #1a2744);">
+            <svg viewBox="0 0 24 24" style="stroke: var(--red); width: 70px; height: 70px; stroke-width: 1.5;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          </div>
+          <div class="project-body">
+            <span class="project-tag" style="color: #ff304b; border-color: rgba(255, 48, 75, 0.3);">Full-Stack • Cybersecurity</span>
+            <h3 class="project-title">Cyber Academy — منصة تعليمية</h3>
+            <p class="project-desc">منصة تعليمية متكاملة للأمن السيبراني. بتشمل نظام تسجيل مستخدمين، لوحة تحكم للمدير، تتبع تقدم الطلاب، وحماية متقدمة ضد الثغرات (JWT, Rate Limiting).</p>
+            <div class="project-links-wrapper">
+              <a href="https://cyber-academy-neon.vercel.app/" target="_blank" rel="noopener" class="project-link" style="color: #ff304b;">معاينة مباشرة ←</a>
+              <a href="https://github.com/menamon713-bit/cyber-academy" target="_blank" rel="noopener" class="project-link" style="color: var(--muted);">الكود المصدري ←</a>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. أداة تحليل الفيروسات (Malware Analyzer) -->
+        <div class="project reveal">
+          <div class="project-thumb" style="background: linear-gradient(135deg, #101624, #14243d);">
+            <svg viewBox="0 0 24 24" style="stroke: var(--purple); width: 70px; height: 70px; stroke-width: 1.5;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/><line x1="12" y1="15" x2="12" y2="19"/></svg>
+          </div>
+          <div class="project-body">
+            <span class="project-tag" style="color: var(--purple); border-color: rgba(168, 85, 247, 0.3);">Python • Security Tool</span>
+            <h3 class="project-title">Static Malware Analyzer</h3>
+            <p class="project-desc">أداة بلغة بايثون لتحليل البرمجيات الخبيثة بشكل ساكن (Static Analysis) بدون تشغيلها. بتستخرج الـ Hashes، والـ IOCs، وتحسب نسبة العشوائية (Entropy) لتحديد الملفات المشفرة.</p>
+            <div class="project-links-wrapper">
+              <a href="https://github.com/menamon713-bit/malware-analyzer" target="_blank" rel="noopener" class="project-link" style="color: var(--purple);">الكود المصدري (GitHub) ←</a>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. مطعم عويضة -->
         <div class="project reveal">
           <div class="project-thumb">
             <img src="awida-logo.png" alt="عويضة الجمهورية" class="project-logo">
@@ -580,7 +332,6 @@ button.contact-item { width: 100%; text-align: right; font-family: inherit; curs
             <span class="project-tag">مطاعم • React</span>
             <h3 class="project-title">Restaurant SPA — مطعم عويضة</h3>
             <p class="project-desc">موقع مطعم تفاعلي بـ React + Vite. فيه منيو بالبحث والفلترة، سلة تسوق، زر اتصال، وتصميم عصري.</p>
-            
             <div class="project-links-wrapper">
               <a href="https://restaurant-spa-lilac.vercel.app/" target="_blank" rel="noopener" class="project-link">معاينة مباشرة ←</a>
               <a href="https://github.com/menamon713-bit/اسم-المشروع" target="_blank" rel="noopener" class="project-link" style="color: var(--muted);">الكود المصدري ←</a>
@@ -588,24 +339,7 @@ button.contact-item { width: 100%; text-align: right; font-family: inherit; curs
           </div>
         </div>
 
-        <!-- المشروع الثاني: مطعم الحمش (جديد) -->
-        <div class="project reveal">
-          <div class="project-thumb">
-            <img src="el-hemesh-logo.png" alt="مطعم الحمش" class="project-logo">
-          </div>
-          <div class="project-body">
-            <span class="project-tag">مطاعم • React</span>
-            <h3 class="project-title">El-Hemesh Restaurant — مطعم الحمش</h3>
-            <p class="project-desc">موقع تعريفي لمطعم مشويات في قلفاو - سوهاج، يعرض قائمة الطعام والمميزات بأسلوب عصري ومتجاوب.</p>
-            
-            <div class="project-links-wrapper">
-              <a href="https://el-hemesh-restaurant.vercel.app/" target="_blank" rel="noopener" class="project-link">معاينة مباشرة ←</a>
-              <a href="https://github.com/menamon713-bit/اسم-المشروع-هنا" target="_blank" rel="noopener" class="project-link" style="color: var(--muted);">الكود المصدري ←</a>
-            </div>
-          </div>
-        </div>
-
-        <!-- المشروع الثالث: Lets Go -->
+        <!-- 4. Lets Go Cafe -->
         <div class="project reveal">
           <div class="project-thumb">
             <img src="letsgo-logo.png" alt="Lets Go Cafe" class="project-logo">
@@ -615,19 +349,6 @@ button.contact-item { width: 100%; text-align: right; font-family: inherit; curs
             <h3 class="project-title">Lets Go Cafe</h3>
             <p class="project-desc">موقع مطعم بـ HTML/CSS/JS. صفحة واحدة تعرض المنيو والأصناف، مع تصميم عصري.</p>
             <a href="https://letsgo-cafe.vercel.app" target="_blank" rel="noopener" class="project-link">شوف المشروع ←</a>
-          </div>
-        </div>
-
-        <!-- المشروع الرابع: شخصي -->
-        <div class="project reveal">
-          <div class="project-thumb">
-            <svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-          </div>
-          <div class="project-body">
-            <span class="project-tag">شخصي</span>
-            <h3 class="project-title">الموقع الشخصي</h3>
-            <p class="project-desc">الموقع اللي إنت فيه دلوقتي! Portfolio بيعرض مهاراتي ومشاريعي.</p>
-            <a href="#" class="project-link">إنت هنا ←</a>
           </div>
         </div>
 
@@ -654,17 +375,11 @@ button.contact-item { width: 100%; text-align: right; font-family: inherit; curs
           <div class="whatsapp-dropdown" id="whatsappDropdown">
             <a href="javascript:void(0)" onclick="openWhatsApp('business')">
               <span>💼</span>
-              <div>
-                <strong>واتساب الأعمال</strong>
-                <small>للمشاريع والاتفاقيات الرسمية</small>
-              </div>
+              <div><strong>واتساب الأعمال</strong><small>للمشاريع والاتفاقيات الرسمية</small></div>
             </a>
             <a href="javascript:void(0)" onclick="openWhatsApp('normal')">
               <span>💬</span>
-              <div>
-                <strong>واتساب العادي</strong>
-                <small>للاستفسارات السريعة والودية</small>
-              </div>
+              <div><strong>واتساب العادي</strong><small>للاستفسارات السريعة والودية</small></div>
             </a>
           </div>
         </div>
