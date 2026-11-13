@@ -20,236 +20,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
-<style>
-*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-:root{
-  --bg:#070b14;--bg-2:#0d1424;--card:rgba(17, 26, 46, 0.6);--border:#1e2a44;
-  --blue:#3b82f6;--cyan:#22d3ee;--purple:#a855f7;--pink:#ec4899;
-  --text:#e8eefc;--muted:#8a97b8;--red:#ff304b;
-}
-[data-theme="light"] {
-  --bg:#f8fafc; --bg-2:#e2e8f0; --card:rgba(255, 255, 255, 0.7); --border:#cbd5e1;
-  --text:#0f172a; --muted:#475569; --blue:#2563eb; --cyan:#0891b2;
-}
-[data-theme="light"] .bg-anim .grid-lines {
-  background-image:linear-gradient(rgba(37,99,235,0.05) 1px,transparent 1px),linear-gradient(90deg,rgba(37,99,235,0.05) 1px,transparent 1px);
-}
-[data-theme="light"] .sidebar { background:rgba(248,250,252,0.95); }
-[data-theme="light"] .topbar { background:rgba(248,250,252,0.85); }
-[data-theme="light"] .intro { background:#f8fafc; }
-[data-theme="light"] .page-title { color:#0f172a; }
-[data-theme="light"] .card { box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
-
-html{scroll-behavior:smooth}
-body{font-family:Cairo,sans-serif;background:var(--bg);color:var(--text);line-height:1.7;overflow-x:hidden;min-height:100vh;position:relative;transition: background 0.4s, color 0.4s;}
-::selection { background: var(--red); color: #fff; }
-
-.theme-btn{position:fixed;bottom:25px;left:25px;width:50px;height:50px;border-radius:50%;background:var(--card);border:1px solid var(--border);color:var(--red);font-size:1.3rem;cursor:pointer;z-index:1000;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(10px);box-shadow:0 5px 20px rgba(0,0,0,0.3);transition:all 0.3s;}
-.theme-btn:hover{transform:scale(1.1) rotate(15deg);border-color:var(--red);background:rgba(255,48,75,0.1);}
-
-.bg-anim{position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none}
-.grid-lines{position:absolute;inset:0;background-image:linear-gradient(rgba(255,48,75,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,48,75,0.03) 1px,transparent 1px);background-size:50px 50px;animation:gridMove 20s linear infinite;}
-@keyframes gridMove{from{background-position:0 0}to{background-position:50px 50px}}
-.orb{position:absolute;border-radius:50%;filter:blur(80px);opacity:.3}
-.orb-1{width:400px;height:400px;background:var(--red);top:-100px;right:-100px;animation:float1 18s infinite ease-in-out}
-.orb-2{width:350px;height:350px;background:var(--blue);bottom:-100px;left:-100px;animation:float2 22s infinite ease-in-out}
-.orb-3{width:250px;height:250px;background:var(--purple);top:50%;left:50%;transform:translate(-50%,-50%);animation:float3 25s infinite ease-in-out;opacity:.2}
-@keyframes float1{0%,100%{transform:translate(0,0)}50%{transform:translate(-80px,60px)}}
-@keyframes float2{0%,100%{transform:translate(0,0)}50%{transform:translate(80px,-60px)}}
-@keyframes float3{0%,100%{transform:translate(-50%,-50%) scale(1)}50%{transform:translate(-50%,-50%) scale(1.3)}}
-
-/* ═══ Intro Animation (مدته حوالي 4.5 ثانية) ═══ */
-.intro{position:fixed;inset:0;background:#03060c;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;transition:opacity 1s ease,visibility 1s ease;}
-.intro.hide{opacity:0;visibility:hidden}
-.intro-bg{position:absolute;inset:0;overflow:hidden}
-.intro-bg::before,.intro-bg::after{content:"";position:absolute;border-radius:50%;filter:blur(80px);opacity:.6}
-.intro-bg::before{width:400px;height:400px;background:var(--red);top:20%;left:10%;animation:introFloat1 6s infinite ease-in-out}
-.intro-bg::after{width:350px;height:350px;background:var(--blue);bottom:20%;right:10%;animation:introFloat2 6s infinite ease-in-out}
-@keyframes introFloat1{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(50px,-50px) scale(1.3)}}
-@keyframes introFloat2{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(-50px,50px) scale(1.3)}}
-.intro-name{position:relative;z-index:2;display:flex;gap:2px;flex-wrap:wrap;justify-content:center;padding:0 20px;perspective:1000px;}
-.intro-letter{font-family:'Space Grotesk',sans-serif;font-size:3.5rem;font-weight:700;opacity:0;transform:translateY(60px) rotateX(-90deg);animation:letterIn .8s cubic-bezier(.34,1.56,.64,1) forwards;background:linear-gradient(135deg,#fff 0%,var(--red) 50%,var(--blue) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;display:inline-block;}
-@keyframes letterIn{to{opacity:1;transform:translateY(0) rotateX(0)}}
-.intro-line{position:relative;z-index:2;width:0;height:3px;background:linear-gradient(90deg,var(--red),var(--blue),var(--purple));border-radius:3px;margin-top:25px;box-shadow:0 0 25px var(--red);animation:lineGrow 1s 1.5s cubic-bezier(.34,1.56,.64,1) forwards;}
-@keyframes lineGrow{to{width:300px}}
-.intro-dot{position:relative;z-index:2;width:10px;height:10px;background:var(--red);border-radius:50%;margin-top:30px;box-shadow:0 0 25px var(--red);opacity:0;animation:dotPulse 1s 2.2s ease forwards;}
-@keyframes dotPulse{0%{opacity:0;transform:scale(0)}50%{opacity:1;transform:scale(1.6)}100%{opacity:1;transform:scale(1)}}
-.intro-subtitle{position:relative;z-index:2;color:var(--muted);font-size:.8rem;margin-top:35px;letter-spacing:6px;opacity:0;animation:fadeInSub 1s 2.8s ease forwards;}
-@keyframes fadeInSub{to{opacity:1}}
-
-.layout{position:relative;z-index:1;display:flex;flex-direction:column;min-height:100vh}
-.topbar{background:rgba(7,11,20,0.85);backdrop-filter:blur(15px);border-bottom:1px solid var(--border);padding:16px 20px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:100;transition: background 0.4s;}
-.topbar-logo{font-family:'Space Grotesk',sans-serif;font-size:1.15rem;font-weight:700;background:linear-gradient(135deg,var(--red),var(--blue));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
-.topbar-menu{background:rgba(255,48,75,0.08);border:1px solid rgba(255,48,75,0.4);color:var(--red);width:44px;height:44px;border-radius:12px;font-size:1.4rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .3s;}
-.topbar-menu:hover,.topbar-menu:active{transform:scale(.95) rotate(90deg);background:var(--red);color:#fff;}
-.sidebar{background:rgba(13,20,36,0.97);backdrop-filter:blur(15px);border-left:1px solid var(--border);padding:25px 20px;display:flex;flex-direction:column;position:fixed;top:0;right:0;bottom:0;width:290px;z-index:200;transform:translateX(100%);transition:transform .5s cubic-bezier(.34,1.56,.64,1), background 0.4s;overflow-y:auto;}
-.sidebar.open{transform:translateX(0)}
-.sidebar-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(4px);z-index:150;display:none;opacity:0;transition:opacity .3s;}
-.sidebar-overlay.show{display:block;opacity:1}
-.sidebar-profile{text-align:center;padding-bottom:25px;border-bottom:1px solid var(--border);margin-bottom:25px}
-.sidebar-avatar{width:95px;height:95px;margin:0 auto 15px;border-radius:50%;overflow:hidden;background:linear-gradient(135deg,var(--red),var(--blue),var(--purple));display:flex;align-items:center;justify-content:center;font-size:1.5rem;font-weight:900;color:#fff;box-shadow:0 0 40px rgba(255,48,75,0.4);border:2px solid rgba(255,48,75,0.6);position:relative;animation:avatarPulse 3s infinite ease-in-out;font-family:'Space Grotesk',sans-serif;}
-@keyframes avatarPulse{0%,100%{box-shadow:0 0 40px rgba(255,48,75,0.4)}50%{box-shadow:0 0 60px rgba(255,48,75,0.7)}}
-.sidebar-avatar img{width:100%;height:100%;object-fit:cover;object-position:center}
-.sidebar-name{font-size:1.15rem;font-weight:900;margin-bottom:5px}
-.sidebar-role{color:var(--muted);font-size:.8rem}
-.sidebar-status{display:inline-flex;align-items:center;gap:6px;margin-top:12px;padding:5px 14px;background:rgba(255,48,75,0.1);border:1px solid rgba(255,48,75,0.3);border-radius:20px;font-size:.7rem;color:var(--red);font-weight:700;}
-.sidebar-status::before{content:"";width:6px;height:6px;background:var(--red);border-radius:50%;box-shadow:0 0 8px var(--red);animation:pulse 1.5s infinite;}
-@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.8)}}
-.sidebar-nav{flex:1;display:flex;flex-direction:column;gap:6px}
-.nav-btn{background:transparent;border:1px solid transparent;color:var(--muted);padding:14px 15px;border-radius:12px;font:600 .9rem Cairo;text-align:right;cursor:pointer;display:flex;align-items:center;gap:12px;transition:all .3s;width:100%;position:relative;overflow:hidden;}
-.nav-btn::before{content:"";position:absolute;right:0;top:0;bottom:0;width:3px;background:linear-gradient(180deg,var(--red),var(--blue));transform:translateX(3px);transition:transform .3s;}
-.nav-btn:hover{background:rgba(255,48,75,0.06);color:var(--red);transform:translateX(-5px)}
-.nav-btn:hover::before{transform:translateX(0)}
-.nav-btn.active{background:linear-gradient(135deg,rgba(255,48,75,0.2),rgba(59,130,246,0.15));color:var(--red);border-color:rgba(255,48,75,0.4);}
-.nav-btn.active::before{transform:translateX(0)}
-.nav-btn .icon{width:22px;height:22px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.nav-btn .icon svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2}
-.sidebar-footer{padding-top:20px;border-top:1px solid var(--border);text-align:center}
-.sidebar-footer p{color:var(--muted);font-size:.75rem}
-.sidebar-footer p span{background:linear-gradient(135deg,var(--red),var(--blue));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-weight:700;}
-
-.main{flex:1;padding:25px 20px;max-width:900px;margin:0 auto;width:100%}
-.page{display:none;animation:fadeIn .5s ease}
-.page.active{display:block}
-@keyframes fadeIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
-.page-label{font-size:.75rem;font-weight:700;color:var(--red);letter-spacing:3px;margin-bottom:10px;display:inline-block;position:relative;padding-right:15px;}
-.page-label::before{content:"";position:absolute;right:0;top:50%;transform:translateY(-50%);width:8px;height:8px;background:var(--red);border-radius:50%;box-shadow:0 0 10px var(--red);animation:pulse 1.5s infinite;}
-.page-title{font-size:1.8rem;font-weight:900;margin-bottom:15px;line-height:1.3;color:#fff;transition:color 0.4s;}
-.page-title .gradient{background:linear-gradient(135deg,var(--red),var(--blue),var(--purple));background-size:200% 200%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:gradientShift 4s ease infinite;}
-@keyframes gradientShift{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
-.page-desc{color:var(--muted);font-size:.92rem;margin-bottom:25px;line-height:1.9}
-
-.card{background:var(--card);backdrop-filter:blur(12px);border:1px solid var(--border);border-radius:18px;padding:24px;margin-bottom:16px;position:relative;overflow:hidden;transition:all .4s cubic-bezier(0.175, 0.885, 0.32, 1.275);}
-.card::before{content:"";position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--red),var(--blue),var(--purple));transform:scaleX(0);transform-origin:right;transition:transform .5s;}
-.card:hover::before{transform:scaleX(1)}
-.card:hover{border-color:rgba(255,48,75,0.4);transform:translateY(-5px);box-shadow:0 15px 40px rgba(255,48,75,0.15), inset 0 0 20px rgba(255,48,75,0.05);}
-.card p{color:var(--muted);font-size:.92rem;line-height:2;margin-bottom:12px}
-.card p:last-child{margin-bottom:0}
-.card p strong{color:var(--red);font-weight:700}
-
-.skills-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
-.skill{background:var(--card);backdrop-filter:blur(12px);border:1px solid var(--border);border-radius:14px;padding:20px 12px;text-align:center;transition:all .4s;position:relative;overflow:hidden;cursor:default;}
-.skill::after{content:"";position:absolute;inset:0;background:radial-gradient(circle at 50% 0%,rgba(255,48,75,0.15),transparent 70%);opacity:0;transition:opacity .4s;}
-.skill:hover{border-color:rgba(255,48,75,0.5);transform:translateY(-5px) scale(1.03);box-shadow:0 10px 30px rgba(255,48,75,0.1)}
-.skill:hover::after{opacity:1}
-.skill-icon{font-size:2rem;margin-bottom:10px;display:block;transition:transform .4s}
-.skill:hover .skill-icon{transform:scale(1.2) rotate(-10deg)}
-.skill-name{font-weight:700;font-size:.88rem;color:var(--text);margin-bottom:12px}
-.skill-bar{height:5px;background:var(--bg-2);border-radius:3px;overflow:hidden}
-.skill-bar-fill{height:100%;background:linear-gradient(90deg,var(--red),var(--blue));border-radius:3px;position:relative;transform-origin:right;transform:scaleX(0);transition:transform 1s cubic-bezier(.34,1.56,.64,1);}
-.skill-bar-fill::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.3),transparent);animation:shimmer 2s infinite;}
-@keyframes shimmer{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
-.projects-list{display:flex;flex-direction:column;gap:18px}
-.project{background:var(--card);backdrop-filter:blur(12px);border:1px solid var(--border);border-radius:18px;overflow:hidden;transition:all .4s;position:relative;}
-.project:hover{border-color:var(--red);transform:translateY(-5px);box-shadow:0 15px 50px rgba(255,48,75,0.15)}
-.project-thumb{height:170px;background:linear-gradient(135deg,var(--bg-2),#1a2744);display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;}
-.project-thumb::before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 20% 80%,rgba(255,48,75,0.4),transparent 50%),radial-gradient(circle at 80% 20%,rgba(59,130,246,0.4),transparent 50%);opacity:0;transition:opacity .5s;}
-.project:hover .project-thumb::before{opacity:1}
-.project-thumb svg{width:60px;height:60px;stroke:var(--red);fill:none;stroke-width:1.5;position:relative;z-index:1;transition:transform .5s;}
-.project:hover .project-thumb svg{transform:scale(1.15) rotate(5deg)}
-.project-logo{width:100%;height:100%;object-fit:cover;position:relative;z-index:1;transition:transform .5s;}
-.project:hover .project-logo{transform:scale(1.05)}
-.project-body{padding:22px}
-.project-tag{display:inline-block;padding:5px 14px;background:rgba(255,48,75,0.1);border:1px solid rgba(255,48,75,0.3);color:var(--red);border-radius:20px;font-size:.7rem;font-weight:700;margin-bottom:10px;transition:all .3s;}
-.project:hover .project-tag{background:rgba(255,48,75,0.2);transform:scale(1.05)}
-.project-title{font-size:1.15rem;font-weight:900;margin-bottom:8px;color:var(--text)}
-.project-desc{color:var(--muted);font-size:.85rem;line-height:1.8;margin-bottom:15px}
-.project-links-wrapper { display: flex; gap: 15px; align-items: center; flex-wrap: wrap; }
-.project-link{color:var(--red);text-decoration:none;font-weight:700;font-size:.88rem;display:inline-flex;align-items:center;gap:6px;transition:all .3s;position:relative; cursor:pointer; background:none; border:none; font-family:inherit;}
-.project-link::after{content:"";position:absolute;bottom:-2px;right:0;left:0;height:1px;background:var(--red);transform:scaleX(0);transform-origin:right;transition:transform .3s;}
-.project-link:hover{gap:12px}
-.project-link:hover::after{transform:scaleX(1)}
-.stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;}
-.stat{background:var(--card);backdrop-filter:blur(12px);border:1px solid var(--border);border-radius:14px;padding:20px 12px;text-align:center;transition:all .3s;}
-.stat:hover{border-color:rgba(255,48,75,0.4);transform:translateY(-3px)}
-.stat-num{font-family:'Space Grotesk',sans-serif;font-size:1.8rem;font-weight:700;background:linear-gradient(135deg,var(--red),var(--blue));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1;}
-.stat-label{color:var(--muted);font-size:.75rem;margin-top:8px;font-weight:600}
-
-/* ═══ Contact Buttons Fix ═══ */
-.contact-grid{display:flex;flex-direction:column;gap:12px}
-.contact-item{
-  display:flex;
-  align-items:center;
-  gap:15px;
-  padding:20px;
-  background:var(--card);
-  backdrop-filter:blur(12px);
-  border:1px solid var(--border);
-  border-radius:14px;
-  color:var(--text);
-  text-decoration:none;
-  font-weight:600;
-  font-size:.92rem;
-  transition:all .4s;
-  position:relative;
-  overflow:hidden;
-  cursor:pointer;
-  width:100%;
-  text-align:right;
-  font-family:inherit;
-  outline:none;
-}
-.contact-item::before{
-  content:"";
-  position:absolute;
-  right:0;
-  top:0;
-  bottom:0;
-  width:3px;
-  background:linear-gradient(180deg,var(--red),var(--blue));
-  transform:scaleY(0);
-  transform-origin:bottom;
-  transition:transform .4s;
-  border-radius:0 14px 14px 0;
-}
-.contact-item:hover{
-  border-color:rgba(255,48,75,0.5);
-  background:rgba(255,48,75,0.08);
-  transform:translateX(-5px);
-}
-.contact-item:hover::before{transform:scaleY(1)}
-.contact-icon{width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,rgba(255,48,75,0.2),rgba(59,130,246,0.15));border:1px solid rgba(255,48,75,0.3);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .4s;}
-.contact-item:hover .contact-icon{background:linear-gradient(135deg,var(--red),var(--blue));transform:rotate(-10deg) scale(1.1);}
-.contact-icon svg{width:22px;height:22px;stroke:var(--red);fill:none;stroke-width:2;transition:stroke .4s}
-.contact-item:hover .contact-icon svg{stroke:#fff}
-.contact-text{display:flex;flex-direction:column;flex:1}
-.contact-text small{color:var(--muted);font-size:.75rem;font-weight:400}
-.contact-text span{font-weight:700;font-size:.95rem}
-.contact-arrow{color:var(--red);font-size:1.3rem;transition:transform .3s}
-.contact-item:hover .contact-arrow{transform:translateX(-5px)}
-
-.reveal { opacity: 0; transform: translateY(30px); transition: all 0.8s cubic-bezier(0.5, 0, 0, 1); }
-.reveal.visible { opacity: 1; transform: translateY(0); }
-
-/* ═══ Modal ═══ */
-.modal{position:fixed;inset:0;background:rgba(0,0,0,0.8);backdrop-filter:blur(5px);z-index:2000;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity 0.3s;}
-.modal.show{opacity:1;pointer-events:auto;}
-.modal-content{background:var(--bg-2);border:1px solid var(--red);border-radius:16px;padding:25px;width:90%;max-width:500px;max-height:80vh;overflow-y:auto;position:relative;transform:scale(0.9);transition:transform 0.3s;box-shadow:0 20px 50px rgba(255,48,75,0.2);}
-.modal.show .modal-content{transform:scale(1);}
-.modal-close{position:absolute;top:15px;left:15px;background:none;border:none;color:var(--muted);font-size:1.5rem;cursor:pointer;transition:color 0.3s;}
-.modal-close:hover{color:var(--red);}
-.modal-title{color:var(--red);font-size:1.2rem;font-weight:900;margin-bottom:15px;border-bottom:1px solid var(--border);padding-bottom:10px;padding-left:35px;}
-.modal-body p{margin-bottom:10px;font-size:0.9rem;color:var(--text);}
-.modal-body strong{color:var(--blue);}
-
-@media(min-width:900px){
-  .topbar{display:none}
-  .sidebar{display:flex;transform:translateX(0);position:fixed;width:300px}
-  .sidebar-overlay{display:none !important}
-  .main{margin-right:300px;padding:50px 60px;max-width:none}
-  .page-title{font-size:2.8rem}
-  .skills-grid{grid-template-columns:repeat(4,1fr)}
-  .projects-list{display:grid;grid-template-columns:repeat(2,1fr);gap:22px}
-  .contact-grid{display:grid;grid-template-columns:repeat(2,1fr)}
-  .intro-letter{font-size:6rem}
-  .stats-grid{grid-template-columns:repeat(4,1fr)}
-  .theme-btn{bottom:40px;left:40px;}
-}
-@media(max-width:400px){
-  .intro-letter{font-size:2.5rem}
-  .page-title{font-size:1.5rem}
-}
-</style>
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
 
@@ -280,14 +51,14 @@ body{font-family:Cairo,sans-serif;background:var(--bg);color:var(--text);line-he
   <aside class="sidebar" id="sidebar">
     <div class="sidebar-profile">
       <div class="sidebar-avatar">
-        <img src="mina.png" alt="M.A.S.H" onerror="this.style.display='none'; this.parentElement.innerHTML='M.A.S.H';">
+        <img src="mina.png" alt="M.A.S.H" data-fallback="initials">
       </div>
       <div class="sidebar-name">M.A.S.H</div>
       <div class="sidebar-role">مختبر اختراق وأمن سيبراني</div>
       <span class="sidebar-status">متاح للعمل</span>
       
       <!-- لينك الـ CV -->
-      <a href="./MASH_CV.pdf" target="_blank" download style="display: inline-block; margin-top: 15px; padding: 8px 16px; background: transparent; border: 1px solid var(--red); color: var(--red); border-radius: 8px; text-decoration: none; font-size: 0.8rem; font-weight: 700; transition: all 0.3s;" onmouseover="this.style.background='var(--red)'; this.style.color='#fff'" onmouseout="this.style.background='transparent'; this.style.color='var(--red)'" title="تحميل السيرة الذاتية">تحميل السيرة الذاتية 📄</a>
+      <a href="./MASH_CV.pdf" target="_blank" rel="noopener noreferrer" download class="cv-btn" title="تحميل السيرة الذاتية">تحميل السيرة الذاتية 📄</a>
     </div>
     <nav class="sidebar-nav">
       <button class="nav-btn active" data-page="home"><span class="icon"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></span>الرئيسية</button>
@@ -364,7 +135,7 @@ body{font-family:Cairo,sans-serif;background:var(--bg);color:var(--text);line-he
             <h3 class="project-title">تقرير تقييم أمني (Pentest)</h3>
             <p class="project-desc">قمت بإجراء اختبار اختراق (Black-Box) مصرّح به لمنصة ويب حقيقية. اكتشفت 9 ثغرات (حرجة، عالية، متوسطة، منخفضة) تشمل تسريب بيانات شخصية (PII)، وStored XSS، ومفاتيح تشفير مسربة، وثغرة DoS. وحصلت على مكافأة مالية (Bounty).</p>
             <div class="project-links-wrapper">
-              <button onclick="openReportModal()" class="project-link" style="color: #ff304b; cursor: pointer;">عرض ملخص التقرير ←</button>
+              <button data-action="open-report" class="project-link" style="color: #ff304b; cursor: pointer;">عرض ملخص التقرير ←</button>
             </div>
           </div>
         </div>
@@ -379,7 +150,7 @@ body{font-family:Cairo,sans-serif;background:var(--bg);color:var(--text);line-he
             <h3 class="project-title">أداة تحليل الفيروسات (Static)</h3>
             <p class="project-desc">أداة بلغة بايثون لتحليل البرمجيات الخبيثة بشكل ساكن بدون تشغيلها. تستخرج الـ Hashes، ومؤشرات الاختراق (IOCs)، وتحسب نسبة العشوائية لتحديد الملفات المشفرة.</p>
             <div class="project-links-wrapper">
-              <a href="https://github.com/menamon713-bit/malware-analyzer" target="_blank" rel="noopener" class="project-link" style="color: var(--purple);">الكود المصدري (GitHub) ←</a>
+              <a href="https://github.com/menamon713-bit/malware-analyzer" target="_blank" rel="noopener noreferrer" class="project-link" style="color: var(--purple);">الكود المصدري (GitHub) ←</a>
             </div>
           </div>
         </div>
@@ -399,7 +170,7 @@ body{font-family:Cairo,sans-serif;background:var(--bg);color:var(--text);line-he
             <h3 class="project-title">ReconXplorer v5.3</h3>
             <p class="project-desc">إطار عمل متقدم لاستطلاع الأمن السيبراني. يقوم بأتمتة فحص الشبكات، جمع المعلومات (OSINT)، اكتشاف ثغرات الويب، ويوفر خطوات المعالجة (Remediation).</p>
             <div class="project-links-wrapper">
-              <button onclick="openReconModal()" class="project-link" style="color: var(--cyan); cursor: pointer;">عرض تفاصيل الأداة ←</button>
+              <button data-action="open-recon" class="project-link" style="color: var(--cyan); cursor: pointer;">عرض تفاصيل الأداة ←</button>
             </div>
           </div>
         </div>
@@ -407,15 +178,15 @@ body{font-family:Cairo,sans-serif;background:var(--bg);color:var(--text);line-he
         <!-- 4. مطعم عويضة الجمهورية -->
         <div class="project reveal">
           <div class="project-thumb">
-            <img src="awida-logo.png" alt="مطعم عويضة الجمهورية" class="project-logo" onerror="this.src='https://via.placeholder.com/400x200/0d1424/3b82f6?text=Awida+Restaurant'">
+            <img src="awida-logo.png" alt="مطعم عويضة الجمهورية" class="project-logo" data-fallback="hide">
           </div>
           <div class="project-body">
             <span class="project-tag">تطوير ويب • React</span>
             <h3 class="project-title">مطعم عويضة الجمهورية</h3>
             <p class="project-desc">موقع مطعم تفاعلي مبني بـ React + Vite. فيه منيو بالبحث والفلترة، سلة تسوق، زر اتصال، وتصميم عصري.</p>
             <div class="project-links-wrapper">
-              <a href="https://restaurant-spa-lilac.vercel.app/" target="_blank" rel="noopener" class="project-link">معاينة مباشرة ←</a>
-              <a href="https://github.com/menamon713-bit/restaurant-spa" target="_blank" rel="noopener" class="project-link" style="color: var(--muted);">الكود المصدري ←</a>
+              <a href="https://restaurant-spa-lilac.vercel.app/" target="_blank" rel="noopener noreferrer" class="project-link">معاينة مباشرة ←</a>
+              <a href="https://github.com/menamon713-bit/restaurant-spa" target="_blank" rel="noopener noreferrer" class="project-link" style="color: var(--muted);">الكود المصدري ←</a>
             </div>
           </div>
         </div>
@@ -423,15 +194,15 @@ body{font-family:Cairo,sans-serif;background:var(--bg);color:var(--text);line-he
         <!-- 5. Lets Go Cafe -->
         <div class="project reveal">
           <div class="project-thumb">
-            <img src="letsgo-logo.png" alt="Lets Go Cafe" class="project-logo" onerror="this.src='https://via.placeholder.com/400x200/0d1424/3b82f6?text=Lets+Go+Cafe'">
+            <img src="letsgo-logo.png" alt="Lets Go Cafe" class="project-logo" data-fallback="hide">
           </div>
           <div class="project-body">
             <span class="project-tag">تطوير ويب • HTML/CSS/JS</span>
             <h3 class="project-title">موقع Lets Go Cafe</h3>
             <p class="project-desc">موقع مطعم تفاعلي بتصميم عصري وسريع، مبني بـ HTML, CSS, و JavaScript، مع التركيز على تجربة المستخدم.</p>
             <div class="project-links-wrapper">
-              <a href="https://letsgo-cafe.vercel.app" target="_blank" rel="noopener" class="project-link">معاينة مباشرة ←</a>
-              <a href="https://github.com/menamon713-bit/letsgo-cafe" target="_blank" rel="noopener" class="project-link" style="color: var(--muted);">الكود المصدري ←</a>
+              <a href="https://letsgo-cafe.vercel.app" target="_blank" rel="noopener noreferrer" class="project-link">معاينة مباشرة ←</a>
+              <a href="https://github.com/menamon713-bit/letsgo-cafe" target="_blank" rel="noopener noreferrer" class="project-link" style="color: var(--muted);">الكود المصدري ←</a>
             </div>
           </div>
         </div>
@@ -447,7 +218,7 @@ body{font-family:Cairo,sans-serif;background:var(--bg);color:var(--text);line-he
       
       <div class="contact-grid">
         <!-- WhatsApp Direct Button -->
-        <button onclick="handleWhatsApp()" class="contact-item reveal">
+        <button data-action="whatsapp" class="contact-item reveal">
           <div class="contact-icon">
             <svg viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
           </div>
@@ -456,7 +227,7 @@ body{font-family:Cairo,sans-serif;background:var(--bg);color:var(--text);line-he
         </button>
 
         <!-- Phone Call -->
-        <button onclick="handlePhone()" class="contact-item reveal">
+        <button data-action="phone" class="contact-item reveal">
           <div class="contact-icon">
             <svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
           </div>
@@ -465,7 +236,7 @@ body{font-family:Cairo,sans-serif;background:var(--bg);color:var(--text);line-he
         </button>
 
         <!-- Email -->
-        <button onclick="handleEmail()" class="contact-item reveal">
+        <button data-action="email" class="contact-item reveal">
           <div class="contact-icon">
             <svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
           </div>
@@ -480,7 +251,7 @@ body{font-family:Cairo,sans-serif;background:var(--bg);color:var(--text);line-he
 <!-- Modal for Security Report -->
 <div class="modal" id="reportModal">
   <div class="modal-content">
-    <button class="modal-close" onclick="closeReportModal()">✕</button>
+    <button class="modal-close" data-action="close-report">✕</button>
     <h3 class="modal-title">📄 تقرير تقييم أمني - ملخص</h3>
     <div class="modal-body">
       <p><strong>نوع الفحص:</strong> Black-Box Penetration Test (مصرّح به)</p>
@@ -504,7 +275,7 @@ body{font-family:Cairo,sans-serif;background:var(--bg);color:var(--text);line-he
 <!-- Modal for ReconXplorer -->
 <div class="modal" id="reconModal">
   <div class="modal-content">
-    <button class="modal-close" onclick="closeReconModal()">✕</button>
+    <button class="modal-close" data-action="close-recon">✕</button>
     <h3 class="modal-title" style="color: var(--cyan);">📡 ReconXplorer v5.3</h3>
     <div class="modal-body">
       <p><strong>النوع:</strong> أداة أتمتة (Python Script)</p>
@@ -522,180 +293,6 @@ body{font-family:Cairo,sans-serif;background:var(--bg);color:var(--text);line-he
   </div>
 </div>
 
-<script>
-// ═══ البيانات الحساسة (مشفرة بطريقة Base64) ═══
-const _0x1a2 = {
-  n: "bWluYQ==", // مينا
-  e: "bWluYWRldmVsb3BlcjQzQGdtYWlsLmNvbQ==", // الإيميل
-  p: "KzIwMTU1NDQxNjA5NA==", // الرقم المحلي بالكود الدولي
-  w: "MjAxNTU0NDE2MDk0" // الرقم الدولي للواتساب
-};
-
-function _dec(str) { return atob(str); }
-function _getName() { return _dec(_0x1a2.n); }
-
-// ═══ تطبيق البيانات المفكوكة عند تحميل الصفحة ═══
-document.addEventListener("DOMContentLoaded", function() {
-  const aboutNameElement = document.getElementById('aboutName');
-  if(aboutNameElement) {
-    aboutNameElement.innerHTML = `أنا <strong>${_getName()} (M.A.S.H)</strong>، باحث أمني مستقل من <strong>سوهاج، مصر</strong>. تعلمت الأمن السيبراني بنفسي، وعندي شغف كبير بـ <strong>الـ Red Teaming</strong> وأمن تطبيقات الويب.`;
-  }
-});
-
-// ═══ دوال التواصل المباشر ═══
-function handleWhatsApp() {
-  var phone = _dec(_0x1a2.w); 
-  var message = encodeURIComponent("السلام عليكم، عايز أتكلم معاك في مشروع");
-  
-  // 1. محاولة فتح تطبيق الواتساب العادي (المسنجر) الأول
-  var normalAppUrl = "whatsapp://send?phone=" + phone + "&text=" + message;
-  
-  // 2. لو التطبيق العادي مش موجود، نفتح الواتساب ويب
-  var webUrl = "https://wa.me/" + phone + "?text=" + message;
-
-  // محاولة فتح التطبيق العادي
-  window.location.href = normalAppUrl;
-
-  // بعد ثانية ونص، لو التطبيق مفتحش، نفتح الواتساب ويب
-  setTimeout(function() {
-    window.open(webUrl, '_blank');
-  }, 1500);
-}
-
-function handlePhone() {
-  var phone = _dec(_0x1a2.p);
-  window.location.href = "tel:" + phone;
-}
-
-function handleEmail() {
-  var email = _dec(_0x1a2.e);
-  window.location.href = "mailto:" + email;
-}
-
-// ═══ Theme Toggle Logic ═══
-var themeToggle = document.getElementById('themeToggle');
-var html = document.documentElement;
-
-try {
-  if (localStorage.getItem('theme') === 'light') {
-    html.setAttribute('data-theme', 'light');
-    themeToggle.textContent = '☀️';
-  }
-} catch (e) {}
-
-themeToggle.addEventListener('click', function() {
-    if (html.getAttribute('data-theme') === 'light') {
-        html.removeAttribute('data-theme');
-        themeToggle.textContent = '🌙';
-        try { localStorage.setItem('theme', 'dark'); } catch (e) {}
-    } else {
-        html.setAttribute('data-theme', 'light');
-        themeToggle.textContent = '☀️';
-        try { localStorage.setItem('theme', 'light'); } catch (e) {}
-    }
-});
-
-// ═══ Intro Animation (حوالي 4.5 ثانية) ═══
-(function(){
-  var name = "M.A.S.H";
-  var container = document.getElementById('introName');
-  var chars = name.split('');
-  
-  chars.forEach(function(char, i){
-    var span = document.createElement('span');
-    span.className = 'intro-letter';
-    if(char === ' '){ span.innerHTML = '&nbsp;'; } else { span.textContent = char; }
-    span.style.animationDelay = (0.4 + i * 0.12) + 's';
-    container.appendChild(span);
-  });
-  
-  // اختفاء الأنيميشن بعد 4.5 ثانية
-  setTimeout(function(){
-    document.getElementById('intro').classList.add('hide');
-    setTimeout(function(){ document.getElementById('intro').style.display = 'none'; }, 1000);
-  }, 4500);
-})();
-
-// ═══ Sidebar Toggle ═══
-var menuBtn = document.getElementById('menuBtn');
-var sidebar = document.getElementById('sidebar');
-var overlay = document.getElementById('overlay');
-menuBtn.addEventListener('click', function(){
-  sidebar.classList.toggle('open');
-  overlay.classList.toggle('show');
-});
-overlay.addEventListener('click', function(){
-  sidebar.classList.remove('open');
-  overlay.classList.remove('show');
-});
-
-// ═══ Navigation & Scroll Reveal ═══
-var navBtns = document.querySelectorAll('.nav-btn');
-navBtns.forEach(function(btn){
-  btn.addEventListener('click', function(){
-    var pageId = this.getAttribute('data-page');
-    document.querySelectorAll('.page').forEach(function(p){ p.classList.remove('active'); });
-    document.getElementById('page-' + pageId).classList.add('active');
-    navBtns.forEach(function(b){ b.classList.remove('active'); });
-    this.classList.add('active');
-    sidebar.classList.remove('open');
-    overlay.classList.remove('show');
-    window.scrollTo({top:0, behavior:'smooth'});
-    
-    if(pageId === 'skills'){
-      setTimeout(function(){
-        document.querySelectorAll('.skill-bar-fill').forEach(function(bar, i){
-          bar.style.transition = 'none';
-          bar.style.transform = 'scaleX(0)';
-          setTimeout(function(){
-            bar.style.transition = 'transform 1s cubic-bezier(.34,1.56,.64,1)';
-            bar.style.transform = 'scaleX(1)';
-          }, 100 + i * 100);
-        });
-      }, 100);
-    }
-  });
-});
-
-// ═══ Modal Logic for Security Report ═══
-function openReportModal() {
-  document.getElementById('reportModal').classList.add('show');
-}
-function closeReportModal() {
-  document.getElementById('reportModal').classList.remove('show');
-}
-document.getElementById('reportModal').addEventListener('click', function(e) {
-  if (e.target === this) closeReportModal();
-});
-
-// ═══ Modal Logic for ReconXplorer ═══
-function openReconModal() {
-  document.getElementById('reconModal').classList.add('show');
-}
-function closeReconModal() {
-  document.getElementById('reconModal').classList.remove('show');
-}
-document.getElementById('reconModal').addEventListener('click', function(e) {
-  if (e.target === this) closeReconModal();
-});
-
-// ═══ Scroll Reveal Observer ═══
-document.addEventListener("DOMContentLoaded", function() {
-  var reveals = document.querySelectorAll(".reveal");
-  
-  var observer = new IntersectionObserver(function(entries) {
-    entries.forEach(function(entry) {
-    if (entry.isIntersecting) {
-      entry.target.classList.add("visible");
-      observer.unobserve(entry.target); 
-    }
-    });
-  }, { threshold: 0.1, rootMargin: "0px 0px -50px 0px" });
-
-  reveals.forEach(function(reveal) {
-    observer.observe(reveal);
-  });
-});
-</script>
+<script src="script.js" defer></script>
 </body>
 </html>
