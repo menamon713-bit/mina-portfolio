@@ -164,10 +164,48 @@ body{font-family:Cairo,sans-serif;background:var(--bg);color:var(--text);line-he
 .stat-num{font-family:'Space Grotesk',sans-serif;font-size:1.8rem;font-weight:700;background:linear-gradient(135deg,var(--red),var(--blue));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1;}
 .stat-label{color:var(--muted);font-size:.75rem;margin-top:8px;font-weight:600}
 
+/* ═══ Contact Buttons Fix ═══ */
 .contact-grid{display:flex;flex-direction:column;gap:12px}
-.contact-item{display:flex;align-items:center;gap:15px;padding:20px;background:var(--card);backdrop-filter:blur(12px);border:1px solid var(--border);border-radius:14px;color:var(--text);text-decoration:none;font-weight:600;font-size:.92rem;transition:all .4s;position:relative;overflow:hidden; cursor:pointer; width: 100%; text-align: right; font-family: inherit;}
-.contact-item::before{content:"";position:absolute;right:0;top:0;bottom:0;width:3px;background:linear-gradient(180deg,var(--red),var(--blue));transform:scaleY(0);transform-origin:bottom;transition:transform .4s;}
-.contact-item:hover{border-color:rgba(255,48,75,0.5);background:rgba(255,48,75,0.08);transform:translateX(-5px);}
+.contact-item{
+  display:flex;
+  align-items:center;
+  gap:15px;
+  padding:20px;
+  background:var(--card);
+  backdrop-filter:blur(12px);
+  border:1px solid var(--border);
+  border-radius:14px;
+  color:var(--text);
+  text-decoration:none;
+  font-weight:600;
+  font-size:.92rem;
+  transition:all .4s;
+  position:relative;
+  overflow:hidden; /* ده اللي بيمنع الخطوط إنها تطلع برا الزرار */
+  cursor:pointer;
+  width:100%;
+  text-align:right;
+  font-family:inherit;
+  outline:none; /* بيشيل الإطار الافتراضي بتاع المتصفح */
+}
+.contact-item::before{
+  content:"";
+  position:absolute;
+  right:0;
+  top:0;
+  bottom:0;
+  width:3px;
+  background:linear-gradient(180deg,var(--red),var(--blue));
+  transform:scaleY(0);
+  transform-origin:bottom;
+  transition:transform .4s;
+  border-radius:0 14px 14px 0;
+}
+.contact-item:hover{
+  border-color:rgba(255,48,75,0.5);
+  background:rgba(255,48,75,0.08);
+  transform:translateX(-5px);
+}
 .contact-item:hover::before{transform:scaleY(1)}
 .contact-icon{width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,rgba(255,48,75,0.2),rgba(59,130,246,0.15));border:1px solid rgba(255,48,75,0.3);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .4s;}
 .contact-item:hover .contact-icon{background:linear-gradient(135deg,var(--red),var(--blue));transform:rotate(-10deg) scale(1.1);}
