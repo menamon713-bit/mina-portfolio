@@ -58,7 +58,7 @@ body{font-family:Cairo,sans-serif;background:var(--bg);color:var(--text);line-he
 @keyframes float2{0%,100%{transform:translate(0,0)}50%{transform:translate(80px,-60px)}}
 @keyframes float3{0%,100%{transform:translate(-50%,-50%) scale(1)}50%{transform:translate(-50%,-50%) scale(1.3)}}
 
-/* ═══ Intro Animation (تم تعديل التوقيت لـ 15 ثانية) ═══ */
+/* ═══ Intro Animation (مدته حوالي 4.5 ثانية) ═══ */
 .intro{position:fixed;inset:0;background:#03060c;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;transition:opacity 1s ease,visibility 1s ease;}
 .intro.hide{opacity:0;visibility:hidden}
 .intro-bg{position:absolute;inset:0;overflow:hidden}
@@ -70,11 +70,11 @@ body{font-family:Cairo,sans-serif;background:var(--bg);color:var(--text);line-he
 .intro-name{position:relative;z-index:2;display:flex;gap:2px;flex-wrap:wrap;justify-content:center;padding:0 20px;perspective:1000px;}
 .intro-letter{font-family:'Space Grotesk',sans-serif;font-size:3.5rem;font-weight:700;opacity:0;transform:translateY(60px) rotateX(-90deg);animation:letterIn .8s cubic-bezier(.34,1.56,.64,1) forwards;background:linear-gradient(135deg,#fff 0%,var(--red) 50%,var(--blue) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;display:inline-block;}
 @keyframes letterIn{to{opacity:1;transform:translateY(0) rotateX(0)}}
-.intro-line{position:relative;z-index:2;width:0;height:3px;background:linear-gradient(90deg,var(--red),var(--blue),var(--purple));border-radius:3px;margin-top:25px;box-shadow:0 0 25px var(--red);animation:lineGrow 2s 6s cubic-bezier(.34,1.56,.64,1) forwards;}
+.intro-line{position:relative;z-index:2;width:0;height:3px;background:linear-gradient(90deg,var(--red),var(--blue),var(--purple));border-radius:3px;margin-top:25px;box-shadow:0 0 25px var(--red);animation:lineGrow 1s 1.5s cubic-bezier(.34,1.56,.64,1) forwards;}
 @keyframes lineGrow{to{width:300px}}
-.intro-dot{position:relative;z-index:2;width:10px;height:10px;background:var(--red);border-radius:50%;margin-top:30px;box-shadow:0 0 25px var(--red);opacity:0;animation:dotPulse 1s 8s ease forwards;}
+.intro-dot{position:relative;z-index:2;width:10px;height:10px;background:var(--red);border-radius:50%;margin-top:30px;box-shadow:0 0 25px var(--red);opacity:0;animation:dotPulse 1s 2.2s ease forwards;}
 @keyframes dotPulse{0%{opacity:0;transform:scale(0)}50%{opacity:1;transform:scale(1.6)}100%{opacity:1;transform:scale(1)}}
-.intro-subtitle{position:relative;z-index:2;color:var(--muted);font-size:.8rem;margin-top:35px;letter-spacing:6px;opacity:0;animation:fadeInSub 1s 9s ease forwards;}
+.intro-subtitle{position:relative;z-index:2;color:var(--muted);font-size:.8rem;margin-top:35px;letter-spacing:6px;opacity:0;animation:fadeInSub 1s 2.8s ease forwards;}
 @keyframes fadeInSub{to{opacity:1}}
 
 .layout{position:relative;z-index:1;display:flex;flex-direction:column;min-height:100vh}
@@ -228,7 +228,7 @@ body{font-family:Cairo,sans-serif;background:var(--bg);color:var(--text);line-he
 .modal.show .modal-content{transform:scale(1);}
 .modal-close{position:absolute;top:15px;left:15px;background:none;border:none;color:var(--muted);font-size:1.5rem;cursor:pointer;transition:color 0.3s;}
 .modal-close:hover{color:var(--red);}
-.modal-title{color:var(--red);font-size:1.2rem;font-weight:900;margin-bottom:15px;border-bottom:1px solid var(--border);padding-bottom:10px;}
+.modal-title{color:var(--red);font-size:1.2rem;font-weight:900;margin-bottom:15px;border-bottom:1px solid var(--border);padding-bottom:10px;padding-left:35px;}
 .modal-body p{margin-bottom:10px;font-size:0.9rem;color:var(--text);}
 .modal-body strong{color:var(--blue);}
 
@@ -286,7 +286,7 @@ body{font-family:Cairo,sans-serif;background:var(--bg);color:var(--text);line-he
       <div class="sidebar-role">مختبر اختراق وأمن سيبراني</div>
       <span class="sidebar-status">متاح للعمل</span>
       
-      <!-- تحديث لينك الـ CV -->
+      <!-- لينك الـ CV -->
       <a href="./MASH_CV.pdf" target="_blank" download style="display: inline-block; margin-top: 15px; padding: 8px 16px; background: transparent; border: 1px solid var(--red); color: var(--red); border-radius: 8px; text-decoration: none; font-size: 0.8rem; font-weight: 700; transition: all 0.3s;" onmouseover="this.style.background='var(--red)'; this.style.color='#fff'" onmouseout="this.style.background='transparent'; this.style.color='var(--red)'" title="تحميل السيرة الذاتية">تحميل السيرة الذاتية 📄</a>
     </div>
     <nav class="sidebar-nav">
@@ -296,7 +296,7 @@ body{font-family:Cairo,sans-serif;background:var(--bg);color:var(--text);line-he
       <button class="nav-btn" data-page="projects"><span class="icon"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></span>المشاريع</button>
       <button class="nav-btn" data-page="contact"><span class="icon"><svg viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></span>تواصل معي</button>
     </nav>
-    <div class="sidebar-footer"><p>صُنع بـ 🖤 بواسطة <span>M.A.S.H</span></div>
+    <div class="sidebar-footer"><p>صُنع بـ 🖤 بواسطة <span>M.A.S.H</span></p></div>
   </aside>
 
   <main class="main">
@@ -307,9 +307,9 @@ body{font-family:Cairo,sans-serif;background:var(--bg);color:var(--text);line-he
       <p class="page-desc reveal">باحث أمني مستقل متخصص في الـ Red Teaming، استغلال ثغرات الويب، وصيد الثغرات (Bug Bounty).</p>
 
       <div class="stats-grid reveal">
-        <div class="stat"><div class="stat-num">8+</div><div class="stat-label">ثغرات مكتشفة</div></div>
+        <div class="stat"><div class="stat-num">9</div><div class="stat-label">ثغرات مكتشفة</div></div>
         <div class="stat"><div class="stat-num">1+</div><div class="stat-label">مكافأة أمنية</div></div>
-        <div class="stat"><div class="stat-num">10+</div><div class="stat-label">مشاريع</div></div>
+        <div class="stat"><div class="stat-num">5</div><div class="stat-label">مشاريع</div></div>
       </div>
 
       <div class="card reveal">
@@ -362,7 +362,7 @@ body{font-family:Cairo,sans-serif;background:var(--bg);color:var(--text);line-he
           <div class="project-body">
             <span class="project-tag" style="color: #ff304b; border-color: rgba(255, 48, 75, 0.3);">أمن سيبراني • اختراق</span>
             <h3 class="project-title">تقرير تقييم أمني (Pentest)</h3>
-            <p class="project-desc">قمت بإجراء اختبار اختراق (Black-Box) لمنصة تعليمية. اكتشفت 8 ثغرات (عالية، متوسطة، منخفضة) تشمل Stored XSS، ومفاتيح تشفير مسربة، وثغرة DoS. وحصلت على مكافأة مالية (Bounty).</p>
+            <p class="project-desc">قمت بإجراء اختبار اختراق (Black-Box) مصرّح به لمنصة ويب حقيقية. اكتشفت 9 ثغرات (حرجة، عالية، متوسطة، منخفضة) تشمل تسريب بيانات شخصية (PII)، وStored XSS، ومفاتيح تشفير مسربة، وثغرة DoS. وحصلت على مكافأة مالية (Bounty).</p>
             <div class="project-links-wrapper">
               <button onclick="openReportModal()" class="project-link" style="color: #ff304b; cursor: pointer;">عرض ملخص التقرير ←</button>
             </div>
@@ -483,12 +483,13 @@ body{font-family:Cairo,sans-serif;background:var(--bg);color:var(--text);line-he
     <button class="modal-close" onclick="closeReportModal()">✕</button>
     <h3 class="modal-title">📄 تقرير تقييم أمني - ملخص</h3>
     <div class="modal-body">
-      <p><strong>نوع الفحص:</strong> Black-Box Penetration Test</p>
-      <p><strong>الهدف:</strong> منصة تعليمية (تم إخفاء البيانات الحساسة للعميل)</p>
-      <p><strong>عدد الثغرات المكتشفة:</strong> 8 ثغرات</p>
+      <p><strong>نوع الفحص:</strong> Black-Box Penetration Test (مصرّح به)</p>
+      <p><strong>الهدف:</strong> منصة ويب حقيقية (تم إخفاء البيانات الحساسة للعميل)</p>
+      <p><strong>عدد الثغرات المكتشفة:</strong> 9 ثغرات</p>
       <hr style="border-color: var(--border); margin: 15px 0;">
       <p><strong style="color: var(--red);">أهم الثغرات المكتشفة:</strong></p>
       <ul style="padding-right: 20px; color: var(--muted); font-size: 0.9rem; margin-bottom: 15px;">
+        <li><strong>PII Leakage (حرجة):</strong> كشف بيانات شخصية للمدرّسين عبر API غير محمي.</li>
         <li><strong>Stored XSS (عالية):</strong> حقن أكواد برمجية في التذاكر يسمح بسرقة الجلسات.</li>
         <li><strong>Hardcoded Encryption Key (عالية):</strong> مفتاح تشفير مسرب في كود الواجهة الأمامية.</li>
         <li><strong>Client-Side Access Bypass (متوسطة):</strong> تخطي حماية الواجهة الأمامية للوصول للوحة التحكم.</li>
@@ -525,7 +526,7 @@ body{font-family:Cairo,sans-serif;background:var(--bg);color:var(--text);line-he
 // ═══ البيانات الحساسة (مشفرة بطريقة Base64) ═══
 const _0x1a2 = {
   n: "bWluYQ==", // مينا
-  e: "bWluYWRldmVsb3BlcjQzQGdtYWlsLmNvbQ==", // الإيميل الجديد
+  e: "bWluYWRldmVsb3BlcjQzQGdtYWlsLmNvbQ==", // الإيميل
   p: "KzIwMTU1NDQxNjA5NA==", // الرقم المحلي بالكود الدولي
   w: "MjAxNTU0NDE2MDk0" // الرقم الدولي للواتساب
 };
@@ -575,43 +576,44 @@ function handleEmail() {
 var themeToggle = document.getElementById('themeToggle');
 var html = document.documentElement;
 
-if (localStorage.getItem('theme') === 'light') {
+try {
+  if (localStorage.getItem('theme') === 'light') {
     html.setAttribute('data-theme', 'light');
     themeToggle.textContent = '☀️';
-}
+  }
+} catch (e) {}
 
 themeToggle.addEventListener('click', function() {
     if (html.getAttribute('data-theme') === 'light') {
         html.removeAttribute('data-theme');
         themeToggle.textContent = '🌙';
-        localStorage.setItem('theme', 'dark');
+        try { localStorage.setItem('theme', 'dark'); } catch (e) {}
     } else {
         html.setAttribute('data-theme', 'light');
         themeToggle.textContent = '☀️';
-        localStorage.setItem('theme', 'light');
+        try { localStorage.setItem('theme', 'light'); } catch (e) {}
     }
 });
 
-// ═══ Intro Animation (تم تعديل التوقيت لـ 15 ثانية) ═══
+// ═══ Intro Animation (حوالي 4.5 ثانية) ═══
 (function(){
   var name = "M.A.S.H";
   var container = document.getElementById('introName');
   var chars = name.split('');
   
-  // سرعة ظهور الحروف (أبطأ شوية عشان الـ 15 ثانية)
   chars.forEach(function(char, i){
     var span = document.createElement('span');
     span.className = 'intro-letter';
     if(char === ' '){ span.innerHTML = '&nbsp;'; } else { span.textContent = char; }
-    span.style.animationDelay = (0.5 + i * 0.15) + 's'; // زودنا التأخير بين الحروف
+    span.style.animationDelay = (0.4 + i * 0.12) + 's';
     container.appendChild(span);
   });
   
-  // اختفاء الأنيميشن بعد 15 ثانية
+  // اختفاء الأنيميشن بعد 4.5 ثانية
   setTimeout(function(){
     document.getElementById('intro').classList.add('hide');
     setTimeout(function(){ document.getElementById('intro').style.display = 'none'; }, 1000);
-  }, 15000); // 15 ثانية
+  }, 4500);
 })();
 
 // ═══ Sidebar Toggle ═══
