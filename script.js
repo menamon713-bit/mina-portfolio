@@ -42,7 +42,18 @@
     var phone = dec(DATA.w);
     if (!/^\d{8,15}$/.test(phone)) return;
     var msg = encodeURIComponent('السلام عليكم، عايز أتكلم معاك في مشروع');
-    window.location.href = 'https://wa.me/' + phone + '?text=' + msg;
+    var webUrl = 'https://wa.me/' + phone + '?text=' + msg;
+
+    // أندرويد: رابط intent بيظهر قائمة "فتح باستخدام" (واتساب / واتساب للأعمال)
+    // ولو مفيش أي تطبيق، المتصفح بيروح لـ wa.me تلقائيًا (من غير فتح مرتين)
+    if (/Android/i.test(navigator.userAgent)) {
+      window.location.href = 'intent://send?phone=' + phone + '&text=' + msg +
+        '#Intent;scheme=whatsapp;S.browser_fallback_url=' + encodeURIComponent(webUrl) + ';end';
+      return;
+    }
+
+    // آيفون والكمبيوتر: wa.me
+    window.location.href = webUrl;
   }
 
   function handlePhone() {
