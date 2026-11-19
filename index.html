@@ -34,9 +34,9 @@
 
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="style.css?v=8">
+  <link rel="stylesheet" href="style.css?v=9">
   <script src="script.js?v=7" defer></script>
-  <script src="contact.js?v=1" defer></script>
+  <script src="contact.js?v=2" defer></script>
 
   <script type="application/ld+json">
   {
@@ -169,7 +169,6 @@
 
   <main class="main-content" id="mainContent">
 
-    <!-- Home -->
     <section class="page active" id="home" aria-labelledby="homeTitle">
       <div class="hero-section reveal">
 
@@ -252,7 +251,6 @@
       </div>
     </section>
 
-    <!-- About -->
     <section class="page" id="about" aria-labelledby="aboutTitle">
       <div class="page-heading reveal">
         <span class="section-kicker" data-i18n="aboutKicker">تعرف عليّ</span>
@@ -326,7 +324,6 @@
       </div>
     </section>
 
-    <!-- Skills -->
     <section class="page" id="skills" aria-labelledby="skillsTitle">
       <div class="page-heading reveal">
         <span class="section-kicker" data-i18n="skillsKicker">قدراتي التقنية</span>
@@ -404,7 +401,6 @@
       </div>
     </section>
 
-    <!-- Projects -->
     <section class="page" id="projects" aria-labelledby="projectsTitle">
       <div class="page-heading reveal">
         <span class="section-kicker" data-i18n="projectsKicker">أعمالي التقنية</span>
@@ -513,7 +509,6 @@
       </div>
     </section>
 
-    <!-- Contact -->
     <section class="page" id="contact" aria-labelledby="contactTitle">
       <div class="page-heading reveal">
         <span class="section-kicker" data-i18n="contactKicker">لنتواصل</span>
@@ -526,7 +521,6 @@
         <p data-i18n="contactText">يمكنك التواصل معي من خلال إحدى الوسائل التالية.</p>
       </div>
 
-      <!-- Contact Form -->
       <form class="contact-form reveal" id="contactForm">
         <div class="form-group">
           <label for="contactName">الاسم</label>
@@ -586,10 +580,10 @@
         </div>
 
         <button type="submit" class="primary-btn" id="contactSubmit">
-          إرسال الرسالة
+          <span data-i18n="formSubmit">إرسال الرسالة</span>
         </button>
 
-        <p id="contactStatus" role="status" aria-live="polite"></p>
+        <p class="form-status" id="contactStatus" role="status" aria-live="polite"></p>
       </form>
 
       <div class="contact-grid">
@@ -648,7 +642,6 @@
 
   <button type="button" class="language-btn" id="languageToggle" aria-label="Switch language" title="Switch language">EN</button>
 
-  <!-- Report Modal -->
   <div class="modal" id="reportModal" role="dialog" aria-modal="true" aria-labelledby="reportModalTitle" aria-hidden="true">
     <div class="modal-content">
       <button type="button" class="modal-close" data-action="close-modal" aria-label="إغلاق">×</button>
@@ -676,7 +669,6 @@
     </div>
   </div>
 
-  <!-- ReconXplorer Modal -->
   <div class="modal" id="reconModal" role="dialog" aria-modal="true" aria-labelledby="reconModalTitle" aria-hidden="true">
     <div class="modal-content">
       <button type="button" class="modal-close" data-action="close-modal" aria-label="إغلاق">×</button>
