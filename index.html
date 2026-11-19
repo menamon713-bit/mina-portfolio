@@ -69,7 +69,36 @@
   }
   </script>
 
-  <script src="script.js" defer></script>
+  <script>
+window.addEventListener("error", function (event) {
+  const box = document.createElement("pre");
+
+  box.style.cssText =
+    "position:fixed;z-index:999999;inset:10px;max-height:45vh;overflow:auto;background:#200;color:white;padding:15px;direction:ltr;white-space:pre-wrap;font:13px monospace";
+
+  box.textContent =
+    "JAVASCRIPT ERROR\n" +
+    "Message: " + event.message + "\n" +
+    "File: " + event.filename + "\n" +
+    "Line: " + event.lineno;
+
+  document.body.appendChild(box);
+});
+
+window.addEventListener("unhandledrejection", function (event) {
+  const box = document.createElement("pre");
+
+  box.style.cssText =
+    "position:fixed;z-index:999999;inset:10px;background:#200;color:white;padding:15px;direction:ltr;white-space:pre-wrap";
+
+  box.textContent = "PROMISE ERROR: " + String(event.reason);
+
+  document.body.appendChild(box);
+});
+</script>
+
+<script src="script.js" defer></script>
+  
 </head>
 
 <body>
