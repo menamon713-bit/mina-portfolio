@@ -1,45 +1,48 @@
-"use strict";
-
 const { neon } = require("@neondatabase/serverless");
 
 const MAX_REQUESTS = 5;
 const WINDOW_SECONDS = 600;
 const MAX_BODY_BYTES = 12 * 1024;
 
+const MAX_LENGTHS = {
+  name: 100,
+  email: 254,
+  subject: 200,
+  message: 5000
+};
+
+function send(res, status, payload) {
+  return res.status(status).json(payload);
+}
+
 function getClientIP(req) {
   const forwarded = req.headers["x-forwarded-for"];
 
-  if (typeof forwarded === "string" && forwarded.trim()) {
-    const ip = forwarded.split(",")[0].trim();
-
-    if (ip && ip.length <= 100) return ip;
+  if (typeof forwarded === "string" && forwarded.length) {
+    return forwarded.split(",")[0].trim().slice(0, 100);
   }
 
   const realIP = req.headers["x-real-ip"];
 
-  if (typeof realIP === "string" && realIP.trim()) {
-    const ip = realIP.trim();
-
-    if (ip.length <= 100) return ip;
+  if (typeof realIP === "string" && realIP.length) {
+    return realIP.trim().slice(0, 100);
   }
 
-  return null;
+  return "unknown";
 }
 
 function validateBody(body) {
-  if (!body || typeof body !== "object" || Array.isArray(body)) {
-    return { valid: false, error: "Invalid request" };
-  }
-
   if (
-    body.website !== undefined &&
-    typeof body.website !== "string"
+    !body ||
+    typeof body !== "object" ||
+    Array.isArray(body)
   ) {
-    return { valid: false, error: "Invalid request" };
+    return "Invalid request body.";
   }
 
+  // Honeypot: bots may fill this hidden field.
   if (typeof body.website === "string" && body.website.trim()) {
-    return { valid: true, spam: true };
+    return "Invalid submission.";
   }
 
   const fields = ["name", "email", "subject", "message"];
@@ -49,77 +52,76 @@ function validateBody(body) {
       body[field] !== undefined &&
       typeof body[field] !== "string"
     ) {
-      return { valid: false, error: "Invalid input" };
+      return "Invalid field type.";
     }
   }
 
   const name = (body.name || "").trim();
-  const email = (body.email || "").trim().toLowerCase();
+  const email = (body.email || "").trim();
   const subject = (body.subject || "").trim();
   const message = (body.message || "").trim();
 
   if (!name || !email || !message) {
-    return {
-      valid: false,
-      error: "Required fields are missing"
-    };
+    return "Name, email and message are required.";
+  }
+
+  if (name.length > MAX_LENGTHS.name) {
+    return "Name is too long.";
+  }
+
+  if (email.length > MAX_LENGTHS.email) {
+    return "Email is too long.";
+  }
+
+  if (subject.length > MAX_LENGTHS.subject) {
+    return "Subject is too long.";
   }
 
   if (
-    name.length > 100 ||
-    email.length > 254 ||
-    subject.length > 200 ||
     message.length < 10 ||
-    message.length > 5000
+    message.length > MAX_LENGTHS.message
   ) {
-    return {
-      valid: false,
-      error: "Invalid input length"
-    };
+    return "Message length is invalid.";
   }
 
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-  if (!emailRegex.test(email)) {
-    return {
-      valid: false,
-      error: "Invalid email address"
-    };
+  if (!emailPattern.test(email)) {
+    return "Invalid email address.";
   }
 
-  return {
-    valid: true,
-    data: { name, email, subject, message }
-  };
+  return null;
 }
 
 async function checkRateLimit(ip) {
-  const url = process.env.KV_REST_API_URL;
-  const token = process.env.KV_REST_API_TOKEN;
+  const redisUrl = process.env.KV_REST_API_URL;
+  const redisToken = process.env.KV_REST_API_TOKEN;
 
-  if (!url || !token) {
-    throw new Error("Redis configuration missing");
+  if (!redisUrl || !redisToken) {
+    throw new Error("RATE_LIMIT_CONFIG_MISSING");
   }
 
-  const key = `mash:contact:${encodeURIComponent(ip)}`;
+  const key = `mash:contact:${ip}`;
 
-  const script = `
-    local count = redis.call("INCR", KEYS[1])
-    if count == 1 then
+  const luaScript = `
+    local current = redis.call("INCR", KEYS[1])
+
+    if current == 1 then
       redis.call("EXPIRE", KEYS[1], ARGV[1])
     end
-    return count
+
+    return current
   `;
 
-  const response = await fetch(url, {
+  const response = await fetch(redisUrl, {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${token}`,
+      Authorization: `Bearer ${redisToken}`,
       "Content-Type": "application/json"
     },
     body: JSON.stringify([
       "EVAL",
-      script,
+      luaScript,
       "1",
       key,
       String(WINDOW_SECONDS)
@@ -127,41 +129,39 @@ async function checkRateLimit(ip) {
   });
 
   if (!response.ok) {
-    throw new Error("Redis request failed");
+    throw new Error("RATE_LIMIT_SERVICE_ERROR");
   }
 
   const result = await response.json();
 
-  if (
-    result.error ||
-    !Number.isSafeInteger(result.result) ||
-    result.result < 1
-  ) {
-    throw new Error("Invalid Redis response");
+  if (result.error) {
+    throw new Error("RATE_LIMIT_SERVICE_ERROR");
   }
 
-  return result.result > MAX_REQUESTS;
+  const count = Number(result.result);
+
+  if (!Number.isFinite(count)) {
+    throw new Error("RATE_LIMIT_INVALID_RESPONSE");
+  }
+
+  return count <= MAX_REQUESTS;
 }
 
 module.exports = async function handler(req, res) {
   res.setHeader("Cache-Control", "no-store");
-  res.setHeader("X-Content-Type-Options", "nosniff");
 
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
-
-    return res.status(405).json({
-      success: false,
-      message: "Method not allowed"
+    return send(res, 405, {
+      error: "Method not allowed."
     });
   }
 
   const contentType = req.headers["content-type"] || "";
 
   if (!contentType.toLowerCase().includes("application/json")) {
-    return res.status(415).json({
-      success: false,
-      message: "Unsupported content type"
+    return send(res, 415, {
+      error: "Content-Type must be application/json."
     });
   }
 
@@ -171,93 +171,73 @@ module.exports = async function handler(req, res) {
     Number.isFinite(contentLength) &&
     contentLength > MAX_BODY_BYTES
   ) {
-    return res.status(413).json({
-      success: false,
-      message: "Request body too large"
+    return send(res, 413, {
+      error: "Request body is too large."
+    });
+  }
+
+  const body = req.body;
+
+  let serializedBody;
+
+  try {
+    serializedBody = JSON.stringify(body);
+  } catch (_) {
+    return send(res, 400, {
+      error: "Invalid request body."
     });
   }
 
   if (
-    !process.env.DATABASE_URL ||
-    !process.env.KV_REST_API_URL ||
-    !process.env.KV_REST_API_TOKEN
+    !serializedBody ||
+    Buffer.byteLength(serializedBody, "utf8") > MAX_BODY_BYTES
   ) {
-    return res.status(500).json({
-      success: false,
-      message: "Server configuration error"
+    return send(res, 413, {
+      error: "Request body is too large."
+    });
+  }
+
+  const validationError = validateBody(body);
+
+  if (validationError) {
+    return send(res, 400, {
+      error: validationError
+    });
+  }
+
+  const name = body.name.trim();
+  const email = body.email.trim();
+  const subject = (body.subject || "").trim();
+  const message = body.message.trim();
+
+  const databaseUrl = process.env.DATABASE_URL;
+
+  if (!databaseUrl) {
+    return send(res, 503, {
+      error: "Contact service is temporarily unavailable."
+    });
+  }
+
+  const clientIP = getClientIP(req);
+
+  try {
+    const allowed = await checkRateLimit(clientIP);
+
+    if (!allowed) {
+      return send(res, 429, {
+        error: "Too many requests. Please try again later."
+      });
+    }
+  } catch (error) {
+    console.error("Contact rate limit error:", error.message);
+
+    return send(res, 503, {
+      error: "Contact service is temporarily unavailable."
     });
   }
 
   try {
-    const body = req.body;
-
-    if (!body || typeof body !== "object" || Array.isArray(body)) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid request"
-      });
-    }
-
-    const bodyBytes = Buffer.byteLength(
-      JSON.stringify(body),
-      "utf8"
-    );
-
-    if (bodyBytes > MAX_BODY_BYTES) {
-      return res.status(413).json({
-        success: false,
-        message: "Request body too large"
-      });
-    }
-
-    const validation = validateBody(body);
-
-    if (!validation.valid) {
-      return res.status(400).json({
-        success: false,
-        message: validation.error
-      });
-    }
-
-    if (validation.spam) {
-      return res.status(200).json({
-        success: true,
-        message: "Message received"
-      });
-    }
-
-    const ip = getClientIP(req);
-
-    if (!ip) {
-      return res.status(400).json({
-        success: false,
-        message: "Unable to process request"
-      });
-    }
-
-    let limited;
-
-    try {
-      limited = await checkRateLimit(ip);
-    } catch (error) {
-      console.error("Rate limiter unavailable");
-
-      return res.status(503).json({
-        success: false,
-        message: "Service temporarily unavailable"
-      });
-    }
-
-    if (limited) {
-      return res.status(429).json({
-        success: false,
-        message: "Too many requests. Please try again later."
-      });
-    }
-
-    const { name, email, subject, message } = validation.data;
-
-    const sql = neon(process.env.DATABASE_URL);
+    const sql = neon(databaseUrl);
 
     await sql`
       INSERT INTO contact_messages
@@ -266,17 +246,16 @@ module.exports = async function handler(req, res) {
         (${name}, ${email}, ${subject || null}, ${message})
     `;
 
-    return res.status(201).json({
+    return send(res, 201, {
       success: true,
-      message: "Your message has been sent successfully"
+      message: "Message received successfully."
     });
 
   } catch (error) {
-    console.error("Contact API error");
+    console.error("Contact database error:", error.message);
 
-    return res.status(500).json({
-      success: false,
-      message: "Server error. Please try again later."
+    return send(res, 500, {
+      error: "Could not save your message."
     });
   }
 };
