@@ -1,3 +1,5 @@
+"use strict";
+
 const { neon } = require("@neondatabase/serverless");
 
 const MAX_REQUESTS = 5;
@@ -19,13 +21,21 @@ function getClientIP(req) {
   const forwarded = req.headers["x-forwarded-for"];
 
   if (typeof forwarded === "string" && forwarded.length) {
-    return forwarded.split(",")[0].trim().slice(0, 100);
+    const ip = forwarded.split(",")[0].trim();
+
+    if (ip.length <= 100 && /^[0-9a-fA-F.:]+$/.test(ip)) {
+      return ip;
+    }
   }
 
   const realIP = req.headers["x-real-ip"];
 
   if (typeof realIP === "string" && realIP.length) {
-    return realIP.trim().slice(0, 100);
+    const ip = realIP.trim();
+
+    if (ip.length <= 100 && /^[0-9a-fA-F.:]+$/.test(ip)) {
+      return ip;
+    }
   }
 
   return "unknown";
@@ -40,8 +50,15 @@ function validateBody(body) {
     return "Invalid request body.";
   }
 
-  // Honeypot: bots may fill this hidden field.
-  if (typeof body.website === "string" && body.website.trim()) {
+  if (
+    body.website !== undefined &&
+    typeof body.website !== "string"
+  ) {
+    return "Invalid submission.";
+  }
+
+  // Honeypot protection.
+  if (body.website && body.website.trim()) {
     return "Invalid submission.";
   }
 
@@ -140,7 +157,7 @@ async function checkRateLimit(ip) {
 
   const count = Number(result.result);
 
-  if (!Number.isFinite(count)) {
+  if (!Number.isSafeInteger(count) || count < 1) {
     throw new Error("RATE_LIMIT_INVALID_RESPONSE");
   }
 
@@ -149,22 +166,29 @@ async function checkRateLimit(ip) {
 
 module.exports = async function handler(req, res) {
   res.setHeader("Cache-Control", "no-store");
+  res.setHeader("X-Content-Type-Options", "nosniff");
 
+  // POST only.
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
+
     return send(res, 405, {
       error: "Method not allowed."
     });
   }
 
+  // JSON only.
   const contentType = req.headers["content-type"] || "";
 
-  if (!contentType.toLowerCase().includes("application/json")) {
+  if (
+    !contentType.toLowerCase().includes("application/json")
+  ) {
     return send(res, 415, {
       error: "Content-Type must be application/json."
     });
   }
 
+  // Check declared request size.
   const contentLength = Number(req.headers["content-length"]);
 
   if (
@@ -176,12 +200,11 @@ module.exports = async function handler(req, res) {
     });
   }
 
-  const body = req.body;
-
+  // Check actual parsed body size.
   let serializedBody;
 
   try {
-    serializedBody = JSON.stringify(body);
+    serializedBody = JSON.stringify(req.body);
   } catch (_) {
     return send(res, 400, {
       error: "Invalid request body."
@@ -197,6 +220,9 @@ module.exports = async function handler(req, res) {
     });
   }
 
+  const body = req.body;
+
+  // Validate input.
   const validationError = validateBody(body);
 
   if (validationError) {
@@ -210,6 +236,7 @@ module.exports = async function handler(req, res) {
   const subject = (body.subject || "").trim();
   const message = body.message.trim();
 
+  // Database configuration.
   const databaseUrl = process.env.DATABASE_URL;
 
   if (!databaseUrl) {
@@ -218,6 +245,7 @@ module.exports = async function handler(req, res) {
     });
   }
 
+  // Rate limiting.
   const clientIP = getClientIP(req);
 
   try {
@@ -229,13 +257,17 @@ module.exports = async function handler(req, res) {
       });
     }
   } catch (error) {
-    console.error("Contact rate limit error:", error.message);
+    console.error(
+      "Contact rate limit error:",
+      error.message
+    );
 
     return send(res, 503, {
       error: "Contact service is temporarily unavailable."
     });
   }
 
+  // Save message to Neon PostgreSQL.
   try {
     const sql = neon(databaseUrl);
 
@@ -252,7 +284,10 @@ module.exports = async function handler(req, res) {
     });
 
   } catch (error) {
-    console.error("Contact database error:", error.message);
+    console.error(
+      "Contact database error:",
+      error.message
+    );
 
     return send(res, 500, {
       error: "Could not save your message."
