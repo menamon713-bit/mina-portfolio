@@ -342,6 +342,8 @@ html[lang="en"] .project-category {
   border: 1px solid var(--border);
   border-radius: 12px;
   cursor: pointer;
+  z-index: 1200; /* تأكد إنه فوق أي عنصر */
+  position: relative;
 }
 
 .menu-btn span {
@@ -357,7 +359,6 @@ html[lang="en"] .project-category {
 .sidebar {
   position: fixed;
   top: 0;
-  inset-inline-start: 0;
   bottom: 0;
   z-index: 1100;
   width: min(var(--sidebar-width), 85vw);
@@ -367,18 +368,36 @@ html[lang="en"] .project-category {
   overflow-y: auto;
   background: var(--surface);
   border-inline-end: 1px solid var(--border);
-  transform: translateX(-105%);
-  transition: transform 0.3s ease;
+  
+  /* إخفاء المنيو باستخدام right بدل transform عشان مشكلة كروم */
+  right: -100%; 
+  transition: right 0.3s ease-in-out;
 }
 
+/* في الوضع العربي (RTL) المنيو بتيجي من اليمين */
 html[dir="rtl"] .sidebar {
-  transform: translateX(105%);
+  right: -100%;
+  left: auto;
 }
 
+/* لما الجافاسكريبت يضيف كلاس open، المنيو تظهر */
 .sidebar.open {
-  transform: translateX(0);
+  right: 0 !important;
 }
 
+/* في الشاشات الكبيرة (الديسكتوب) المنيو ثابتة */
+@media (min-width: 1000px) {
+  .sidebar {
+    right: 0 !important;
+    inset-inline-start: 0;
+    transform: none;
+  }
+  html[dir="rtl"] .sidebar {
+    right: 0 !important;
+  }
+}
+
+/* باقي تنسيقات المنيو */
 .sidebar-brand {
   display: flex;
   flex-direction: column;
