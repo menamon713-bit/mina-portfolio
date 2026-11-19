@@ -3,710 +3,37 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#111111">
+  <meta name="theme-color" content="#080808">
+
   <title>M.A.S.H CYVEX | Secure Admin</title>
 
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap');
+  <meta name="description" content="M.A.S.H CYVEX Secure Administration Portal">
 
-    :root {
-      --bg: #0b0b0b;
-      --panel: #141414;
-      --panel2: #1b1b1b;
-      --border: #303030;
-      --text: #f2f2f2;
-      --muted: #999;
-      --white: #fff;
-      --radius: 14px;
-    }
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
+  <link rel="stylesheet" href="admin.css?v=1">
 
-    body {
-      font-family: 'Cairo', sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      min-height: 100vh;
-    }
-
-    button, input, select {
-      font: inherit;
-    }
-
-    button {
-      cursor: pointer;
-    }
-
-    .hidden {
-      display: none !important;
-    }
-
-    .muted {
-      color: var(--muted);
-    }
-
-    /* LOGIN */
-
-    .login-screen {
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-    }
-
-    .login-card {
-      width: 100%;
-      max-width: 420px;
-      padding: 38px 30px;
-      background: var(--panel);
-      border: 1px solid var(--border);
-      border-radius: 18px;
-      animation: appear .5s ease;
-    }
-
-    .brand {
-      text-align: center;
-      margin-bottom: 32px;
-    }
-
-    .brand h1 {
-      font-size: 27px;
-      letter-spacing: 2px;
-      font-weight: 800;
-    }
-
-    .brand p {
-      color: var(--muted);
-      font-size: 11px;
-      letter-spacing: 3px;
-      margin-top: 5px;
-    }
-
-    .login-card label {
-      display: block;
-      margin-bottom: 9px;
-      font-size: 13px;
-    }
-
-    .login-card input {
-      width: 100%;
-      padding: 14px;
-      background: #090909;
-      color: white;
-      border: 1px solid var(--border);
-      border-radius: 9px;
-      outline: none;
-      margin-bottom: 17px;
-      transition: border .2s;
-    }
-
-    input:focus, select:focus {
-      border-color: #aaa;
-    }
-
-    .primary-btn {
-      width: 100%;
-      border: 1px solid #777;
-      background: #eee;
-      color: #111;
-      padding: 13px;
-      border-radius: 9px;
-      font-weight: 800;
-      transition: .2s;
-    }
-
-    .primary-btn:hover {
-      background: white;
-      transform: translateY(-2px);
-    }
-
-    .primary-btn:disabled {
-      opacity: .5;
-      cursor: not-allowed;
-      transform: none;
-    }
-
-    .login-error {
-      color: #ccc;
-      background: #242424;
-      border: 1px solid #444;
-      border-radius: 8px;
-      padding: 10px;
-      font-size: 12px;
-      margin-bottom: 15px;
-    }
-
-    /* DASHBOARD */
-
-    .dashboard {
-      min-height: 100vh;
-      display: flex;
-    }
-
-    .sidebar {
-      width: 255px;
-      background: #101010;
-      border-left: 1px solid var(--border);
-      padding: 24px 16px;
-      position: fixed;
-      right: 0;
-      top: 0;
-      bottom: 0;
-      z-index: 20;
-      transition: transform .3s ease;
-    }
-
-    .sidebar-brand {
-      padding: 0 12px 25px;
-      border-bottom: 1px solid var(--border);
-    }
-
-    .sidebar-brand h2 {
-      font-size: 19px;
-      letter-spacing: 1px;
-    }
-
-    .sidebar-brand p {
-      font-size: 10px;
-      color: var(--muted);
-      letter-spacing: 2px;
-    }
-
-    .nav-title {
-      color: #777;
-      font-size: 11px;
-      margin: 25px 12px 10px;
-    }
-
-    .nav-link {
-      width: 100%;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      background: transparent;
-      color: #aaa;
-      border: 1px solid transparent;
-      padding: 12px;
-      border-radius: 9px;
-      text-align: right;
-      margin-bottom: 5px;
-      transition: .2s;
-    }
-
-    .nav-link:hover,
-    .nav-link.active {
-      color: white;
-      background: #202020;
-      border-color: #393939;
-    }
-
-    .nav-icon {
-      width: 22px;
-      text-align: center;
-      font-size: 17px;
-    }
-
-    .main {
-      width: calc(100% - 255px);
-      margin-right: 255px;
-      min-height: 100vh;
-    }
-
-    .topbar {
-      height: 76px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 30px;
-      border-bottom: 1px solid var(--border);
-      background: #101010;
-    }
-
-    .topbar-actions {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .icon-btn {
-      width: 39px;
-      height: 39px;
-      background: #1b1b1b;
-      color: white;
-      border: 1px solid var(--border);
-      border-radius: 9px;
-      transition: .2s;
-    }
-
-    .icon-btn:hover {
-      background: #303030;
-    }
-
-    .logout-btn {
-      padding: 9px 15px;
-      background: #1b1b1b;
-      color: white;
-      border: 1px solid var(--border);
-      border-radius: 9px;
-    }
-
-    .logout-btn:hover {
-      background: #303030;
-    }
-
-    .admin-info {
-      display: flex;
-      align-items: center;
-      gap: 11px;
-    }
-
-    .avatar {
-      width: 38px;
-      height: 38px;
-      display: grid;
-      place-items: center;
-      border-radius: 10px;
-      background: #252525;
-      border: 1px solid #444;
-      font-weight: 800;
-    }
-
-    .admin-info strong {
-      display: block;
-      font-size: 12px;
-    }
-
-    .admin-info small {
-      color: var(--muted);
-      font-size: 10px;
-    }
-
-    .content {
-      padding: 30px;
-      max-width: 1500px;
-      margin: auto;
-    }
-
-    .page-heading {
-      margin-bottom: 25px;
-    }
-
-    .page-heading h1 {
-      font-size: 25px;
-      margin-bottom: 5px;
-    }
-
-    .page-heading p {
-      font-size: 13px;
-      color: var(--muted);
-    }
-
-    /* STATS */
-
-    .stats {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 15px;
-      margin-bottom: 30px;
-    }
-
-    .stat-card {
-      background: var(--panel);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 20px;
-      transition: transform .2s, border .2s;
-    }
-
-    .stat-card:hover {
-      transform: translateY(-3px);
-      border-color: #666;
-    }
-
-    .stat-top {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      color: var(--muted);
-      font-size: 12px;
-    }
-
-    .stat-icon {
-      font-size: 19px;
-    }
-
-    .stat-number {
-      font-size: 29px;
-      font-weight: 800;
-      margin-top: 12px;
-    }
-
-    .stat-description {
-      color: #888;
-      font-size: 11px;
-      margin-top: 2px;
-    }
-
-    /* MESSAGES */
-
-    .section-card {
-      background: var(--panel);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      overflow: hidden;
-    }
-
-    .section-header {
-      padding: 20px;
-      border-bottom: 1px solid var(--border);
-    }
-
-    .section-header h2 {
-      font-size: 17px;
-    }
-
-    .section-header p {
-      font-size: 12px;
-      color: var(--muted);
-      margin-top: 3px;
-    }
-
-    .toolbar {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 16px 20px;
-      border-bottom: 1px solid var(--border);
-      flex-wrap: wrap;
-    }
-
-    .search-input,
-    .filter-select {
-      background: #0c0c0c;
-      color: white;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 10px 12px;
-      outline: none;
-    }
-
-    .search-input {
-      flex: 1;
-      min-width: 180px;
-    }
-
-    .filter-select {
-      min-width: 140px;
-    }
-
-    .table-wrap {
-      width: 100%;
-      overflow-x: auto;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      min-width: 650px;
-    }
-
-    th, td {
-      padding: 14px 18px;
-      text-align: right;
-      border-bottom: 1px solid #292929;
-      font-size: 12px;
-    }
-
-    th {
-      color: #999;
-      font-weight: 600;
-      background: #181818;
-    }
-
-    td {
-      color: #ddd;
-    }
-
-    tbody tr {
-      transition: background .2s;
-    }
-
-    tbody tr:hover {
-      background: #1c1c1c;
-    }
-
-    .message-name {
-      font-weight: 700;
-      color: white;
-    }
-
-    .message-email {
-      display: block;
-      color: #888;
-      font-size: 10px;
-      direction: ltr;
-      text-align: right;
-    }
-
-    .status {
-      display: inline-block;
-      padding: 4px 9px;
-      border: 1px solid #555;
-      border-radius: 20px;
-      color: #ddd;
-      font-size: 10px;
-      white-space: nowrap;
-    }
-
-    .view-btn {
-      background: #252525;
-      color: white;
-      border: 1px solid #444;
-      border-radius: 7px;
-      padding: 6px 12px;
-      font-size: 11px;
-    }
-
-    .view-btn:hover {
-      background: #383838;
-    }
-
-    .empty-state,
-    .loading-state {
-      text-align: center;
-      padding: 45px 15px;
-      color: #888;
-      font-size: 13px;
-    }
-
-    /* MODAL */
-
-    .modal-overlay {
-      position: fixed;
-      inset: 0;
-      z-index: 100;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 18px;
-      background: rgba(0,0,0,.8);
-      animation: fadeIn .2s ease;
-    }
-
-    .modal {
-      width: 100%;
-      max-width: 600px;
-      max-height: 90vh;
-      overflow-y: auto;
-      background: #151515;
-      border: 1px solid #444;
-      border-radius: 15px;
-      animation: appear .25s ease;
-    }
-
-    .modal-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 18px 20px;
-      border-bottom: 1px solid var(--border);
-    }
-
-    .modal-header h2 {
-      font-size: 17px;
-    }
-
-    .close-btn {
-      background: transparent;
-      color: white;
-      border: 0;
-      font-size: 23px;
-      padding: 0 5px;
-    }
-
-    .modal-body {
-      padding: 22px;
-    }
-
-    .detail-item {
-      margin-bottom: 18px;
-    }
-
-    .detail-item label {
-      display: block;
-      color: #888;
-      font-size: 11px;
-      margin-bottom: 5px;
-    }
-
-    .detail-item p {
-      font-size: 13px;
-      overflow-wrap: anywhere;
-    }
-
-    .message-content {
-      background: #0c0c0c;
-      border: 1px solid #303030;
-      padding: 15px;
-      border-radius: 9px;
-      white-space: pre-wrap;
-      line-height: 1.9;
-      min-height: 100px;
-    }
-
-    .status-actions {
-      display: flex;
-      gap: 10px;
-      margin-top: 22px;
-      flex-wrap: wrap;
-    }
-
-    .status-actions select {
-      flex: 1;
-      min-width: 150px;
-      background: #0c0c0c;
-      color: white;
-      border: 1px solid #444;
-      border-radius: 8px;
-      padding: 10px;
-    }
-
-    .save-btn {
-      background: #eee;
-      color: #111;
-      border: 0;
-      border-radius: 8px;
-      padding: 10px 18px;
-      font-weight: 700;
-    }
-
-    .save-btn:hover {
-      background: white;
-    }
-
-    /* TOAST */
-
-    .toast {
-      position: fixed;
-      bottom: 22px;
-      left: 22px;
-      z-index: 200;
-      background: #eee;
-      color: #111;
-      padding: 12px 20px;
-      border-radius: 9px;
-      font-size: 12px;
-      box-shadow: 0 5px 25px #000;
-      animation: appear .25s ease;
-    }
-
-    .mobile-overlay {
-      display: none;
-    }
-
-    @keyframes appear {
-      from { opacity: 0; transform: translateY(12px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
-    }
-
-    @media (max-width: 1000px) {
-      .stats {
-        grid-template-columns: repeat(2, 1fr);
-      }
-    }
-
-    @media (max-width: 700px) {
-      .sidebar {
-        transform: translateX(105%);
-        width: 270px;
-      }
-
-      .sidebar.open {
-        transform: translateX(0);
-      }
-
-      .mobile-overlay.show {
-        display: block;
-        position: fixed;
-        inset: 0;
-        background: rgba(0,0,0,.7);
-        z-index: 15;
-      }
-
-      .main {
-        width: 100%;
-        margin-right: 0;
-      }
-
-      .topbar {
-        padding: 0 15px;
-        height: 65px;
-      }
-
-      .content {
-        padding: 20px 13px;
-      }
-
-      .stats {
-        gap: 10px;
-      }
-
-      .stat-card {
-        padding: 14px;
-      }
-
-      .stat-number {
-        font-size: 24px;
-      }
-
-      .page-heading h1 {
-        font-size: 21px;
-      }
-
-      .admin-info strong {
-        font-size: 11px;
-      }
-
-      .admin-info small {
-        font-size: 9px;
-      }
-    }
-
-    @media (max-width: 380px) {
-      .stats {
-        grid-template-columns: 1fr;
-      }
-
-      .logout-btn {
-        padding: 8px;
-        font-size: 11px;
-      }
-    }
-  </style>
+  <script src="admin.js?v=1" defer></script>
 </head>
 
 <body>
 
   <!-- LOGIN SCREEN -->
   <section class="login-screen" id="loginScreen">
+
     <div class="login-card">
+
       <div class="brand">
         <h1>M.A.S.H CYVEX</h1>
         <p>SECURE ADMINISTRATION PORTAL</p>
       </div>
 
       <form id="loginForm">
+
         <label for="adminPassword">كلمة مرور الإدارة</label>
+
         <input
           type="password"
           id="adminPassword"
@@ -717,19 +44,31 @@
 
         <div id="loginError" class="login-error hidden"></div>
 
-        <button class="primary-btn" id="loginButton" type="submit">
+        <button
+          class="primary-btn"
+          id="loginButton"
+          type="submit"
+        >
           تسجيل الدخول ←
         </button>
+
       </form>
+
     </div>
+
   </section>
+
 
   <!-- DASHBOARD -->
   <section class="dashboard hidden" id="dashboard">
 
+    <!-- MOBILE OVERLAY -->
     <div class="mobile-overlay" id="mobileOverlay"></div>
 
+
+    <!-- SIDEBAR -->
     <aside class="sidebar" id="sidebar">
+
       <div class="sidebar-brand">
         <h2>M.A.S.H CYVEX</h2>
         <p>ADMINISTRATION SYSTEM</p>
@@ -753,77 +92,161 @@
         <span class="nav-icon">↻</span>
         تحديث البيانات
       </button>
+
     </aside>
 
+
+    <!-- MAIN CONTENT -->
     <main class="main">
+
+      <!-- TOPBAR -->
       <header class="topbar">
+
         <div class="admin-info">
+
           <div class="avatar">M</div>
+
           <div>
             <strong>Administrator</strong>
             <small>Secure Session Active</small>
           </div>
+
         </div>
 
         <div class="topbar-actions">
-          <button class="icon-btn" id="menuButton" aria-label="القائمة">☰</button>
-          <button class="icon-btn" id="refreshButton" aria-label="تحديث">↻</button>
-          <button class="logout-btn" id="logoutButton">خروج</button>
+
+          <button
+            class="icon-btn"
+            id="menuButton"
+            aria-label="القائمة"
+            type="button"
+          >
+            ☰
+          </button>
+
+          <button
+            class="icon-btn"
+            id="refreshButton"
+            aria-label="تحديث"
+            type="button"
+          >
+            ↻
+          </button>
+
+          <button
+            class="logout-btn"
+            id="logoutButton"
+            type="button"
+          >
+            خروج
+          </button>
+
         </div>
+
       </header>
 
+
+      <!-- PAGE CONTENT -->
       <div class="content">
 
+        <!-- PAGE HEADING -->
         <div class="page-heading">
+
           <h1>لوحة التحكم</h1>
-          <p>مرحباً بك في نظام إدارة M.A.S.H CYVEX</p>
+
+          <p>
+            مرحباً بك في نظام إدارة M.A.S.H CYVEX
+          </p>
+
         </div>
 
+
+        <!-- STATISTICS -->
         <div class="stats">
+
           <div class="stat-card">
+
             <div class="stat-top">
               <span>إجمالي الرسائل</span>
               <span class="stat-icon">✉</span>
             </div>
+
             <div class="stat-number" id="totalCount">0</div>
-            <div class="stat-description">كل الرسائل المسجلة</div>
+
+            <div class="stat-description">
+              كل الرسائل المسجلة
+            </div>
+
           </div>
 
+
           <div class="stat-card">
+
             <div class="stat-top">
               <span>رسائل جديدة</span>
               <span class="stat-icon">●</span>
             </div>
+
             <div class="stat-number" id="newCount">0</div>
-            <div class="stat-description">تحتاج إلى مراجعة</div>
+
+            <div class="stat-description">
+              تحتاج إلى مراجعة
+            </div>
+
           </div>
 
+
           <div class="stat-card">
+
             <div class="stat-top">
               <span>تمت قراءتها</span>
               <span class="stat-icon">✓</span>
             </div>
+
             <div class="stat-number" id="readCount">0</div>
-            <div class="stat-description">رسائل تمت مراجعتها</div>
+
+            <div class="stat-description">
+              رسائل تمت مراجعتها
+            </div>
+
           </div>
 
+
           <div class="stat-card">
+
             <div class="stat-top">
               <span>تم الرد عليها</span>
               <span class="stat-icon">↗</span>
             </div>
+
             <div class="stat-number" id="repliedCount">0</div>
-            <div class="stat-description">رسائل تم التعامل معها</div>
+
+            <div class="stat-description">
+              رسائل تم التعامل معها
+            </div>
+
           </div>
+
         </div>
 
+
+        <!-- MESSAGES SECTION -->
         <section class="section-card" id="messagesSection">
+
           <div class="section-header">
+
             <h2>إدارة الرسائل</h2>
-            <p>عرض وإدارة الرسائل الواردة من نموذج التواصل</p>
+
+            <p>
+              عرض وإدارة الرسائل الواردة من نموذج التواصل
+            </p>
+
           </div>
 
+
+          <!-- TOOLBAR -->
           <div class="toolbar">
+
             <input
               class="search-input"
               id="searchInput"
@@ -832,16 +255,23 @@
             >
 
             <select class="filter-select" id="statusFilter">
+
               <option value="all">كل الحالات</option>
               <option value="new">جديدة</option>
               <option value="read">مقروءة</option>
               <option value="replied">تم الرد</option>
               <option value="archived">مؤرشفة</option>
+
             </select>
+
           </div>
 
+
+          <!-- MESSAGES TABLE -->
           <div class="table-wrap">
+
             <table>
+
               <thead>
                 <tr>
                   <th>الاسم</th>
@@ -851,455 +281,122 @@
                   <th>التفاصيل</th>
                 </tr>
               </thead>
+
               <tbody id="messagesTable">
+
                 <tr>
-                  <td colspan="5" class="loading-state">جاري تحميل الرسائل...</td>
+                  <td colspan="5" class="loading-state">
+                    جاري تحميل الرسائل...
+                  </td>
                 </tr>
+
               </tbody>
+
             </table>
+
           </div>
+
         </section>
 
       </div>
+
     </main>
+
   </section>
+
 
   <!-- MESSAGE DETAILS MODAL -->
   <div class="modal-overlay hidden" id="messageModal">
+
     <div class="modal">
+
       <div class="modal-header">
+
         <h2>تفاصيل الرسالة</h2>
-        <button class="close-btn" id="closeModal">×</button>
+
+        <button
+          class="close-btn"
+          id="closeModal"
+          type="button"
+          aria-label="إغلاق"
+        >
+          ×
+        </button>
+
       </div>
 
+
       <div class="modal-body">
+
         <div class="detail-item">
           <label>الاسم</label>
           <p id="detailName">-</p>
         </div>
+
 
         <div class="detail-item">
           <label>البريد الإلكتروني</label>
           <p id="detailEmail" dir="ltr">-</p>
         </div>
 
+
         <div class="detail-item">
           <label>الموضوع</label>
           <p id="detailSubject">-</p>
         </div>
+
 
         <div class="detail-item">
           <label>تاريخ الإرسال</label>
           <p id="detailDate">-</p>
         </div>
 
-        <div class="detail-item">
-          <label>محتوى الرسالة</label>
-          <div class="message-content" id="detailMessage"></div>
-        </div>
 
         <div class="detail-item">
+
+          <label>محتوى الرسالة</label>
+
+          <div class="message-content" id="detailMessage"></div>
+
+        </div>
+
+
+        <div class="detail-item">
+
           <label>حالة الرسالة</label>
+
           <div class="status-actions">
+
             <select id="detailStatus">
+
               <option value="new">جديدة</option>
               <option value="read">مقروءة</option>
               <option value="replied">تم الرد</option>
               <option value="archived">مؤرشفة</option>
+
             </select>
 
-            <button class="save-btn" id="saveStatusButton">
+            <button
+              class="save-btn"
+              id="saveStatusButton"
+              type="button"
+            >
               حفظ الحالة
             </button>
+
           </div>
+
         </div>
+
       </div>
+
     </div>
+
   </div>
 
+
+  <!-- TOAST NOTIFICATION -->
   <div id="toast" class="toast hidden"></div>
-
-  <script>
-    "use strict";
-
-    const $ = (selector) => document.querySelector(selector);
-
-    const loginScreen = $("#loginScreen");
-    const dashboard = $("#dashboard");
-    const loginForm = $("#loginForm");
-    const loginButton = $("#loginButton");
-    const loginError = $("#loginError");
-    const messagesTable = $("#messagesTable");
-    const messageModal = $("#messageModal");
-
-    let messages = [];
-    let selectedMessage = null;
-
-    const statusNames = {
-      new: "جديدة",
-      read: "مقروءة",
-      replied: "تم الرد",
-      archived: "مؤرشفة"
-    };
-
-    function showToast(message) {
-      const toast = $("#toast");
-      toast.textContent = message;
-      toast.classList.remove("hidden");
-
-      clearTimeout(showToast.timer);
-      showToast.timer = setTimeout(() => {
-        toast.classList.add("hidden");
-      }, 3000);
-    }
-
-    async function apiRequest(url, options = {}) {
-      const response = await fetch(url, {
-        credentials: "same-origin",
-        ...options,
-        headers: {
-          ...(options.body ? { "Content-Type": "application/json" } : {}),
-          ...options.headers
-        }
-      });
-
-      let data = {};
-
-      try {
-        data = await response.json();
-      } catch {
-        data = {};
-      }
-
-      if (!response.ok) {
-        const error = new Error(
-          data.error || data.message || `HTTP ${response.status}`
-        );
-        error.status = response.status;
-        throw error;
-      }
-
-      return data;
-    }
-
-    function showLogin() {
-      loginScreen.classList.remove("hidden");
-      dashboard.classList.add("hidden");
-    }
-
-    function showDashboard() {
-      loginScreen.classList.add("hidden");
-      dashboard.classList.remove("hidden");
-    }
-
-    function normalizeMessages(data) {
-      if (Array.isArray(data)) return data;
-      if (Array.isArray(data.messages)) return data.messages;
-      if (Array.isArray(data.data)) return data.data;
-      if (data.data && Array.isArray(data.data.messages)) {
-        return data.data.messages;
-      }
-      return [];
-    }
-
-    function formatDate(value) {
-      if (!value) return "-";
-
-      const date = new Date(value);
-
-      if (Number.isNaN(date.getTime())) {
-        return String(value);
-      }
-
-      return date.toLocaleString("ar-EG", {
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-        hour: "2-digit",
-        minute: "2-digit"
-      });
-    }
-
-    function updateStats() {
-      $("#totalCount").textContent = messages.length;
-      $("#newCount").textContent =
-        messages.filter(m => m.status === "new").length;
-      $("#readCount").textContent =
-        messages.filter(m => m.status === "read").length;
-      $("#repliedCount").textContent =
-        messages.filter(m => m.status === "replied").length;
-    }
-
-    function createCellText(value) {
-      return document.createTextNode(
-        value === null || value === undefined ? "-" : String(value)
-      );
-    }
-
-    function renderMessages() {
-      const search = $("#searchInput").value.trim().toLowerCase();
-      const filter = $("#statusFilter").value;
-
-      const filtered = messages.filter(message => {
-        const searchable = [
-          message.name,
-          message.email,
-          message.subject,
-          message.message
-        ].join(" ").toLowerCase();
-
-        const matchesSearch = searchable.includes(search);
-        const matchesStatus =
-          filter === "all" || message.status === filter;
-
-        return matchesSearch && matchesStatus;
-      });
-
-      messagesTable.replaceChildren();
-
-      if (!filtered.length) {
-        const row = document.createElement("tr");
-        const cell = document.createElement("td");
-
-        cell.colSpan = 5;
-        cell.className = "empty-state";
-        cell.textContent = messages.length
-          ? "لا توجد رسائل تطابق البحث."
-          : "لا توجد رسائل حتى الآن.";
-
-        row.appendChild(cell);
-        messagesTable.appendChild(row);
-        return;
-      }
-
-      filtered.forEach(message => {
-        const row = document.createElement("tr");
-
-        const nameCell = document.createElement("td");
-        const name = document.createElement("span");
-        const email = document.createElement("span");
-
-        name.className = "message-name";
-        name.textContent = message.name || "بدون اسم";
-
-        email.className = "message-email";
-        email.textContent = message.email || "";
-
-        nameCell.append(name, email);
-
-        const subjectCell = document.createElement("td");
-        subjectCell.textContent = message.subject || "-";
-
-        const dateCell = document.createElement("td");
-        dateCell.textContent = formatDate(message.created_at);
-
-        const statusCell = document.createElement("td");
-        const status = document.createElement("span");
-        status.className = "status";
-        status.textContent = statusNames[message.status] || "غير معروف";
-        statusCell.appendChild(status);
-
-        const actionCell = document.createElement("td");
-        const viewButton = document.createElement("button");
-
-        viewButton.className = "view-btn";
-        viewButton.textContent = "عرض";
-        viewButton.addEventListener("click", () => openMessage(message));
-
-        actionCell.appendChild(viewButton);
-
-        row.append(
-          nameCell,
-          subjectCell,
-          dateCell,
-          statusCell,
-          actionCell
-        );
-
-        messagesTable.appendChild(row);
-      });
-    }
-
-    async function loadMessages() {
-      messagesTable.innerHTML =
-        '<tr><td colspan="5" class="loading-state">جاري تحميل الرسائل...</td></tr>';
-
-      try {
-        const data = await apiRequest("/api/admin/messages");
-        messages = normalizeMessages(data);
-        updateStats();
-        renderMessages();
-      } catch (error) {
-        if (error.status === 401) {
-          showLogin();
-          return;
-        }
-
-        messagesTable.innerHTML =
-          '<tr><td colspan="5" class="empty-state">تعذر تحميل الرسائل. حاول تحديث الصفحة.</td></tr>';
-
-        showToast("حدث خطأ أثناء تحميل الرسائل");
-        console.error("Messages error:", error);
-      }
-    }
-
-    function openMessage(message) {
-      selectedMessage = message;
-
-      $("#detailName").textContent = message.name || "-";
-      $("#detailEmail").textContent = message.email || "-";
-      $("#detailSubject").textContent = message.subject || "-";
-      $("#detailDate").textContent = formatDate(message.created_at);
-      $("#detailMessage").textContent = message.message || "-";
-      $("#detailStatus").value = statusNames[message.status]
-        ? message.status
-        : "new";
-
-      messageModal.classList.remove("hidden");
-    }
-
-    function closeMessage() {
-      messageModal.classList.add("hidden");
-      selectedMessage = null;
-    }
-
-    async function saveMessageStatus() {
-      if (!selectedMessage) return;
-
-      const status = $("#detailStatus").value;
-      const button = $("#saveStatusButton");
-
-      button.disabled = true;
-      button.textContent = "جاري الحفظ...";
-
-      try {
-        await apiRequest("/api/admin/update-status", {
-          method: "POST",
-          body: JSON.stringify({
-            id: selectedMessage.id,
-            status
-          })
-        });
-
-        selectedMessage.status = status;
-
-        const index = messages.findIndex(
-          message => message.id === selectedMessage.id
-        );
-
-        if (index !== -1) {
-          messages[index].status = status;
-        }
-
-        updateStats();
-        renderMessages();
-        closeMessage();
-        showToast("تم تحديث حالة الرسالة بنجاح");
-      } catch (error) {
-        showToast("تعذر تحديث الحالة");
-        console.error("Update status error:", error);
-      } finally {
-        button.disabled = false;
-        button.textContent = "حفظ الحالة";
-      }
-    }
-
-    async function checkSession() {
-      try {
-        await apiRequest("/api/admin/session");
-        showDashboard();
-        await loadMessages();
-      } catch {
-        showLogin();
-      }
-    }
-
-    loginForm.addEventListener("submit", async event => {
-      event.preventDefault();
-
-      const password = $("#adminPassword").value;
-
-      if (!password) return;
-
-      loginButton.disabled = true;
-      loginButton.textContent = "جاري تسجيل الدخول...";
-      loginError.classList.add("hidden");
-
-      try {
-        await apiRequest("/api/admin/login", {
-          method: "POST",
-          body: JSON.stringify({ password })
-        });
-
-        $("#adminPassword").value = "";
-        showDashboard();
-        await loadMessages();
-      } catch (error) {
-        loginError.textContent =
-          error.status === 429
-            ? "محاولات كثيرة. انتظر قليلاً ثم حاول مجدداً."
-            : "فشل تسجيل الدخول. تحقق من كلمة المرور.";
-
-        loginError.classList.remove("hidden");
-      } finally {
-        loginButton.disabled = false;
-        loginButton.textContent = "تسجيل الدخول ←";
-      }
-    });
-
-    async function logout() {
-      try {
-        await apiRequest("/api/admin/logout", {
-          method: "POST",
-          body: JSON.stringify({})
-        });
-      } catch (error) {
-        console.error("Logout error:", error);
-      }
-
-      closeMessage();
-      showLogin();
-      showToast("تم تسجيل الخروج");
-    }
-
-    $("#logoutButton").addEventListener("click", logout);
-    $("#refreshButton").addEventListener("click", loadMessages);
-    $("#refreshNav").addEventListener("click", loadMessages);
-    $("#searchInput").addEventListener("input", renderMessages);
-    $("#statusFilter").addEventListener("change", renderMessages);
-    $("#saveStatusButton").addEventListener("click", saveMessageStatus);
-    $("#closeModal").addEventListener("click", closeMessage);
-
-    messageModal.addEventListener("click", event => {
-      if (event.target === messageModal) closeMessage();
-    });
-
-    $("#menuButton").addEventListener("click", () => {
-      $("#sidebar").classList.toggle("open");
-      $("#mobileOverlay").classList.toggle("show");
-    });
-
-    $("#mobileOverlay").addEventListener("click", () => {
-      $("#sidebar").classList.remove("open");
-      $("#mobileOverlay").classList.remove("show");
-    });
-
-    $("#overviewNav").addEventListener("click", () => {
-      $("#overviewNav").classList.add("active");
-      $("#messagesNav").classList.remove("active");
-      $("#messagesSection").scrollIntoView({ behavior: "smooth" });
-    });
-
-    $("#messagesNav").addEventListener("click", () => {
-      $("#messagesNav").classList.add("active");
-      $("#overviewNav").classList.remove("active");
-      $("#messagesSection").scrollIntoView({ behavior: "smooth" });
-      $("#sidebar").classList.remove("open");
-      $("#mobileOverlay").classList.remove("show");
-    });
-
-    checkSession();
-  </script>
 
 </body>
 </html>
