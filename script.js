@@ -1,7 +1,7 @@
 // ================================================
 // M.A.S.H CYVEX — Main JavaScript
 // Navigation / Theme / Language / Modals / Contact
-// Animated Background — No Intro Screen
+// Contact Form API Integration
 // ================================================
 
 (function () {
@@ -16,6 +16,9 @@
   const menuBtn = document.getElementById("menuBtn");
   const sidebar = document.getElementById("sidebar");
   const overlay = document.getElementById("overlay");
+
+  const contactForm = document.getElementById("contactForm");
+  const formStatus = document.getElementById("formStatus");
 
   const allowedPages = [
     "home",
@@ -35,6 +38,7 @@
   let previousFocus = null;
   let lastContactAction = 0;
   let revealObserver = null;
+  let formSubmitting = false;
 
   const reducedMotion = window.matchMedia(
     "(prefers-reduced-motion: reduce)"
@@ -132,6 +136,12 @@
       phoneTitle: "الهاتف",
       contactFooterTitle: "شكراً لزيارتك",
       contactFooterText: "أقدّر وقتك واهتمامك باستكشاف أعمالي.",
+
+      formSuccess: "تم إرسال رسالتك بنجاح.",
+      formError: "تعذر إرسال الرسالة. حاول مرة أخرى.",
+      formInvalid: "يرجى التأكد من صحة البيانات المدخلة.",
+      formSending: "جارٍ إرسال رسالتك...",
+      formNetworkError: "تعذر الاتصال بالخادم. تحقق من الإنترنت وحاول مجدداً.",
 
       rights: "جميع الحقوق محفوظة.",
       footerMade: "صُنع باهتمام بالتفاصيل.",
@@ -249,6 +259,12 @@
       phoneTitle: "Phone",
       contactFooterTitle: "Thanks for Visiting",
       contactFooterText: "I appreciate your time and interest in exploring my work.",
+
+      formSuccess: "Your message was sent successfully.",
+      formError: "Your message could not be sent. Please try again.",
+      formInvalid: "Please check the information you entered.",
+      formSending: "Sending your message...",
+      formNetworkError: "Unable to connect to the server. Check your internet connection.",
 
       rights: "All rights reserved.",
       footerMade: "Built with attention to detail.",
@@ -531,7 +547,6 @@
 
   // ================================================
   // Animated Background
-  // No intro screen or intro timers
   // ================================================
 
   function initializeBackground() {
@@ -668,7 +683,7 @@
       if (!modal) return;
 
       const focusableElements = modal.querySelectorAll(
-        'a[href], button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        'a[href], button:not([disabled]), input:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
       );
 
       if (!focusableElements.length) return;
@@ -737,6 +752,129 @@
       "mailto:" + CONTACT.email +
       "?subject=" + subject +
       "&body=" + bodyText;
+  }
+
+  // ================================================
+  // Contact Form API
+  // ================================================
+
+  function setFormStatus(message, type) {
+    if (!formStatus) return;
+
+    formStatus.textContent = message;
+    formStatus.setAttribute("data-status", type || "info");
+    formStatus.setAttribute("role", type === "error" ? "alert" : "status");
+  }
+
+  function setFormLoading(loading) {
+    if (!contactForm) return;
+
+    const submitButton = contactForm.querySelector(
+      'button[type="submit"], input[type="submit"]'
+    );
+
+    if (!submitButton) return;
+
+    submitButton.disabled = loading;
+    submitButton.setAttribute("aria-busy", String(loading));
+
+    if (submitButton.tagName === "BUTTON") {
+      if (!submitButton.dataset.originalText) {
+        submitButton.dataset.originalText = submitButton.textContent;
+      }
+
+      submitButton.textContent = loading
+        ? translations[currentLanguage].formSending
+        : submitButton.dataset.originalText;
+    }
+  }
+
+  if (contactForm) {
+    contactForm.addEventListener("submit", async function (event) {
+      event.preventDefault();
+
+      if (formSubmitting) return;
+
+      if (!contactForm.reportValidity()) {
+        setFormStatus(
+          translations[currentLanguage].formInvalid,
+          "error"
+        );
+        return;
+      }
+
+      const formData = new FormData(contactForm);
+
+      const payload = {
+        name: String(formData.get("name") || "").trim(),
+        email: String(formData.get("email") || "").trim(),
+        subject: String(formData.get("subject") || "").trim(),
+        message: String(formData.get("message") || "").trim()
+      };
+
+      if (
+        !payload.name ||
+        !payload.email ||
+        !payload.subject ||
+        !payload.message
+      ) {
+        setFormStatus(
+          translations[currentLanguage].formInvalid,
+          "error"
+        );
+        return;
+      }
+
+      formSubmitting = true;
+      setFormLoading(true);
+
+      setFormStatus(
+        translations[currentLanguage].formSending,
+        "info"
+      );
+
+      try {
+        const response = await fetch("/api/contact", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Accept": "application/json"
+          },
+          body: JSON.stringify(payload)
+        });
+
+        let result = {};
+
+        try {
+          result = await response.json();
+        } catch {
+          result = {};
+        }
+
+        if (!response.ok || result.success !== true) {
+          throw new Error("CONTACT_SUBMISSION_FAILED");
+        }
+
+        contactForm.reset();
+
+        setFormStatus(
+          translations[currentLanguage].formSuccess,
+          "success"
+        );
+
+      } catch (error) {
+        const message =
+          error && error.message === "CONTACT_SUBMISSION_FAILED"
+            ? translations[currentLanguage].formError
+            : translations[currentLanguage].formNetworkError;
+
+        setFormStatus(message, "error");
+
+      } finally {
+        formSubmitting = false;
+        setFormLoading(false);
+      }
+    });
   }
 
   // ================================================
