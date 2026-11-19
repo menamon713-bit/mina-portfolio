@@ -59,7 +59,10 @@ function validateBody(body) {
   const message = (body.message || "").trim();
 
   if (!name || !email || !message) {
-    return { valid: false, error: "Required fields are missing" };
+    return {
+      valid: false,
+      error: "Required fields are missing"
+    };
   }
 
   if (
@@ -69,13 +72,19 @@ function validateBody(body) {
     message.length < 10 ||
     message.length > 5000
   ) {
-    return { valid: false, error: "Invalid input length" };
+    return {
+      valid: false,
+      error: "Invalid input length"
+    };
   }
 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
   if (!emailRegex.test(email)) {
-    return { valid: false, error: "Invalid email address" };
+    return {
+      valid: false,
+      error: "Invalid email address"
+    };
   }
 
   return {
@@ -147,6 +156,27 @@ module.exports = async function handler(req, res) {
     });
   }
 
+  const contentType = req.headers["content-type"] || "";
+
+  if (!contentType.toLowerCase().includes("application/json")) {
+    return res.status(415).json({
+      success: false,
+      message: "Unsupported content type"
+    });
+  }
+
+  const contentLength = Number(req.headers["content-length"]);
+
+  if (
+    Number.isFinite(contentLength) &&
+    contentLength > MAX_BODY_BYTES
+  ) {
+    return res.status(413).json({
+      success: false,
+      message: "Request body too large"
+    });
+  }
+
   if (
     !process.env.DATABASE_URL ||
     !process.env.KV_REST_API_URL ||
@@ -165,6 +195,18 @@ module.exports = async function handler(req, res) {
       return res.status(400).json({
         success: false,
         message: "Invalid request"
+      });
+    }
+
+    const bodyBytes = Buffer.byteLength(
+      JSON.stringify(body),
+      "utf8"
+    );
+
+    if (bodyBytes > MAX_BODY_BYTES) {
+      return res.status(413).json({
+        success: false,
+        message: "Request body too large"
       });
     }
 
