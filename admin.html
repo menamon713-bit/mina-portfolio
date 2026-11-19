@@ -1,471 +1,1087 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="robots" content="noindex, nofollow">
-  <meta name="theme-color" content="#090909">
-  <title>M.A.S.H CYVEX | Admin</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#08090e">
+<title>M.A.S.H CYVEX | Admin Dashboard</title>
 
-  <style>
-    * {
-      box-sizing: border-box;
-    }
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap');
 
-    body {
-      margin: 0;
-      min-height: 100vh;
-      background: #090909;
-      color: #f5f5f5;
-      font-family: Arial, sans-serif;
-    }
+:root{
+  --bg:#08090e;
+  --panel:#10121c;
+  --panel2:#151827;
+  --red:#ff304f;
+  --blue:#3478ff;
+  --text:#f5f6ff;
+  --muted:#8b91a7;
+  --border:rgba(255,255,255,.075);
+  --green:#35d69b;
+  --yellow:#ffbf4a;
+}
 
-    button, input, select {
-      font: inherit;
-    }
+*{box-sizing:border-box;margin:0;padding:0}
 
-    .container {
-      width: min(1050px, 92%);
-      margin: 45px auto;
-    }
+body{
+  font-family:'Cairo',sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  min-height:100vh;
+  overflow-x:hidden;
+}
 
-    .brand {
-      color: #ff3030;
-      font-size: 25px;
-      font-weight: 800;
-      margin-bottom: 8px;
-    }
+body:before{
+  content:"";
+  position:fixed;
+  inset:0;
+  pointer-events:none;
+  background:
+    radial-gradient(ellipse at 10% 10%,rgba(255,48,79,.13),transparent 35%),
+    radial-gradient(ellipse at 90% 80%,rgba(52,120,255,.13),transparent 38%);
+  z-index:-1;
+}
 
-    .subtitle {
-      color: #999;
-      margin-bottom: 30px;
-    }
+button,input,select{font:inherit}
+button{cursor:pointer}
 
-    .panel, .message {
-      background: #141414;
-      border: 1px solid #292929;
-      border-radius: 13px;
-      padding: 22px;
-      margin-bottom: 18px;
-    }
+.hidden{display:none!important}
 
-    h1, h2 {
-      margin-top: 0;
-    }
+.login-screen{
+  min-height:100vh;
+  display:grid;
+  place-items:center;
+  padding:20px;
+}
 
-    input, select {
-      width: 100%;
-      padding: 13px;
-      border-radius: 8px;
-      border: 1px solid #383838;
-      background: #0c0c0c;
-      color: white;
-      margin: 10px 0;
-      outline: none;
-    }
+.login-card{
+  width:min(420px,100%);
+  padding:38px;
+  border:1px solid var(--border);
+  border-radius:24px;
+  background:rgba(16,18,28,.85);
+  backdrop-filter:blur(20px);
+  box-shadow:0 25px 90px #0008;
+  animation:appear .7s ease both;
+}
 
-    input:focus, select:focus {
-      border-color: #ff3030;
-    }
+.logo{
+  font-size:29px;
+  font-weight:900;
+  letter-spacing:1px;
+  margin-bottom:5px;
+}
 
-    button {
-      cursor: pointer;
-      border: 0;
-      border-radius: 8px;
-      padding: 12px 18px;
-      background: #e52b2b;
-      color: white;
-      font-weight: bold;
-    }
+.logo span{color:var(--red)}
+.login-subtitle{color:var(--muted);font-size:13px;margin-bottom:30px}
 
-    button:disabled {
-      opacity: .5;
-      cursor: not-allowed;
-    }
+.input-label{
+  display:block;
+  font-size:13px;
+  color:#c2c6d6;
+  margin-bottom:8px;
+}
 
-    button.secondary {
-      background: #292929;
-    }
+input,select{
+  width:100%;
+  padding:13px 15px;
+  color:white;
+  background:#090b12;
+  border:1px solid var(--border);
+  border-radius:11px;
+  outline:none;
+  transition:.25s;
+}
 
-    .hidden {
-      display: none !important;
-    }
+input:focus,select:focus{
+  border-color:var(--red);
+  box-shadow:0 0 0 3px #ff304f18;
+}
 
-    .status {
-      color: #aaa;
-      margin-top: 14px;
-      line-height: 1.7;
-    }
+.primary-btn{
+  border:0;
+  border-radius:11px;
+  padding:13px 20px;
+  color:white;
+  background:linear-gradient(110deg,var(--red),#cf214c);
+  font-weight:800;
+  transition:.3s;
+  box-shadow:0 8px 25px #ff304f25;
+}
 
-    .error {
-      color: #ff6262;
-    }
+.primary-btn:hover{
+  transform:translateY(-3px);
+  box-shadow:0 12px 32px #ff304f48;
+}
 
-    .success {
-      color: #62d994;
-    }
+.login-card .primary-btn{width:100%;margin-top:17px}
 
-    .topbar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 15px;
-      flex-wrap: wrap;
-      margin-bottom: 20px;
-    }
+.status{
+  min-height:25px;
+  margin-top:13px;
+  font-size:13px;
+  color:var(--muted);
+}
 
-    .message h3 {
-      margin: 0 0 12px;
-      overflow-wrap: anywhere;
-    }
+.error{color:#ff667a}
+.success{color:var(--green)}
 
-    .message p {
-      color: #ccc;
-      line-height: 1.8;
-      overflow-wrap: anywhere;
-      white-space: pre-wrap;
-    }
+.dashboard{min-height:100vh}
 
-    .meta {
-      color: #999;
-      font-size: 13px;
-      line-height: 1.9;
-      overflow-wrap: anywhere;
-    }
+.sidebar{
+  width:255px;
+  position:fixed;
+  inset:0 0 0 auto;
+  background:rgba(13,15,24,.94);
+  border-left:1px solid var(--border);
+  padding:28px 18px;
+  z-index:20;
+  backdrop-filter:blur(20px);
+  transition:.3s;
+}
 
-    .message-actions {
-      display: grid;
-      grid-template-columns: 1fr auto;
-      gap: 10px;
-      align-items: center;
-      margin-top: 15px;
-    }
+.sidebar-logo{
+  padding:0 12px 30px;
+  border-bottom:1px solid var(--border);
+}
 
-    .message-actions select {
-      margin: 0;
-    }
+.sidebar-logo small{
+  display:block;
+  color:var(--muted);
+  font-size:10px;
+  letter-spacing:2px;
+}
 
-    .empty {
-      text-align: center;
-      color: #aaa;
-      padding: 35px;
-    }
+.nav-title{
+  color:#6d748b;
+  font-size:11px;
+  margin:27px 12px 12px;
+}
 
-    @media (max-width: 600px) {
-      .container {
-        margin: 25px auto;
-      }
+.nav-link{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:13px;
+  color:#aeb3c5;
+  border-radius:11px;
+  margin:5px 0;
+  transition:.25s;
+  font-size:13px;
+  cursor:pointer;
+}
 
-      .panel, .message {
-        padding: 16px;
-      }
+.nav-link:hover,.nav-link.active{
+  background:linear-gradient(100deg,#ff304f1b,#3478ff12);
+  color:white;
+  border:1px solid #ff304f25;
+}
 
-      .message-actions {
-        grid-template-columns: 1fr;
-      }
-    }
-  </style>
+.nav-link.active{border-right:3px solid var(--red)}
+
+.nav-icon{
+  width:27px;
+  text-align:center;
+  font-size:17px;
+}
+
+.sidebar-bottom{
+  position:absolute;
+  bottom:25px;
+  right:18px;
+  left:18px;
+}
+
+.admin-badge{
+  border:1px solid var(--border);
+  border-radius:13px;
+  padding:13px;
+  display:flex;
+  gap:10px;
+  align-items:center;
+  background:#ffffff05;
+}
+
+.admin-avatar{
+  width:37px;
+  height:37px;
+  display:grid;
+  place-items:center;
+  border-radius:11px;
+  background:linear-gradient(135deg,var(--red),var(--blue));
+  font-weight:900;
+}
+
+.admin-badge small{color:var(--muted);display:block;font-size:10px}
+
+.main{
+  margin-right:255px;
+  padding:30px 35px;
+  max-width:1700px;
+}
+
+.topbar{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:15px;
+  margin-bottom:32px;
+}
+
+.topbar h1{font-size:25px;font-weight:800}
+.topbar p{font-size:12px;color:var(--muted);margin-top:4px}
+
+.top-actions{display:flex;gap:10px;align-items:center}
+
+.icon-btn{
+  width:43px;
+  height:43px;
+  border:1px solid var(--border);
+  background:var(--panel);
+  color:white;
+  border-radius:12px;
+  transition:.25s;
+}
+
+.icon-btn:hover{border-color:var(--blue);transform:translateY(-2px)}
+
+.stats{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:17px;
+  margin-bottom:28px;
+}
+
+.stat-card{
+  background:linear-gradient(145deg,#141725,#0e1019);
+  border:1px solid var(--border);
+  border-radius:17px;
+  padding:21px;
+  position:relative;
+  overflow:hidden;
+  transition:.3s;
+  animation:rise .6s ease both;
+}
+
+.stat-card:nth-child(2){animation-delay:.08s}
+.stat-card:nth-child(3){animation-delay:.16s}
+.stat-card:nth-child(4){animation-delay:.24s}
+
+.stat-card:hover{
+  transform:translateY(-5px);
+  border-color:#ffffff25;
+}
+
+.stat-card:after{
+  content:"";
+  position:absolute;
+  width:100px;
+  height:100px;
+  border-radius:50%;
+  filter:blur(35px);
+  opacity:.2;
+  top:-40px;
+  left:-30px;
+  background:var(--accent);
+}
+
+.stat-top{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  color:var(--muted);
+  font-size:12px;
+}
+
+.stat-icon{
+  width:38px;
+  height:38px;
+  display:grid;
+  place-items:center;
+  border-radius:11px;
+  background:color-mix(in srgb,var(--accent) 15%,transparent);
+  color:var(--accent);
+  font-size:18px;
+}
+
+.stat-number{
+  font-size:31px;
+  font-weight:900;
+  margin-top:12px;
+  direction:ltr;
+  text-align:right;
+}
+
+.stat-note{font-size:11px;color:var(--muted);margin-top:2px}
+
+.content-card{
+  background:rgba(16,18,28,.86);
+  border:1px solid var(--border);
+  border-radius:18px;
+  padding:23px;
+  animation:rise .6s ease both;
+}
+
+.content-header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:15px;
+  flex-wrap:wrap;
+  margin-bottom:20px;
+}
+
+.content-header h2{font-size:17px}
+.content-header p{font-size:11px;color:var(--muted);margin-top:3px}
+
+.filters{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+}
+
+.filters input{width:220px}
+.filters select{width:150px}
+
+.message-list{
+  display:grid;
+  gap:12px;
+}
+
+.message-card{
+  padding:17px;
+  border:1px solid var(--border);
+  border-radius:13px;
+  background:#ffffff03;
+  transition:.25s;
+  animation:rise .4s ease both;
+}
+
+.message-card:hover{
+  background:#ffffff07;
+  border-color:#3478ff55;
+  transform:translateX(-3px);
+}
+
+.message-main{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:15px;
+}
+
+.message-title{font-size:14px;font-weight:800;margin-bottom:6px}
+
+.message-meta{
+  color:var(--muted);
+  font-size:11px;
+  line-height:2;
+  overflow-wrap:anywhere;
+}
+
+.message-preview{
+  color:#b6bbcc;
+  font-size:12px;
+  line-height:1.9;
+  margin-top:10px;
+  overflow-wrap:anywhere;
+}
+
+.pill{
+  display:inline-flex;
+  padding:5px 10px;
+  border-radius:30px;
+  font-size:10px;
+  font-weight:800;
+  white-space:nowrap;
+}
+
+.pill.new{background:#ff304f18;color:#ff6479}
+.pill.read{background:#3478ff20;color:#75a3ff}
+.pill.replied{background:#35d69b18;color:#54e5ae}
+.pill.archived{background:#ffffff12;color:#aeb3c5}
+
+.message-actions{
+  display:flex;
+  justify-content:flex-end;
+  align-items:center;
+  gap:8px;
+  margin-top:14px;
+  flex-wrap:wrap;
+}
+
+.small-btn{
+  padding:8px 13px;
+  border-radius:9px;
+  background:#ffffff09;
+  color:white;
+  border:1px solid var(--border);
+  font-size:11px;
+  transition:.2s;
+}
+
+.small-btn:hover{border-color:var(--blue);background:#3478ff18}
+
+.message-actions select{width:135px;padding:8px;font-size:11px}
+
+.empty{
+  text-align:center;
+  padding:55px 15px;
+  color:var(--muted);
+}
+
+.empty-icon{font-size:35px;margin-bottom:10px}
+
+.modal{
+  position:fixed;
+  inset:0;
+  z-index:50;
+  background:#000b;
+  display:grid;
+  place-items:center;
+  padding:18px;
+  backdrop-filter:blur(8px);
+  animation:fade .2s ease;
+}
+
+.modal-box{
+  width:min(600px,100%);
+  max-height:85vh;
+  overflow:auto;
+  background:#131622;
+  border:1px solid #ffffff15;
+  border-radius:20px;
+  padding:25px;
+  box-shadow:0 25px 90px #000b;
+  animation:rise .3s ease;
+}
+
+.modal-header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:20px;
+}
+
+.detail-item{
+  padding:13px 0;
+  border-bottom:1px solid var(--border);
+}
+
+.detail-item small{display:block;color:var(--muted);margin-bottom:5px}
+.detail-item p{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.9}
+
+.toast{
+  position:fixed;
+  bottom:25px;
+  left:25px;
+  z-index:100;
+  background:#151a25;
+  border:1px solid #35d69b55;
+  border-radius:12px;
+  padding:13px 20px;
+  box-shadow:0 10px 35px #0008;
+  transform:translateY(30px);
+  opacity:0;
+  pointer-events:none;
+  transition:.3s;
+  font-size:13px;
+}
+
+.toast.show{opacity:1;transform:translateY(0)}
+
+.mobile-menu{display:none}
+
+@keyframes rise{
+  from{opacity:0;transform:translateY(18px)}
+  to{opacity:1;transform:translateY(0)}
+}
+@keyframes appear{
+  from{opacity:0;transform:scale(.96)}
+  to{opacity:1;transform:scale(1)}
+}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+
+@media(max-width:1100px){
+  .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+
+@media(max-width:750px){
+  .sidebar{transform:translateX(100%)}
+  .sidebar.open{transform:translateX(0)}
+  .main{margin-right:0;padding:23px 17px}
+  .mobile-menu{display:inline-grid}
+  .topbar h1{font-size:20px}
+  .content-card{padding:16px}
+  .filters{width:100%}
+  .filters input,.filters select{width:100%}
+  .message-main{flex-direction:column}
+  .message-actions{justify-content:flex-start}
+}
+
+@media(max-width:420px){
+  .stats{gap:10px}
+  .stat-card{padding:14px}
+  .stat-number{font-size:25px}
+  .topbar{align-items:flex-start}
+}
+</style>
 </head>
 
 <body>
-  <main class="container">
-    <div class="brand">M.A.S.H CYVEX</div>
-    <div class="subtitle">Secure Administration Panel</div>
 
-    <section id="loginPanel" class="panel">
-      <h2>تسجيل دخول الإدارة</h2>
+<!-- LOGIN -->
+<section id="loginScreen" class="login-screen">
+  <div class="login-card">
+    <div class="logo">M.A.S.H <span>CYVEX</span></div>
+    <div class="login-subtitle">SECURE ADMINISTRATION PORTAL</div>
 
-      <form id="loginForm">
-        <label for="password">كلمة مرور الإدارة</label>
-        <input
-          id="password"
-          type="password"
-          autocomplete="current-password"
-          required
-          maxlength="512"
-          placeholder="أدخل كلمة المرور"
-        >
+    <form id="loginForm">
+      <label class="input-label" for="password">كلمة مرور الإدارة</label>
+      <input
+        id="password"
+        type="password"
+        required
+        maxlength="512"
+        autocomplete="current-password"
+        placeholder="أدخل كلمة المرور"
+      >
+      <button class="primary-btn" id="loginButton" type="submit">
+        تسجيل الدخول ←
+      </button>
+    </form>
 
-        <button id="loginButton" type="submit">
-          تسجيل الدخول
-        </button>
-      </form>
+    <div id="loginStatus" class="status" role="status"></div>
+  </div>
+</section>
 
-      <div id="loginStatus" class="status" role="status"></div>
+<!-- DASHBOARD -->
+<div id="dashboard" class="dashboard hidden">
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo">M.A.S.H <span>CYVEX</span></div>
+      <small>ADMINISTRATION SYSTEM</small>
+    </div>
+
+    <div class="nav-title">القائمة الرئيسية</div>
+
+    <div class="nav-link active" data-view="overview">
+      <span class="nav-icon">▦</span>
+      نظرة عامة
+    </div>
+
+    <div class="nav-link" data-view="messages">
+      <span class="nav-icon">✉</span>
+      رسائل التواصل
+    </div>
+
+    <div class="nav-title">النظام</div>
+
+    <div class="nav-link" id="refreshNav">
+      <span class="nav-icon">↻</span>
+      تحديث البيانات
+    </div>
+
+    <div class="sidebar-bottom">
+      <div class="admin-badge">
+        <div class="admin-avatar">M</div>
+        <div>
+          <strong style="font-size:12px">Administrator</strong>
+          <small>Secure Session Active</small>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <div>
+        <h1 id="pageTitle">لوحة التحكم</h1>
+        <p>مرحباً بك في نظام إدارة M.A.S.H CYVEX</p>
+      </div>
+
+      <div class="top-actions">
+        <button class="icon-btn mobile-menu" id="menuButton" aria-label="فتح القائمة">☰</button>
+        <button class="icon-btn" id="refreshButton" aria-label="تحديث">↻</button>
+        <button class="primary-btn" id="logoutButton">خروج</button>
+      </div>
+    </header>
+
+    <section id="overviewView">
+      <div class="stats">
+        <article class="stat-card" style="--accent:var(--red)">
+          <div class="stat-top">
+            إجمالي الرسائل
+            <span class="stat-icon">✉</span>
+          </div>
+          <div class="stat-number" id="totalCount">0</div>
+          <div class="stat-note">كل الرسائل المسجلة</div>
+        </article>
+
+        <article class="stat-card" style="--accent:var(--yellow)">
+          <div class="stat-top">
+            رسائل جديدة
+            <span class="stat-icon">●</span>
+          </div>
+          <div class="stat-number" id="newCount">0</div>
+          <div class="stat-note">تحتاج إلى مراجعة</div>
+        </article>
+
+        <article class="stat-card" style="--accent:var(--blue)">
+          <div class="stat-top">
+            تمت قراءتها
+            <span class="stat-icon">✓</span>
+          </div>
+          <div class="stat-number" id="readCount">0</div>
+          <div class="stat-note">رسائل تمت مراجعتها</div>
+        </article>
+
+        <article class="stat-card" style="--accent:var(--green)">
+          <div class="stat-top">
+            تم الرد عليها
+            <span class="stat-icon">↗</span>
+          </div>
+          <div class="stat-number" id="repliedCount">0</div>
+          <div class="stat-note">رسائل تم التعامل معها</div>
+        </article>
+      </div>
     </section>
 
-    <section id="dashboard" class="hidden">
-      <div class="topbar">
+    <section class="content-card" id="messagesView">
+      <div class="content-header">
         <div>
-          <h2>رسائل التواصل</h2>
-          <div class="meta">آخر 100 رسالة</div>
+          <h2>إدارة الرسائل</h2>
+          <p>عرض وإدارة الرسائل الواردة من نموذج التواصل</p>
         </div>
 
-        <div>
-          <button id="refreshButton" class="secondary">
-            تحديث
-          </button>
-
-          <button id="logoutButton">
-            تسجيل الخروج
-          </button>
+        <div class="filters">
+          <input id="searchInput" type="search" placeholder="ابحث بالاسم أو البريد...">
+          <select id="filterStatus" aria-label="فلترة حسب الحالة">
+            <option value="all">كل الحالات</option>
+            <option value="new">جديدة</option>
+            <option value="read">مقروءة</option>
+            <option value="replied">تم الرد</option>
+            <option value="archived">مؤرشفة</option>
+          </select>
         </div>
       </div>
 
       <div id="dashboardStatus" class="status" role="status"></div>
-      <div id="messages"></div>
+      <div id="messageList" class="message-list"></div>
     </section>
   </main>
+</div>
 
-  <script>
-    "use strict";
+<!-- DETAILS MODAL -->
+<div id="detailsModal" class="modal hidden">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h2>تفاصيل الرسالة</h2>
+      <button class="icon-btn" id="closeModal">✕</button>
+    </div>
+    <div id="detailsContent"></div>
+  </div>
+</div>
 
-    const loginPanel = document.getElementById("loginPanel");
-    const dashboard = document.getElementById("dashboard");
-    const loginForm = document.getElementById("loginForm");
-    const passwordInput = document.getElementById("password");
-    const loginButton = document.getElementById("loginButton");
-    const loginStatus = document.getElementById("loginStatus");
-    const dashboardStatus = document.getElementById("dashboardStatus");
-    const messagesContainer = document.getElementById("messages");
+<div id="toast" class="toast" role="status"></div>
 
-    const statusLabels = {
-      new: "جديدة",
-      read: "تمت قراءتها",
-      replied: "تم الرد",
-      archived: "مؤرشفة"
-    };
+<script>
+"use strict";
 
-    async function api(url, options = {}) {
-      const response = await fetch(url, {
-        credentials: "same-origin",
-        cache: "no-store",
-        ...options,
-        headers: {
-          "Accept": "application/json",
-          ...(options.body ? { "Content-Type": "application/json" } : {}),
-          ...(options.headers || {})
-        }
+const $ = id => document.getElementById(id);
+
+const loginScreen = $("loginScreen");
+const dashboard = $("dashboard");
+const loginForm = $("loginForm");
+const passwordInput = $("password");
+const loginButton = $("loginButton");
+const loginStatus = $("loginStatus");
+const dashboardStatus = $("dashboardStatus");
+const messageList = $("messageList");
+const detailsModal = $("detailsModal");
+
+let allMessages = [];
+let toastTimer;
+
+const labels = {
+  new: "جديدة",
+  read: "مقروءة",
+  replied: "تم الرد",
+  archived: "مؤرشفة"
+};
+
+async function api(url, options = {}) {
+  const response = await fetch(url, {
+    credentials: "same-origin",
+    cache: "no-store",
+    ...options,
+    headers: {
+      Accept: "application/json",
+      ...(options.body ? {"Content-Type":"application/json"} : {}),
+      ...(options.headers || {})
+    }
+  });
+
+  let data = {};
+
+  try {
+    data = await response.json();
+  } catch (_) {}
+
+  if (!response.ok) {
+    throw new Error(
+      response.status === 401
+        ? "انتهت الجلسة. سجل الدخول مرة أخرى."
+        : data.error || "حدث خطأ أثناء تنفيذ الطلب."
+    );
+  }
+
+  return data;
+}
+
+function setStatus(element, message, type = "") {
+  element.textContent = message;
+  element.className = "status " + type;
+}
+
+function notify(message) {
+  const toast = $("toast");
+  toast.textContent = message;
+  toast.classList.add("show");
+
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => {
+    toast.classList.remove("show");
+  }, 2800);
+}
+
+function showLogin() {
+  dashboard.classList.add("hidden");
+  loginScreen.classList.remove("hidden");
+  passwordInput.value = "";
+}
+
+function showDashboard() {
+  loginScreen.classList.add("hidden");
+  dashboard.classList.remove("hidden");
+}
+
+function formatDate(value) {
+  const date = new Date(value);
+
+  return Number.isNaN(date.getTime())
+    ? String(value || "")
+    : date.toLocaleString("ar-EG");
+}
+
+function updateStats() {
+  const counts = {
+    new: 0,
+    read: 0,
+    replied: 0,
+    archived: 0
+  };
+
+  allMessages.forEach(message => {
+    if (Object.prototype.hasOwnProperty.call(counts, message.status)) {
+      counts[message.status]++;
+    }
+  });
+
+  $("totalCount").textContent = allMessages.length;
+  $("newCount").textContent = counts.new;
+  $("readCount").textContent = counts.read;
+  $("repliedCount").textContent = counts.replied;
+}
+
+function createElement(tag, className, text) {
+  const element = document.createElement(tag);
+
+  if (className) element.className = className;
+  if (text !== undefined) element.textContent = text;
+
+  return element;
+}
+
+function openDetails(message) {
+  const content = $("detailsContent");
+  content.replaceChildren();
+
+  const details = [
+    ["رقم الرسالة", message.id],
+    ["الاسم", message.name],
+    ["البريد الإلكتروني", message.email],
+    ["الموضوع", message.subject || "بدون عنوان"],
+    ["تاريخ الاستلام", formatDate(message.created_at)],
+    ["الحالة", labels[message.status] || message.status],
+    ["نص الرسالة", message.message]
+  ];
+
+  details.forEach(([label, value]) => {
+    const item = createElement("div", "detail-item");
+    item.appendChild(createElement("small", "", label));
+    item.appendChild(createElement("p", "", String(value ?? "")));
+    content.appendChild(item);
+  });
+
+  detailsModal.classList.remove("hidden");
+}
+
+function createCard(message, index) {
+  const card = createElement("article", "message-card");
+  card.style.animationDelay = Math.min(index * 35, 350) + "ms";
+
+  const main = createElement("div", "message-main");
+  const info = createElement("div");
+
+  info.appendChild(
+    createElement("div", "message-title", message.subject || "بدون عنوان")
+  );
+
+  info.appendChild(
+    createElement(
+      "div",
+      "message-meta",
+      message.name + " • " + message.email + " • " + formatDate(message.created_at)
+    )
+  );
+
+  info.appendChild(
+    createElement("div", "message-preview", message.message)
+  );
+
+  main.appendChild(info);
+  main.appendChild(
+    createElement("span", "pill " + message.status, labels[message.status] || message.status)
+  );
+
+  card.appendChild(main);
+
+  const actions = createElement("div", "message-actions");
+
+  const select = document.createElement("select");
+  select.setAttribute("aria-label", "تغيير حالة الرسالة");
+
+  Object.entries(labels).forEach(([value, label]) => {
+    const option = document.createElement("option");
+    option.value = value;
+    option.textContent = label;
+    option.selected = message.status === value;
+    select.appendChild(option);
+  });
+
+  const save = createElement("button", "small-btn", "حفظ الحالة");
+  const details = createElement("button", "small-btn", "عرض التفاصيل");
+
+  details.addEventListener("click", () => openDetails(message));
+
+  save.addEventListener("click", async () => {
+    save.disabled = true;
+
+    try {
+      await api("/api/admin/update-status", {
+        method: "POST",
+        body: JSON.stringify({
+          id: message.id,
+          status: select.value
+        })
       });
 
-      let data = {};
+      message.status = select.value;
+      updateStats();
+      renderMessages();
+      notify("تم تحديث حالة الرسالة بنجاح");
+    } catch (error) {
+      setStatus(dashboardStatus, error.message, "error");
 
-      try {
-        data = await response.json();
-      } catch (_) {}
-
-      if (!response.ok) {
-        throw new Error(
-          response.status === 401
-            ? "انتهت الجلسة أو يلزم تسجيل الدخول."
-            : data.error || "حدث خطأ في الاتصال."
-        );
+      if (error.message.includes("انتهت الجلسة")) {
+        showLogin();
       }
+    } finally {
+      save.disabled = false;
+    }
+  });
 
-      return data;
+  actions.appendChild(select);
+  actions.appendChild(save);
+  actions.appendChild(details);
+  card.appendChild(actions);
+
+  return card;
+}
+
+function renderMessages() {
+  const query = $("searchInput").value.trim().toLowerCase();
+  const filter = $("filterStatus").value;
+
+  const filtered = allMessages.filter(message => {
+    const matchesQuery =
+      String(message.name || "").toLowerCase().includes(query) ||
+      String(message.email || "").toLowerCase().includes(query) ||
+      String(message.subject || "").toLowerCase().includes(query);
+
+    const matchesStatus =
+      filter === "all" || message.status === filter;
+
+    return matchesQuery && matchesStatus;
+  });
+
+  messageList.replaceChildren();
+
+  if (!filtered.length) {
+    const empty = createElement("div", "empty");
+    empty.appendChild(createElement("div", "empty-icon", "✉"));
+    empty.appendChild(createElement("div", "", "لا توجد رسائل مطابقة."));
+    messageList.appendChild(empty);
+    return;
+  }
+
+  const fragment = document.createDocumentFragment();
+
+  filtered.forEach((message, index) => {
+    fragment.appendChild(createCard(message, index));
+  });
+
+  messageList.appendChild(fragment);
+}
+
+async function loadMessages() {
+  setStatus(dashboardStatus, "جارٍ تحميل البيانات...");
+
+  try {
+    const data = await api("/api/admin/messages");
+
+    if (!Array.isArray(data.messages)) {
+      throw new Error("استجابة الخادم غير صحيحة.");
     }
 
-    function showStatus(element, message, type = "") {
-      element.textContent = message;
-      element.className = "status " + type;
+    allMessages = data.messages;
+
+    updateStats();
+    renderMessages();
+
+    setStatus(
+      dashboardStatus,
+      "تم تحميل " + allMessages.length + " رسالة.",
+      "success"
+    );
+  } catch (error) {
+    setStatus(dashboardStatus, error.message, "error");
+
+    if (error.message.includes("انتهت الجلسة")) {
+      showLogin();
     }
+  }
+}
 
-    function showDashboard() {
-      loginPanel.classList.add("hidden");
-      dashboard.classList.remove("hidden");
-    }
+loginForm.addEventListener("submit", async event => {
+  event.preventDefault();
 
-    function showLogin() {
-      dashboard.classList.add("hidden");
-      loginPanel.classList.remove("hidden");
-    }
+  const password = passwordInput.value;
 
-    function createElement(tag, className, text) {
-      const element = document.createElement(tag);
+  if (!password) return;
 
-      if (className) element.className = className;
-      if (text !== undefined) element.textContent = text;
+  loginButton.disabled = true;
+  setStatus(loginStatus, "جارٍ التحقق من بيانات الدخول...");
 
-      return element;
-    }
-
-    function formatDate(value) {
-      const date = new Date(value);
-
-      if (Number.isNaN(date.getTime())) {
-        return String(value || "");
-      }
-
-      return date.toLocaleString("ar-EG");
-    }
-
-    function createMessageCard(message) {
-      const card = createElement("article", "message");
-
-      card.appendChild(
-        createElement("h3", "", message.subject || "بدون عنوان")
-      );
-
-      const meta = createElement("div", "meta");
-
-      meta.textContent =
-        "رقم الرسالة: " + message.id +
-        " | الاسم: " + message.name +
-        " | البريد: " + message.email +
-        " | التاريخ: " + formatDate(message.created_at);
-
-      card.appendChild(meta);
-
-      card.appendChild(
-        createElement("p", "", message.message)
-      );
-
-      const actions = createElement("div", "message-actions");
-
-      const select = document.createElement("select");
-      select.setAttribute("aria-label", "حالة الرسالة");
-
-      Object.entries(statusLabels).forEach(([value, label]) => {
-        const option = document.createElement("option");
-        option.value = value;
-        option.textContent = label;
-        option.selected = message.status === value;
-        select.appendChild(option);
-      });
-
-      const saveButton = createElement("button", "", "حفظ الحالة");
-
-      saveButton.addEventListener("click", async () => {
-        saveButton.disabled = true;
-
-        try {
-          await api("/api/admin/update-status", {
-            method: "POST",
-            body: JSON.stringify({
-              id: message.id,
-              status: select.value
-            })
-          });
-
-          message.status = select.value;
-
-          showStatus(
-            dashboardStatus,
-            "تم تحديث حالة الرسالة رقم " + message.id,
-            "success"
-          );
-        } catch (error) {
-          showStatus(dashboardStatus, error.message, "error");
-
-          if (error.message.includes("انتهت الجلسة")) {
-            showLogin();
-          }
-        } finally {
-          saveButton.disabled = false;
-        }
-      });
-
-      actions.appendChild(select);
-      actions.appendChild(saveButton);
-      card.appendChild(actions);
-
-      return card;
-    }
-
-    async function loadMessages() {
-      showStatus(dashboardStatus, "جارٍ تحميل الرسائل...");
-      messagesContainer.replaceChildren();
-
-      try {
-        const data = await api("/api/admin/messages");
-
-        if (!Array.isArray(data.messages) || data.messages.length === 0) {
-          messagesContainer.appendChild(
-            createElement("div", "panel empty", "لا توجد رسائل حتى الآن.")
-          );
-
-          showStatus(dashboardStatus, "");
-          return;
-        }
-
-        const fragment = document.createDocumentFragment();
-
-        data.messages.forEach(message => {
-          fragment.appendChild(createMessageCard(message));
-        });
-
-        messagesContainer.appendChild(fragment);
-
-        showStatus(
-          dashboardStatus,
-          "عدد الرسائل المعروضة: " + data.messages.length,
-          "success"
-        );
-
-      } catch (error) {
-        showStatus(dashboardStatus, error.message, "error");
-
-        if (error.message.includes("انتهت الجلسة")) {
-          showLogin();
-        }
-      }
-    }
-
-    loginForm.addEventListener("submit", async event => {
-      event.preventDefault();
-
-      if (!passwordInput.value) return;
-
-      loginButton.disabled = true;
-      showStatus(loginStatus, "جارٍ التحقق...");
-
-      try {
-        await api("/api/admin/login", {
-          method: "POST",
-          body: JSON.stringify({
-            password: passwordInput.value
-          })
-        });
-
-        passwordInput.value = "";
-        showDashboard();
-        await loadMessages();
-
-      } catch (error) {
-        showStatus(loginStatus, error.message, "error");
-      } finally {
-        loginButton.disabled = false;
-      }
+  try {
+    await api("/api/admin/login", {
+      method: "POST",
+      body: JSON.stringify({password})
     });
 
-    document.getElementById("refreshButton")
-      .addEventListener("click", loadMessages);
+    passwordInput.value = "";
+    showDashboard();
+    await loadMessages();
+    notify("تم تسجيل الدخول بنجاح");
+  } catch (error) {
+    setStatus(loginStatus, error.message, "error");
+  } finally {
+    loginButton.disabled = false;
+  }
+});
 
-    document.getElementById("logoutButton")
-      .addEventListener("click", async () => {
-        try {
-          await api("/api/admin/logout", {
-            method: "POST",
-            body: JSON.stringify({})
-          });
-        } catch (_) {}
+async function logout() {
+  try {
+    await api("/api/admin/logout", {
+      method: "POST",
+      body: JSON.stringify({})
+    });
+  } catch (_) {}
 
-        showLogin();
-        messagesContainer.replaceChildren();
-        showStatus(loginStatus, "تم تسجيل الخروج.", "success");
+  allMessages = [];
+  messageList.replaceChildren();
+  showLogin();
+  setStatus(loginStatus, "تم تسجيل الخروج.");
+}
+
+$("logoutButton").addEventListener("click", logout);
+$("refreshButton").addEventListener("click", loadMessages);
+$("refreshNav").addEventListener("click", loadMessages);
+
+$("searchInput").addEventListener("input", renderMessages);
+$("filterStatus").addEventListener("change", renderMessages);
+
+$("closeModal").addEventListener("click", () => {
+  detailsModal.classList.add("hidden");
+});
+
+detailsModal.addEventListener("click", event => {
+  if (event.target === detailsModal) {
+    detailsModal.classList.add("hidden");
+  }
+});
+
+$("menuButton").addEventListener("click", () => {
+  $("sidebar").classList.toggle("open");
+});
+
+document.querySelectorAll("[data-view]").forEach(link => {
+  link.addEventListener("click", () => {
+    document.querySelectorAll("[data-view]").forEach(item => {
+      item.classList.remove("active");
+    });
+
+    link.classList.add("active");
+
+    const view = link.dataset.view;
+
+    $("pageTitle").textContent =
+      view === "messages" ? "رسائل التواصل" : "لوحة التحكم";
+
+    $("overviewView").classList.toggle("hidden", view !== "overview");
+
+    $("sidebar").classList.remove("open");
+
+    if (view === "messages") {
+      $("messagesView").scrollIntoView({
+        behavior: "smooth",
+        block: "start"
       });
-
-    async function checkSession() {
-      try {
-        await api("/api/admin/session");
-        showDashboard();
-        await loadMessages();
-      } catch (_) {
-        showLogin();
-      }
+    } else {
+      window.scrollTo({
+        top: 0,
+        behavior: "smooth"
+      });
     }
+  });
+});
 
-    checkSession();
-  </script>
+async function checkSession() {
+  try {
+    await api("/api/admin/session");
+    showDashboard();
+    await loadMessages();
+  } catch (_) {
+    showLogin();
+  }
+}
+
+checkSession();
+</script>
+
 </body>
 </html>
