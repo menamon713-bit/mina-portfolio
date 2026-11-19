@@ -1,7 +1,6 @@
 // ================================================
 // M.A.S.H CYVEX — Main JavaScript
 // Navigation / Theme / Language / Modals / Contact
-// Contact Form API Integration
 // ================================================
 
 (function () {
@@ -16,9 +15,6 @@
   const menuBtn = document.getElementById("menuBtn");
   const sidebar = document.getElementById("sidebar");
   const overlay = document.getElementById("overlay");
-
-  const contactForm = document.getElementById("contactForm");
-  const formStatus = document.getElementById("formStatus");
 
   const allowedPages = [
     "home",
@@ -38,7 +34,6 @@
   let previousFocus = null;
   let lastContactAction = 0;
   let revealObserver = null;
-  let formSubmitting = false;
 
   const reducedMotion = window.matchMedia(
     "(prefers-reduced-motion: reduce)"
@@ -752,129 +747,6 @@
       "mailto:" + CONTACT.email +
       "?subject=" + subject +
       "&body=" + bodyText;
-  }
-
-  // ================================================
-  // Contact Form API
-  // ================================================
-
-  function setFormStatus(message, type) {
-    if (!formStatus) return;
-
-    formStatus.textContent = message;
-    formStatus.setAttribute("data-status", type || "info");
-    formStatus.setAttribute("role", type === "error" ? "alert" : "status");
-  }
-
-  function setFormLoading(loading) {
-    if (!contactForm) return;
-
-    const submitButton = contactForm.querySelector(
-      'button[type="submit"], input[type="submit"]'
-    );
-
-    if (!submitButton) return;
-
-    submitButton.disabled = loading;
-    submitButton.setAttribute("aria-busy", String(loading));
-
-    if (submitButton.tagName === "BUTTON") {
-      if (!submitButton.dataset.originalText) {
-        submitButton.dataset.originalText = submitButton.textContent;
-      }
-
-      submitButton.textContent = loading
-        ? translations[currentLanguage].formSending
-        : submitButton.dataset.originalText;
-    }
-  }
-
-  if (contactForm) {
-    contactForm.addEventListener("submit", async function (event) {
-      event.preventDefault();
-
-      if (formSubmitting) return;
-
-      if (!contactForm.reportValidity()) {
-        setFormStatus(
-          translations[currentLanguage].formInvalid,
-          "error"
-        );
-        return;
-      }
-
-      const formData = new FormData(contactForm);
-
-      const payload = {
-        name: String(formData.get("name") || "").trim(),
-        email: String(formData.get("email") || "").trim(),
-        subject: String(formData.get("subject") || "").trim(),
-        message: String(formData.get("message") || "").trim()
-      };
-
-      if (
-        !payload.name ||
-        !payload.email ||
-        !payload.subject ||
-        !payload.message
-      ) {
-        setFormStatus(
-          translations[currentLanguage].formInvalid,
-          "error"
-        );
-        return;
-      }
-
-      formSubmitting = true;
-      setFormLoading(true);
-
-      setFormStatus(
-        translations[currentLanguage].formSending,
-        "info"
-      );
-
-      try {
-        const response = await fetch("/api/contact", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Accept": "application/json"
-          },
-          body: JSON.stringify(payload)
-        });
-
-        let result = {};
-
-        try {
-          result = await response.json();
-        } catch {
-          result = {};
-        }
-
-        if (!response.ok || result.success !== true) {
-          throw new Error("CONTACT_SUBMISSION_FAILED");
-        }
-
-        contactForm.reset();
-
-        setFormStatus(
-          translations[currentLanguage].formSuccess,
-          "success"
-        );
-
-      } catch (error) {
-        const message =
-          error && error.message === "CONTACT_SUBMISSION_FAILED"
-            ? translations[currentLanguage].formError
-            : translations[currentLanguage].formNetworkError;
-
-        setFormStatus(message, "error");
-
-      } finally {
-        formSubmitting = false;
-        setFormLoading(false);
-      }
-    });
   }
 
   // ================================================
