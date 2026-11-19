@@ -118,7 +118,9 @@ a {
 }
 
 button:focus-visible,
-a:focus-visible {
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible {
   outline: 3px solid var(--primary);
   outline-offset: 4px;
 }
@@ -342,7 +344,7 @@ html[lang="en"] .project-category {
   border: 1px solid var(--border);
   border-radius: 12px;
   cursor: pointer;
-  z-index: 1200; /* تأكد إنه فوق أي عنصر */
+  z-index: 1200;
   position: relative;
 }
 
@@ -368,36 +370,31 @@ html[lang="en"] .project-category {
   overflow-y: auto;
   background: var(--surface);
   border-inline-end: 1px solid var(--border);
-  
-  /* إخفاء المنيو باستخدام right بدل transform عشان مشكلة كروم */
-  right: -100%; 
+  right: -100%;
   transition: right 0.3s ease-in-out;
 }
 
-/* في الوضع العربي (RTL) المنيو بتيجي من اليمين */
 html[dir="rtl"] .sidebar {
   right: -100%;
   left: auto;
 }
 
-/* لما الجافاسكريبت يضيف كلاس open، المنيو تظهر */
 .sidebar.open {
   right: 0 !important;
 }
 
-/* في الشاشات الكبيرة (الديسكتوب) المنيو ثابتة */
 @media (min-width: 1000px) {
   .sidebar {
     right: 0 !important;
     inset-inline-start: 0;
     transform: none;
   }
+
   html[dir="rtl"] .sidebar {
     right: 0 !important;
   }
 }
 
-/* باقي تنسيقات المنيو */
 .sidebar-brand {
   display: flex;
   flex-direction: column;
@@ -1356,6 +1353,127 @@ html[dir="rtl"] .sidebar {
   font-size: 0.82rem;
 }
 
+/* ---------- Contact Form ---------- */
+
+.contact-form-section {
+  margin-top: 25px;
+  padding: clamp(20px, 5vw, 32px);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+
+.contact-form-heading {
+  margin-bottom: 22px;
+}
+
+.contact-form-heading h2 {
+  margin-bottom: 7px;
+  font-size: 1.25rem;
+}
+
+.contact-form-heading p {
+  color: var(--muted);
+  font-size: 0.84rem;
+}
+
+.contact-form {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 17px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.form-group label {
+  color: var(--text);
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
+.form-group input,
+.form-group textarea {
+  width: 100%;
+  min-width: 0;
+  padding: 13px 15px;
+  color: var(--text);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-strong);
+  border-radius: 11px;
+  outline: none;
+  font-size: 0.87rem;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.form-group input {
+  min-height: 48px;
+}
+
+.form-group textarea {
+  min-height: 145px;
+  resize: vertical;
+  line-height: 1.8;
+}
+
+.form-group input::placeholder,
+.form-group textarea::placeholder {
+  color: var(--muted);
+  opacity: 0.8;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-soft);
+}
+
+.form-group input:invalid:not(:placeholder-shown),
+.form-group textarea:invalid:not(:placeholder-shown) {
+  border-color: #e45b69;
+}
+
+.form-group-full {
+  grid-column: 1 / -1;
+}
+
+.form-submit {
+  width: 100%;
+  min-height: 49px;
+  margin-top: 3px;
+}
+
+.form-submit:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+  transform: none;
+}
+
+.form-status {
+  min-height: 24px;
+  margin-top: 12px;
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.7;
+}
+
+.form-status.success {
+  color: var(--success);
+}
+
+.form-status.error {
+  color: #ff6478;
+}
+
+.form-status.loading {
+  color: var(--primary);
+}
+
 /* ---------- Footer ---------- */
 
 .main-footer {
@@ -1545,8 +1663,6 @@ html[dir="rtl"] .sidebar {
   transform: translateY(0);
 }
 
-/* Keep content visible when scripting is disabled */
-
 @media (scripting: none) {
   .reveal {
     opacity: 1;
@@ -1613,6 +1729,19 @@ html[dir="rtl"] .sidebar {
 
   .contact-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .contact-form {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .form-group-full {
+    grid-column: 1 / -1;
+  }
+
+  .form-submit {
+    width: fit-content;
+    min-width: 180px;
   }
 
   .main-footer {
@@ -1729,5 +1858,10 @@ html[dir="rtl"] .sidebar {
   .bg-orb,
   .bg-glow {
     animation: none !important;
+  }
+
+  .form-group input,
+  .form-group textarea {
+    transition: none;
   }
 }
