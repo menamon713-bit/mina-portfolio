@@ -1,595 +1,946 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="ar" dir="rtl" data-theme="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   <title>M.A.S.H CYVEX | Web Developer & Cybersecurity Researcher</title>
-  <meta name="description" content="M.A.S.H CYVEX — مطور واجهات ويب وباحث في الأمن السيبراني من سوهاج، مصر. استكشف المشاريع والمهارات في تطوير الويب واختبار أمان التطبيقات.">
+  <meta name="description" content="M.A.S.H CYVEX — مطور واجهات ويب وباحث في الأمن السيبراني من سوهاج، مصر. استكشف المشاريع والمهارات والأعمال التقنية.">
   <meta name="author" content="M.A.S.H CYVEX">
-  <meta name="robots" content="index, follow, max-image-preview:large">
+  <meta name="robots" content="index, follow">
   <meta name="googlebot" content="index, follow">
   <meta name="theme-color" content="#070b14">
-  <meta name="color-scheme" content="dark light">
   <meta name="application-name" content="M.A.S.H CYVEX">
-
+  <meta name="color-scheme" content="dark light">
   <link rel="canonical" href="https://mina-portfolio-red.vercel.app/">
 
-  <!-- Open Graph -->
   <meta property="og:type" content="website">
+  <meta property="og:title" content="M.A.S.H CYVEX | Developer Portfolio">
+  <meta property="og:description" content="Portfolio of M.A.S.H CYVEX — Web Developer & Cybersecurity Researcher.">
+  <meta property="og:url" content="https://mina-portfolio-red.vercel.app/">
+  <meta property="og:site_name" content="M.A.S.H CYVEX">
   <meta property="og:locale" content="ar_EG">
   <meta property="og:locale:alternate" content="en_US">
-  <meta property="og:site_name" content="M.A.S.H CYVEX">
-  <meta property="og:url" content="https://mina-portfolio-red.vercel.app/">
-  <meta property="og:title" content="M.A.S.H CYVEX | Web Developer & Cybersecurity">
-  <meta property="og:description" content="الموقع الشخصي لـ M.A.S.H CYVEX — تطوير الويب، الأمن السيبراني، المشاريع والمهارات.">
-  <meta property="og:image" content="https://mina-portfolio-red.vercel.app/mina.png">
-  <meta property="og:image:alt" content="M.A.S.H CYVEX Portfolio">
 
-  <!-- Twitter -->
-  <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="M.A.S.H CYVEX | Developer & Cybersecurity">
-  <meta name="twitter:description" content="Front-End Development, Cybersecurity, Security Research and Projects.">
-  <meta name="twitter:image" content="https://mina-portfolio-red.vercel.app/mina.png">
-  <meta name="twitter:image:alt" content="M.A.S.H CYVEX Portfolio">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="M.A.S.H CYVEX | Developer Portfolio">
+  <meta name="twitter:description" content="Web Developer & Cybersecurity Researcher Portfolio.">
 
-  <!-- Favicon -->
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%23ff304b'/><text x='50' y='58' text-anchor='middle' font-family='Arial' font-size='35' font-weight='900' fill='white'>M.A.S.H</text></svg>">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%23070b14'/%3E%3Ctext x='50' y='65' font-size='43' text-anchor='middle' font-family='Arial' font-weight='bold' fill='%23ff304b'%3EM%3C/text%3E%3C/svg%3E">
 
-  <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 
   <link rel="stylesheet" href="style.css">
 
-  <!-- Structured Data -->
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
     "@graph": [
       {
         "@type": "Person",
-        "@id": "https://mina-portfolio-red.vercel.app/#person",
         "name": "M.A.S.H CYVEX",
         "url": "https://mina-portfolio-red.vercel.app/",
-        "image": "https://mina-portfolio-red.vercel.app/mina.png",
-        "jobTitle": "Front-End Developer and Cybersecurity Researcher",
-        "description": "Front-End Developer and Cybersecurity Researcher interested in web security, penetration testing and software development.",
+        "email": "minadeveloper43@gmail.com",
+        "telephone": "+201554416094",
+        "jobTitle": "Web Developer and Cybersecurity Researcher",
         "address": {
           "@type": "PostalAddress",
           "addressLocality": "Sohag",
           "addressCountry": "EG"
         },
-        "knowsAbout": [
-          "Front-End Development",
-          "Web Application Security",
-          "Penetration Testing",
-          "Python",
-          "Linux",
-          "OSINT",
-          "Network Security"
-        ],
         "sameAs": [
           "https://github.com/menamon713-bit"
         ]
       },
       {
         "@type": "WebSite",
-        "@id": "https://mina-portfolio-red.vercel.app/#website",
-        "url": "https://mina-portfolio-red.vercel.app/",
         "name": "M.A.S.H CYVEX",
-        "description": "Personal portfolio of M.A.S.H CYVEX.",
-        "inLanguage": ["ar", "en"],
-        "publisher": {
-          "@id": "https://mina-portfolio-red.vercel.app/#person"
-        }
+        "url": "https://mina-portfolio-red.vercel.app/"
       },
       {
         "@type": "WebPage",
-        "@id": "https://mina-portfolio-red.vercel.app/#webpage",
+        "name": "M.A.S.H CYVEX Portfolio",
         "url": "https://mina-portfolio-red.vercel.app/",
-        "name": "M.A.S.H CYVEX | Web Developer & Cybersecurity",
-        "description": "Portfolio showcasing web development projects, cybersecurity research and technical skills.",
-        "inLanguage": "ar",
-        "isPartOf": {
-          "@id": "https://mina-portfolio-red.vercel.app/#website"
-        },
-        "about": {
-          "@id": "https://mina-portfolio-red.vercel.app/#person"
-        }
+        "inLanguage": ["ar", "en"]
       }
     ]
   }
   </script>
+
+  <script src="script.js" defer></script>
 </head>
 
 <body>
-  <!-- شاشة البداية -->
+
+  <!-- Intro -->
   <div class="intro" id="intro" aria-hidden="true">
-    <div class="intro-bg"></div>
-    <div class="intro-name" id="introName" dir="ltr"></div>
-    <div class="intro-line"></div>
-    <div class="intro-dot"></div>
-    <div class="intro-subtitle">DEVELOPER & CYBERSECURITY</div>
+    <div class="intro-content">
+      <div class="intro-name" id="introName"></div>
+      <div class="intro-line"></div>
+      <p class="intro-subtitle">WEB DEVELOPMENT × CYBERSECURITY</p>
+    </div>
   </div>
 
-  <!-- خلفية الموقع -->
+  <!-- Background -->
   <div class="bg-anim" aria-hidden="true">
-    <div class="grid-lines"></div>
-    <div class="orb orb-1"></div>
-    <div class="orb orb-2"></div>
-    <div class="orb orb-3"></div>
+    <div class="bg-grid"></div>
+    <div class="bg-orb bg-orb-one"></div>
+    <div class="bg-orb bg-orb-two"></div>
   </div>
 
-  <!-- أدوات التحكم -->
-  <button class="theme-btn" id="themeToggle" type="button" title="تغيير المظهر" aria-label="تغيير المظهر">🌙</button>
+  <!-- Mobile Header -->
+  <header class="topbar">
+    <button
+      class="menu-btn"
+      id="menuBtn"
+      type="button"
+      aria-label="فتح القائمة"
+      aria-controls="sidebar"
+      aria-expanded="false"
+    >
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
 
-  <button class="language-btn" id="languageToggle" type="button" aria-label="Switch language" title="Switch language">EN</button>
+    <a href="#home" class="topbar-logo" data-page="home" aria-label="M.A.S.H CYVEX Home">
+      M.A.S.H <span>CYVEX</span>
+    </a>
+  </header>
 
-  <div class="layout">
-    <!-- الشريط العلوي للموبايل -->
-    <header class="topbar">
-      <a class="topbar-logo" href="#home" aria-label="M.A.S.H CYVEX Home">
-        M.A.S.H CYVEX
+  <!-- Sidebar Overlay -->
+  <div class="sidebar-overlay" id="overlay"></div>
+
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar" aria-label="Main navigation">
+
+    <div class="sidebar-brand">
+      <a href="#home" class="brand-logo" data-page="home">
+        M.A.S.H<span>CYVEX</span>
+      </a>
+      <span class="brand-caption" data-i18n="brandCaption">DEVELOPER PORTFOLIO</span>
+    </div>
+
+    <div class="profile-card">
+      <div class="profile-image-wrap">
+        <img
+          src="mina.png"
+          alt="M.A.S.H CYVEX profile"
+          class="profile-image"
+          loading="lazy"
+          onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+        >
+        <div class="profile-fallback" aria-hidden="true">M</div>
+      </div>
+
+      <h2 class="profile-name">M.A.S.H CYVEX</h2>
+      <p class="profile-role" data-i18n="profileRole">مطور ويب وباحث أمن سيبراني</p>
+
+      <div class="profile-status">
+        <span class="status-dot"></span>
+        <span data-i18n="available">متاح للمشاريع</span>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav" aria-label="Primary navigation">
+
+      <a href="#home" class="nav-link active" data-page="home">
+        <span class="nav-icon" aria-hidden="true">⌂</span>
+        <span data-i18n="navHome">الرئيسية</span>
       </a>
 
-      <button class="topbar-menu" id="menuBtn" type="button" aria-label="فتح القائمة" aria-expanded="false" aria-controls="sidebar">☰</button>
-    </header>
+      <a href="#about" class="nav-link" data-page="about">
+        <span class="nav-icon" aria-hidden="true">◉</span>
+        <span data-i18n="navAbout">من أنا</span>
+      </a>
 
-    <div class="sidebar-overlay" id="overlay"></div>
+      <a href="#skills" class="nav-link" data-page="skills">
+        <span class="nav-icon" aria-hidden="true">⌘</span>
+        <span data-i18n="navSkills">المهارات</span>
+      </a>
 
-    <!-- القائمة الجانبية -->
-    <aside class="sidebar" id="sidebar">
-      <div class="sidebar-profile">
-        <div class="sidebar-avatar">
-          <img src="mina.png" alt="الصورة الشخصية لـ M.A.S.H CYVEX" width="95" height="95" data-fallback="initials">
+      <a href="#projects" class="nav-link" data-page="projects">
+        <span class="nav-icon" aria-hidden="true">▣</span>
+        <span data-i18n="navProjects">المشاريع</span>
+      </a>
+
+      <a href="#contact" class="nav-link" data-page="contact">
+        <span class="nav-icon" aria-hidden="true">✉</span>
+        <span data-i18n="navContact">تواصل معي</span>
+      </a>
+
+    </nav>
+
+    <div class="sidebar-bottom">
+      <a
+        href="./MASH_CV.pdf"
+        class="cv-btn"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        <span aria-hidden="true">↓</span>
+        <span data-i18n="downloadCV">تحميل السيرة الذاتية</span>
+      </a>
+
+      <div class="sidebar-social">
+        <a
+          href="https://github.com/menamon713-bit"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="GitHub"
+        >GH</a>
+
+        <a
+          href="mailto:minadeveloper43@gmail.com"
+          aria-label="Email"
+        >@</a>
+
+        <a
+          href="https://wa.me/201554416094"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="WhatsApp"
+        >WA</a>
+      </div>
+
+      <p class="sidebar-copyright">© 2026 M.A.S.H CYVEX</p>
+    </div>
+
+  </aside>
+
+  <!-- Main -->
+  <main class="main-content" id="mainContent">
+
+    <!-- Home -->
+    <section class="page active" id="home" aria-labelledby="homeTitle">
+
+      <div class="hero-section reveal">
+
+        <div class="hero-label">
+          <span class="status-dot"></span>
+          <span data-i18n="heroLabel">مرحباً بك في مساحتي التقنية</span>
         </div>
 
-        <div class="sidebar-name">M.A.S.H CYVEX</div>
+        <p class="hero-greeting" data-i18n="heroGreeting">أهلاً، أنا</p>
 
-        <p class="sidebar-role" data-i18n="sidebarRole">مطور ويب وباحث في الأمن السيبراني</p>
-
-        <span class="sidebar-status" data-i18n="availability">متاح للعمل</span>
-
-        <a href="./MASH_CV.pdf" target="_blank" rel="noopener noreferrer" class="cv-btn" title="تحميل السيرة الذاتية" data-i18n="downloadCV">تحميل السيرة الذاتية 📄</a>
-      </div>
-
-      <nav class="sidebar-nav" aria-label="التنقل الرئيسي">
-        <a class="nav-btn active" href="#home" data-page="home">
-          <span class="icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24">
-              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-              <polyline points="9 22 9 12 15 12 15 22"/>
-            </svg>
-          </span>
-          <span data-i18n="navHome">الرئيسية</span>
-        </a>
-
-        <a class="nav-btn" href="#about" data-page="about">
-          <span class="icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24">
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-              <circle cx="12" cy="7" r="4"/>
-            </svg>
-          </span>
-          <span data-i18n="navAbout">عني</span>
-        </a>
-
-        <a class="nav-btn" href="#skills" data-page="skills">
-          <span class="icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24">
-              <polyline points="16 18 22 12 16 6"/>
-              <polyline points="8 6 2 12 8 18"/>
-            </svg>
-          </span>
-          <span data-i18n="navSkills">المهارات</span>
-        </a>
-
-        <a class="nav-btn" href="#projects" data-page="projects">
-          <span class="icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24">
-              <rect x="3" y="3" width="7" height="7"/>
-              <rect x="14" y="3" width="7" height="7"/>
-              <rect x="14" y="14" width="7" height="7"/>
-              <rect x="3" y="14" width="7" height="7"/>
-            </svg>
-          </span>
-          <span data-i18n="navProjects">المشاريع</span>
-        </a>
-
-        <a class="nav-btn" href="#contact" data-page="contact">
-          <span class="icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24">
-              <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
-            </svg>
-          </span>
-          <span data-i18n="navContact">تواصل معي</span>
-        </a>
-      </nav>
-
-      <div class="sidebar-footer">
-        <p>Made with 🖤 by <span>M.A.S.H CYVEX</span></p>
-      </div>
-    </aside>
-
-    <!-- المحتوى الرئيسي -->
-    <main class="main">
-      <!-- الرئيسية -->
-      <section class="page active" id="home" aria-labelledby="home-title">
-        <span class="page-label reveal" data-i18n="homeLabel">— أهلاً بك —</span>
-
-        <h1 class="page-title reveal" id="home-title">
-          <span data-i18n="homeIntro">أنا</span>
-          <span class="gradient">M.A.S.H CYVEX</span>
-          <br>
-          <span data-i18n="homeTitle">مطور ويب وباحث في الأمن السيبراني</span>
+        <h1 class="hero-title" id="homeTitle">
+          M.A.S.H <span>CYVEX</span>
         </h1>
 
-        <p class="page-desc reveal" data-i18n="homeDescription">
-          أعمل على تطوير واجهات الويب، وأهتم بالأمن السيبراني واختبار الاختراق الأخلاقي واكتشاف الثغرات الأمنية.
-        </p>
-
-        <div class="stats-grid reveal">
-          <div class="stat">
-            <div class="stat-num">9</div>
-            <div class="stat-label" data-i18n="statVulnerabilities">ثغرات مكتشفة</div>
-          </div>
-          <div class="stat">
-            <div class="stat-num">1+</div>
-            <div class="stat-label" data-i18n="statBounty">مكافأة أمنية</div>
-          </div>
-          <div class="stat">
-            <div class="stat-num">5</div>
-            <div class="stat-label" data-i18n="statProjects">مشاريع</div>
-          </div>
-        </div>
-
-        <div class="card reveal">
-          <p data-i18n="homeParagraphOne">
-            بدأت رحلتي في <strong>الأمن السيبراني</strong> من سن صغير، وأركز على <strong>الاختراق الأخلاقي</strong> واكتشاف الثغرات الأمنية.
-          </p>
-          <p data-i18n="homeParagraphTwo">
-            هدفي هو المساهمة في تحسين أمان التطبيقات والأنظمة من خلال <strong>اختبارات الاختراق المصرّح بها</strong> وبرامج صيد الثغرات.
-          </p>
-        </div>
-      </section>
-
-      <!-- عني -->
-      <section class="page" id="about" aria-labelledby="about-title">
-        <span class="page-label reveal" data-i18n="aboutLabel">— عني —</span>
-
-        <h2 class="page-title reveal" id="about-title">
-          <span data-i18n="aboutHeading">مين هو</span>
-          <span class="gradient">M.A.S.H CYVEX؟</span>
+        <h2 class="hero-subtitle" data-i18n="heroSubtitle">
+          مطور واجهات ويب وباحث في الأمن السيبراني
         </h2>
 
-        <p class="page-desc reveal" data-i18n="aboutDescription">
-          نبذة عن رحلتي في تطوير الويب والأمن السيبراني.
+        <p class="hero-description" data-i18n="heroDescription">
+          أعمل على بناء تجارب ويب حديثة، وأهتم بأمن التطبيقات والشبكات واكتشاف الثغرات ومعالجتها.
         </p>
 
-        <div class="card reveal">
-          <p id="aboutName" data-i18n="aboutParagraphOne">
-            أنا باحث أمني مستقل من <strong>سوهاج، مصر</strong>. تعلمت الأمن السيبراني بنفسي، وعندي شغف كبير بـ <strong>الـ Red Teaming</strong> وأمن تطبيقات الويب.
+        <div class="hero-actions">
+          <a href="#projects" class="primary-btn" data-page="projects">
+            <span data-i18n="viewProjects">استكشف مشاريعي</span>
+            <span aria-hidden="true">↗</span>
+          </a>
+
+          <a href="#contact" class="secondary-btn" data-page="contact">
+            <span data-i18n="contactMe">تواصل معي</span>
+          </a>
+        </div>
+
+        <div class="hero-meta">
+          <span>📍 <span data-i18n="location">سوهاج، مصر</span></span>
+          <span>⌘ <span data-i18n="englishLevel">الإنجليزية: متوسط</span></span>
+        </div>
+
+      </div>
+
+      <div class="stats-grid reveal">
+
+        <article class="stat-card">
+          <span class="stat-number">9</span>
+          <span class="stat-label" data-i18n="statOne">ثغرات تم اكتشافها</span>
+        </article>
+
+        <article class="stat-card">
+          <span class="stat-number">1+</span>
+          <span class="stat-label" data-i18n="statTwo">مشاركة في Bug Bounty</span>
+        </article>
+
+        <article class="stat-card">
+          <span class="stat-number">5</span>
+          <span class="stat-label" data-i18n="statThree">مشاريع تقنية</span>
+        </article>
+
+      </div>
+
+      <div class="home-highlight reveal">
+        <div class="section-heading">
+          <span class="section-kicker" data-i18n="focusKicker">مجالات العمل</span>
+          <h2 data-i18n="focusTitle">ما الذي أركز عليه؟</h2>
+        </div>
+
+        <div class="focus-grid">
+
+          <article class="focus-card">
+            <div class="focus-icon" aria-hidden="true">⌨</div>
+            <h3 data-i18n="focusWebTitle">تطوير الويب</h3>
+            <p data-i18n="focusWebText">تصميم وتطوير واجهات ويب حديثة ومتجاوبة.</p>
+          </article>
+
+          <article class="focus-card">
+            <div class="focus-icon" aria-hidden="true">⌘</div>
+            <h3 data-i18n="focusSecurityTitle">الأمن السيبراني</h3>
+            <p data-i18n="focusSecurityText">فهم المخاطر الأمنية واكتشاف نقاط الضعف ومعالجتها.</p>
+          </article>
+
+          <article class="focus-card">
+            <div class="focus-icon" aria-hidden="true">⌁</div>
+            <h3 data-i18n="focusNetworkTitle">أمن الشبكات</h3>
+            <p data-i18n="focusNetworkText">تحليل الشبكات وتحسين إعدادات الحماية.</p>
+          </article>
+
+        </div>
+      </div>
+
+    </section>
+
+    <!-- About -->
+    <section class="page" id="about" aria-labelledby="aboutTitle">
+
+      <div class="page-heading reveal">
+        <span class="section-kicker" data-i18n="aboutKicker">تعرف عليّ</span>
+        <h1 id="aboutTitle" data-i18n="aboutTitle">من أنا؟</h1>
+        <p data-i18n="aboutSubtitle">نبذة عن اهتماماتي ومجالات عملي التقنية.</p>
+      </div>
+
+      <div class="about-card reveal">
+
+        <div class="about-main">
+          <h2 data-i18n="aboutHello">مرحباً، أنا M.A.S.H CYVEX</h2>
+
+          <p data-i18n="aboutTextOne">
+            مطور ويب مهتم ببناء واجهات مستخدم عملية وحديثة، مع اهتمام بالأداء وتجربة المستخدم والتوافق مع مختلف الأجهزة.
           </p>
-          <p data-i18n="aboutParagraphTwo">
-            أركز على <strong>اكتشاف الثغرات</strong>، وبناء أدوات لأتمتة المهام الأمنية، وكتابة تقارير اختبار اختراق.
+
+          <p data-i18n="aboutTextTwo">
+            أهتم أيضاً بالأمن السيبراني، وأعمل على تعلم وتحليل أمن التطبيقات والشبكات واكتشاف الثغرات الأمنية والتعامل معها بطريقة مسؤولة.
           </p>
-          <p data-i18n="aboutParagraphThree">
-            أبحث حالياً عن <strong>تدريب في مجال الأمن السيبراني</strong> وفرص لتطبيق مهاراتي في بيئات عمل مناسبة.
+
+          <p data-i18n="aboutTextThree">
+            أطور مهاراتي باستمرار من خلال التعلم والتطبيق العملي وبناء المشاريع التقنية.
           </p>
         </div>
-      </section>
 
-      <!-- المهارات -->
-      <section class="page" id="skills" aria-labelledby="skills-title">
-        <span class="page-label reveal" data-i18n="skillsLabel">— المهارات —</span>
+        <div class="about-details">
 
-        <h2 class="page-title reveal" id="skills-title">
-          <span data-i18n="skillsHeading">المهارات</span>
-          <span class="gradient" data-i18n="skillsHighlight">والتقنيات</span>
-        </h2>
-
-        <p class="page-desc reveal" data-i18n="skillsDescription">
-          الأدوات والتقنيات التي أتعلمها وأستخدمها في تطوير الويب والأمن السيبراني.
-        </p>
-
-        <div class="skills-grid">
-          <div class="skill reveal">
-            <span class="skill-icon">🛡️</span>
-            <div class="skill-name" data-i18n="skillWebPentest">اختبار أمان الويب</div>
-            <div class="skill-bar"><div class="skill-bar-fill" style="width:85%"></div></div>
+          <div class="detail-item">
+            <span class="detail-label" data-i18n="detailName">الاسم</span>
+            <span class="detail-value">M.A.S.H CYVEX</span>
           </div>
 
-          <div class="skill reveal">
-            <span class="skill-icon">🌐</span>
-            <div class="skill-name" data-i18n="skillNetwork">أمن الشبكات</div>
-            <div class="skill-bar"><div class="skill-bar-fill" style="width:80%"></div></div>
+          <div class="detail-item">
+            <span class="detail-label" data-i18n="detailRole">المجال</span>
+            <span class="detail-value" data-i18n="detailRoleValue">تطوير الويب والأمن السيبراني</span>
           </div>
 
-          <div class="skill reveal">
-            <span class="skill-icon">🐍</span>
-            <div class="skill-name" data-i18n="skillPython">برمجة Python</div>
-            <div class="skill-bar"><div class="skill-bar-fill" style="width:75%"></div></div>
+          <div class="detail-item">
+            <span class="detail-label" data-i18n="detailLocation">الموقع</span>
+            <span class="detail-value" data-i18n="location">سوهاج، مصر</span>
           </div>
 
-          <div class="skill reveal">
-            <span class="skill-icon">💻</span>
-            <div class="skill-name" data-i18n="skillLinux">Linux</div>
-            <div class="skill-bar"><div class="skill-bar-fill" style="width:85%"></div></div>
+          <div class="detail-item">
+            <span class="detail-label" data-i18n="detailLanguage">اللغة الإنجليزية</span>
+            <span class="detail-value" data-i18n="englishLevel">متوسط</span>
           </div>
 
-          <div class="skill reveal">
-            <span class="skill-icon">🔍</span>
-            <div class="skill-name">OSINT</div>
-            <div class="skill-bar"><div class="skill-bar-fill" style="width:80%"></div></div>
+          <div class="detail-item">
+            <span class="detail-label" data-i18n="detailAvailability">الحالة</span>
+            <span class="detail-value" data-i18n="available">متاح للمشاريع</span>
           </div>
 
-          <div class="skill reveal">
-            <span class="skill-icon">🕸️</span>
-            <div class="skill-name">Nmap</div>
-            <div class="skill-bar"><div class="skill-bar-fill" style="width:90%"></div></div>
-          </div>
-
-          <div class="skill reveal">
-            <span class="skill-icon">🔐</span>
-            <div class="skill-name" data-i18n="skillCrypto">التشفير</div>
-            <div class="skill-bar"><div class="skill-bar-fill" style="width:70%"></div></div>
-          </div>
-
-          <div class="skill reveal">
-            <span class="skill-icon">📄</span>
-            <div class="skill-name" data-i18n="skillReports">كتابة التقارير</div>
-            <div class="skill-bar"><div class="skill-bar-fill" style="width:95%"></div></div>
-          </div>
         </div>
-      </section>
 
-      <!-- المشاريع -->
-      <section class="page" id="projects" aria-labelledby="projects-title">
-        <span class="page-label reveal" data-i18n="projectsLabel">— المشاريع —</span>
+      </div>
 
-        <h2 class="page-title reveal" id="projects-title">
-          <span data-i18n="projectsHeading">أعمالي و</span>
-          <span class="gradient" data-i18n="projectsHighlight">إنجازاتي</span>
-        </h2>
+      <div class="about-values reveal">
 
-        <p class="page-desc reveal" data-i18n="projectsDescription">
-          مجموعة من المشاريع والأدوات وتقارير التقييم الأمني وتطوير الويب.
-        </p>
+        <article class="value-card">
+          <span class="value-number">01</span>
+          <h3 data-i18n="valueOneTitle">التعلم المستمر</h3>
+          <p data-i18n="valueOneText">تطوير المعرفة والمهارات التقنية باستمرار.</p>
+        </article>
 
-        <div class="projects-list">
-          <!-- تقرير التقييم الأمني -->
-          <article class="project reveal">
-            <div class="project-thumb" style="background:linear-gradient(135deg,#0d1424,#1a2744)">
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-              </svg>
-            </div>
+        <article class="value-card">
+          <span class="value-number">02</span>
+          <h3 data-i18n="valueTwoTitle">التطبيق العملي</h3>
+          <p data-i18n="valueTwoText">تحويل الأفكار إلى مشاريع وتجارب عملية.</p>
+        </article>
 
-            <div class="project-body">
-              <span class="project-tag" data-i18n="pentestTag">أمن سيبراني • اختبار اختراق</span>
-              <h3 class="project-title" data-i18n="pentestTitle">تقرير تقييم أمني (Pentest)</h3>
-              <p class="project-desc" data-i18n="pentestDescription">
-                قمت بإجراء اختبار اختراق (Black-Box) مصرّح به لمنصة ويب حقيقية. اكتشفت 9 ثغرات (حرجة، عالية، متوسطة، منخفضة) تشمل تسريب بيانات شخصية (PII)، وStored XSS، ومفاتيح تشفير مسربة، وثغرة DoS. وحصلت على مكافأة مالية (Bounty).
-              </p>
-              <div class="project-links-wrapper">
-                <button type="button" data-action="open-report" class="project-link" data-i18n="viewReport">عرض ملخص التقرير ←</button>
-              </div>
-            </div>
-          </article>
+        <article class="value-card">
+          <span class="value-number">03</span>
+          <h3 data-i18n="valueThreeTitle">الأمان والمسؤولية</h3>
+          <p data-i18n="valueThreeText">الاهتمام ببناء حلول أكثر أماناً وموثوقية.</p>
+        </article>
 
-          <!-- Malware Analyzer -->
-          <article class="project reveal">
-            <div class="project-thumb" style="background:linear-gradient(135deg,#101624,#14243d)">
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <rect x="3" y="11" width="18" height="11" rx="2"/>
-                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                <line x1="12" y1="15" x2="12" y2="19"/>
-              </svg>
-            </div>
+      </div>
 
-            <div class="project-body">
-              <span class="project-tag">Python • Security Tool</span>
-              <h3 class="project-title">Malware Analyzer (Static)</h3>
-              <p class="project-desc" data-i18n="malwareDescription">
-                أداة بلغة Python لتحليل البرمجيات الخبيثة بشكل ساكن دون تشغيلها. تستخرج Hashes ومؤشرات الاختراق (IOCs)، وتحسب نسبة العشوائية لتحليل الملفات.
-              </p>
-              <div class="project-links-wrapper">
-                <a href="https://github.com/menamon713-bit/malware-analyzer" target="_blank" rel="noopener noreferrer" class="project-link">GitHub ←</a>
-              </div>
-            </div>
-          </article>
+    </section>
 
-          <!-- ReconXplorer -->
-          <article class="project reveal">
-            <div class="project-thumb" style="background:linear-gradient(135deg,#0d1424,#1a2744)">
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <circle cx="12" cy="12" r="10"/>
-                <circle cx="12" cy="12" r="4"/>
-                <line x1="12" y1="2" x2="12" y2="22"/>
-                <line x1="2" y1="12" x2="22" y2="12"/>
-              </svg>
-            </div>
+    <!-- Skills -->
+    <section class="page" id="skills" aria-labelledby="skillsTitle">
 
-            <div class="project-body">
-              <span class="project-tag">Python • Recon Tool</span>
-              <h3 class="project-title">ReconXplorer v5.3</h3>
-              <p class="project-desc" data-i18n="reconDescription">
-                إطار عمل لاستطلاع الأمن السيبراني. يقوم بأتمتة فحص الشبكات، وجمع المعلومات (OSINT)، واكتشاف ثغرات الويب، ويوفر خطوات المعالجة (Remediation).
-              </p>
-              <div class="project-links-wrapper">
-                <button type="button" data-action="open-recon" class="project-link" data-i18n="viewRecon">عرض تفاصيل الأداة ←</button>
-              </div>
-            </div>
-          </article>
+      <div class="page-heading reveal">
+        <span class="section-kicker" data-i18n="skillsKicker">قدراتي التقنية</span>
+        <h1 id="skillsTitle" data-i18n="skillsTitle">المهارات</h1>
+        <p data-i18n="skillsSubtitle">التقنيات والأدوات التي أتعلمها وأستخدمها في مشاريعي.</p>
+      </div>
 
-          <!-- مطعم عويضة الجمهورية -->
-          <article class="project reveal">
-            <div class="project-thumb">
-              <img src="awida-logo.png" alt="مشروع موقع مطعم عويضة الجمهورية" class="project-logo" loading="lazy" width="400" height="220" data-fallback="hide">
-            </div>
+      <div class="skills-grid">
 
-            <div class="project-body">
-              <span class="project-tag">Web Development • React</span>
-              <h3 class="project-title">مطعم عويضة الجمهورية</h3>
-              <p class="project-desc" data-i18n="awidaDescription">
-                موقع مطعم تفاعلي مبني باستخدام React وVite. يحتوي على قائمة طعام مع البحث والفلترة وسلة تسوق وزر اتصال وتصميم متجاوب.
-              </p>
-              <div class="project-links-wrapper">
-                <a href="https://restaurant-spa-lilac.vercel.app/" target="_blank" rel="noopener noreferrer" class="project-link" data-i18n="livePreview">معاينة مباشرة ←</a>
-                <a href="https://github.com/menamon713-bit/restaurant-spa" target="_blank" rel="noopener noreferrer" class="project-link" data-i18n="sourceCode">الكود المصدري ←</a>
-              </div>
-            </div>
-          </article>
+        <article class="skill-card reveal">
+          <div class="skill-top">
+            <span class="skill-icon">HTML5</span>
+            <span class="skill-name">HTML5</span>
+          </div>
+          <div class="skill-track">
+            <span class="skill-progress" style="--progress:90%"></span>
+          </div>
+        </article>
 
-          <!-- Lets Go Cafe -->
-          <article class="project reveal">
-            <div class="project-thumb">
-              <img src="letsgo-logo.png" alt="مشروع موقع Lets Go Cafe" class="project-logo" loading="lazy" width="400" height="220" data-fallback="hide">
-            </div>
+        <article class="skill-card reveal">
+          <div class="skill-top">
+            <span class="skill-icon">CSS3</span>
+            <span class="skill-name">CSS3</span>
+          </div>
+          <div class="skill-track">
+            <span class="skill-progress" style="--progress:85%"></span>
+          </div>
+        </article>
 
-            <div class="project-body">
-              <span class="project-tag">Web Development • HTML/CSS/JS</span>
-              <h3 class="project-title">Lets Go Cafe</h3>
-              <p class="project-desc" data-i18n="letsgoDescription">
-                موقع تفاعلي بتصميم عصري وسريع، مبني باستخدام HTML وCSS وJavaScript، مع التركيز على تجربة المستخدم.
-              </p>
-              <div class="project-links-wrapper">
-                <a href="https://letsgo-cafe.vercel.app/" target="_blank" rel="noopener noreferrer" class="project-link" data-i18n="livePreview">معاينة مباشرة ←</a>
-                <a href="https://github.com/menamon713-bit/letsgo-cafe" target="_blank" rel="noopener noreferrer" class="project-link" data-i18n="sourceCode">الكود المصدري ←</a>
-              </div>
-            </div>
-          </article>
-        </div>
-      </section>
+        <article class="skill-card reveal">
+          <div class="skill-top">
+            <span class="skill-icon">JS</span>
+            <span class="skill-name">JavaScript</span>
+          </div>
+          <div class="skill-track">
+            <span class="skill-progress" style="--progress:75%"></span>
+          </div>
+        </article>
 
-      <!-- التواصل -->
-      <section class="page" id="contact" aria-labelledby="contact-title">
-        <span class="page-label reveal" data-i18n="contactLabel">— تواصل —</span>
+        <article class="skill-card reveal">
+          <div class="skill-top">
+            <span class="skill-icon">R</span>
+            <span class="skill-name">React</span>
+          </div>
+          <div class="skill-track">
+            <span class="skill-progress" style="--progress:65%"></span>
+          </div>
+        </article>
 
-        <h2 class="page-title reveal" id="contact-title">
-          <span data-i18n="contactHeading">عايز</span>
-          <span class="gradient" data-i18n="contactHighlight">نتكلم؟</span>
-        </h2>
+        <article class="skill-card reveal">
+          <div class="skill-top">
+            <span class="skill-icon">N</span>
+            <span class="skill-name">Node.js</span>
+          </div>
+          <div class="skill-track">
+            <span class="skill-progress" style="--progress:60%"></span>
+          </div>
+        </article>
 
-        <p class="page-desc reveal" data-i18n="contactDescription">اختر وسيلة التواصل المناسبة لك.</p>
+        <article class="skill-card reveal">
+          <div class="skill-top">
+            <span class="skill-icon">Py</span>
+            <span class="skill-name">Python</span>
+          </div>
+          <div class="skill-track">
+            <span class="skill-progress" style="--progress:75%"></span>
+          </div>
+        </article>
 
-        <div class="contact-grid">
-          <button type="button" data-action="whatsapp" class="contact-item reveal">
-            <div class="contact-icon">
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
-              </svg>
-            </div>
-            <div class="contact-text">
-              <small data-i18n="whatsappLabel">تواصل واتساب</small>
-              <span data-i18n="whatsappAction">اضغط لفتح المحادثة</span>
-            </div>
-            <span class="contact-arrow" aria-hidden="true">←</span>
-          </button>
+        <article class="skill-card reveal">
+          <div class="skill-top">
+            <span class="skill-icon">V</span>
+            <span class="skill-name">Vue.js</span>
+          </div>
+          <div class="skill-track">
+            <span class="skill-progress" style="--progress:55%"></span>
+          </div>
+        </article>
 
-          <button type="button" data-action="phone" class="contact-item reveal">
-            <div class="contact-icon">
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
-              </svg>
-            </div>
-            <div class="contact-text">
-              <small data-i18n="phoneLabel">اتصال مباشر</small>
-              <span data-i18n="phoneAction">اضغط للاتصال</span>
-            </div>
-            <span class="contact-arrow" aria-hidden="true">←</span>
-          </button>
+        <article class="skill-card reveal">
+          <div class="skill-top">
+            <span class="skill-icon">A</span>
+            <span class="skill-name">Angular</span>
+          </div>
+          <div class="skill-track">
+            <span class="skill-progress" style="--progress:50%"></span>
+          </div>
+        </article>
 
-          <button type="button" data-action="email" class="contact-item reveal">
-            <div class="contact-icon">
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
-                <polyline points="22,6 12,13 2,6"/>
-              </svg>
-            </div>
-            <div class="contact-text">
-              <small data-i18n="emailLabel">البريد الإلكتروني</small>
-              <span data-i18n="emailAction">اضغط للإرسال</span>
-            </div>
-            <span class="contact-arrow" aria-hidden="true">←</span>
-          </button>
-        </div>
-      </section>
+        <article class="skill-card reveal">
+          <div class="skill-top">
+            <span class="skill-icon">L</span>
+            <span class="skill-name">Laravel</span>
+          </div>
+          <div class="skill-track">
+            <span class="skill-progress" style="--progress:60%"></span>
+          </div>
+        </article>
 
-      <footer class="site-footer">
-        <p>
-          © <span id="currentYear">2026</span>
-          M.A.S.H CYVEX.
-          <span data-i18n="footerRights">جميع الحقوق محفوظة.</span>
-        </p>
-      </footer>
-    </main>
-  </div>
+        <article class="skill-card reveal">
+          <div class="skill-top">
+            <span class="skill-icon">⌘</span>
+            <span class="skill-name" data-i18n="skillNetwork">أمن الشبكات</span>
+          </div>
+          <div class="skill-track">
+            <span class="skill-progress" style="--progress:70%"></span>
+          </div>
+        </article>
 
-  <!-- نافذة تقرير التقييم الأمني -->
-  <div class="modal" id="reportModal" role="dialog" aria-modal="true" aria-labelledby="reportModalTitle">
-    <div class="modal-content">
-      <button class="modal-close" type="button" data-action="close-report" aria-label="إغلاق">✕</button>
+        <article class="skill-card reveal">
+          <div class="skill-top">
+            <span class="skill-icon">⚿</span>
+            <span class="skill-name" data-i18n="skillWebSecurity">أمن تطبيقات الويب</span>
+          </div>
+          <div class="skill-track">
+            <span class="skill-progress" style="--progress:70%"></span>
+          </div>
+        </article>
 
-      <h3 class="modal-title" id="reportModalTitle">📄 تقرير تقييم أمني - ملخص</h3>
+        <article class="skill-card reveal">
+          <div class="skill-top">
+            <span class="skill-icon">⌁</span>
+            <span class="skill-name" data-i18n="skillVulnerability">اكتشاف ومعالجة الثغرات</span>
+          </div>
+          <div class="skill-track">
+            <span class="skill-progress" style="--progress:65%"></span>
+          </div>
+        </article>
 
-      <div class="modal-body">
-        <p><strong>نوع الفحص:</strong> Black-Box Penetration Test (مصرّح به)</p>
-        <p><strong>الهدف:</strong> منصة ويب حقيقية (تم إخفاء البيانات الحساسة للعميل)</p>
-        <p><strong>عدد الثغرات المكتشفة:</strong> 9 ثغرات</p>
+      </div>
 
-        <hr style="border-color:var(--border);margin:15px 0">
-
-        <p><strong style="color:var(--red)">أهم الثغرات المكتشفة:</strong></p>
-
-        <ul>
-          <li><strong>PII Leakage:</strong> كشف بيانات شخصية عبر واجهة API غير محمية.</li>
-          <li><strong>Stored XSS:</strong> مشكلة في معالجة محتوى التذاكر.</li>
-          <li><strong>Hardcoded Encryption Key:</strong> مفتاح تشفير مكشوف في كود الواجهة الأمامية.</li>
-          <li><strong>Client-Side Access Bypass:</strong> قصور في التحقق من الصلاحيات.</li>
-          <li><strong>Spam / DoS:</strong> غياب تحديد مناسب لمعدل الطلبات.</li>
-        </ul>
-
-        <hr style="border-color:var(--border);margin:15px 0">
-
-        <p class="report-note">
-          تم إعداد هذا التقرير بواسطة M.A.S.H، وحصل على مكافأة مالية (Bounty) نظير هذا الاكتشاف.
+      <div class="skills-note reveal">
+        <span aria-hidden="true">ⓘ</span>
+        <p data-i18n="skillsNote">
+          مستويات التقدم المعروضة تقديرية وتعبر عن تقييم ذاتي للمهارات، وليست شهادات أو اختبارات رسمية.
         </p>
       </div>
+
+    </section>
+
+    <!-- Projects -->
+    <section class="page" id="projects" aria-labelledby="projectsTitle">
+
+      <div class="page-heading reveal">
+        <span class="section-kicker" data-i18n="projectsKicker">أعمالي التقنية</span>
+        <h1 id="projectsTitle" data-i18n="projectsTitle">المشاريع</h1>
+        <p data-i18n="projectsSubtitle">مجموعة من المشاريع والتجارب التي عملت عليها.</p>
+      </div>
+
+      <div class="projects-grid">
+
+        <!-- Project 1 -->
+        <article class="project-card reveal">
+
+          <div class="project-visual report-visual">
+            <span class="project-visual-icon" aria-hidden="true">⌕</span>
+            <span class="project-category">SECURITY REPORT</span>
+          </div>
+
+          <div class="project-content">
+            <div class="project-tags">
+              <span>Cybersecurity</span>
+              <span>Assessment</span>
+            </div>
+
+            <h2 data-i18n="projectReportTitle">تقرير تقييم أمني</h2>
+
+            <p data-i18n="projectReportText">
+              نموذج تقرير يعرض نتائج تقييم أمني وملاحظات حول نقاط الضعف والتوصيات.
+            </p>
+
+            <button
+              type="button"
+              class="project-link"
+              data-action="open-report"
+              data-i18n="viewDetails"
+            >
+              عرض التفاصيل <span aria-hidden="true">↗</span>
+            </button>
+          </div>
+
+        </article>
+
+        <!-- Project 2 -->
+        <article class="project-card reveal">
+
+          <div class="project-visual malware-visual">
+            <span class="project-visual-icon" aria-hidden="true">⌘</span>
+            <span class="project-category">MALWARE ANALYSIS</span>
+          </div>
+
+          <div class="project-content">
+            <div class="project-tags">
+              <span>Python</span>
+              <span>Security</span>
+            </div>
+
+            <h2>Malware Analyzer</h2>
+
+            <p data-i18n="projectMalwareText">
+              مشروع لتحليل الملفات بشكل ثابت والمساعدة في فحص خصائصها ومؤشراتها.
+            </p>
+
+            <a
+              href="https://github.com/menamon713-bit/malware-analyzer"
+              class="project-link"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <span data-i18n="viewGithub">عرض على GitHub</span>
+              <span aria-hidden="true">↗</span>
+            </a>
+          </div>
+
+        </article>
+
+        <!-- Project 3 -->
+        <article class="project-card reveal">
+
+          <div class="project-visual recon-visual">
+            <span class="project-visual-icon" aria-hidden="true">⌁</span>
+            <span class="project-category">RECON TOOL</span>
+          </div>
+
+          <div class="project-content">
+            <div class="project-tags">
+              <span>Python</span>
+              <span>Reconnaissance</span>
+            </div>
+
+            <h2>ReconXplorer v5.3</h2>
+
+            <p data-i18n="projectReconText">
+              أداة لاستكشاف المعلومات وجمع البيانات الأولية ضمن نطاقات اختبار مصرح بها.
+            </p>
+
+            <button
+              type="button"
+              class="project-link"
+              data-action="open-recon"
+              data-i18n="viewDetails"
+            >
+              عرض التفاصيل <span aria-hidden="true">↗</span>
+            </button>
+          </div>
+
+        </article>
+
+        <!-- Project 4 -->
+        <article class="project-card reveal">
+
+          <div class="project-image">
+            <img
+              src="awida-logo.png"
+              alt="مطعم عويضة الجمهورية"
+              loading="lazy"
+              onerror="this.parentElement.style.display='none';"
+            >
+          </div>
+
+          <div class="project-content">
+            <div class="project-tags">
+              <span>Web Development</span>
+              <span>Restaurant</span>
+            </div>
+
+            <h2 data-i18n="projectAwidaTitle">مطعم عويضة الجمهورية</h2>
+
+            <p data-i18n="projectAwidaText">
+              موقع ويب تعريفي لمطعم يعرض معلوماته وخدماته.
+            </p>
+
+            <div class="project-actions">
+              <a
+                href="https://restaurant-spa-lilac.vercel.app/"
+                class="project-link"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <span data-i18n="liveDemo">الموقع المباشر</span>
+                <span aria-hidden="true">↗</span>
+              </a>
+
+              <a
+                href="https://github.com/menamon713-bit/restaurant-spa"
+                class="project-link"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                GitHub <span aria-hidden="true">↗</span>
+              </a>
+            </div>
+          </div>
+
+        </article>
+
+        <!-- Project 5 -->
+        <article class="project-card reveal">
+
+          <div class="project-image">
+            <img
+              src="letsgo-logo.png"
+              alt="Lets Go Cafe"
+              loading="lazy"
+              onerror="this.parentElement.style.display='none';"
+            >
+          </div>
+
+          <div class="project-content">
+            <div class="project-tags">
+              <span>Web Development</span>
+              <span>Cafe</span>
+            </div>
+
+            <h2>Lets Go Cafe</h2>
+
+            <p data-i18n="projectLetsGoText">
+              موقع ويب تعريفي لمقهى بتصميم متجاوب.
+            </p>
+
+            <div class="project-actions">
+              <a
+                href="https://letsgo-cafe.vercel.app/"
+                class="project-link"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <span data-i18n="liveDemo">الموقع المباشر</span>
+                <span aria-hidden="true">↗</span>
+              </a>
+
+              <a
+                href="https://github.com/menamon713-bit/letsgo-cafe"
+                class="project-link"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                GitHub <span aria-hidden="true">↗</span>
+              </a>
+            </div>
+          </div>
+
+        </article>
+
+      </div>
+
+    </section>
+
+    <!-- Contact -->
+    <section class="page" id="contact" aria-labelledby="contactTitle">
+
+      <div class="page-heading reveal">
+        <span class="section-kicker" data-i18n="contactKicker">لنتواصل</span>
+        <h1 id="contactTitle" data-i18n="contactTitle">تواصل معي</h1>
+        <p data-i18n="contactSubtitle">للاستفسارات أو مناقشة مشروع أو تعاون تقني.</p>
+      </div>
+
+      <div class="contact-intro reveal">
+        <h2 data-i18n="contactHeadline">هل لديك فكرة أو مشروع؟</h2>
+        <p data-i18n="contactText">
+          يمكنك التواصل معي من خلال إحدى الوسائل التالية.
+        </p>
+      </div>
+
+      <div class="contact-grid">
+
+        <button
+          type="button"
+          class="contact-card"
+          data-action="whatsapp"
+        >
+          <span class="contact-icon" aria-hidden="true">WA</span>
+          <span class="contact-info">
+            <strong>WhatsApp</strong>
+            <small data-i18n="whatsappLabel">ابدأ محادثة</small>
+          </span>
+          <span class="contact-arrow" aria-hidden="true">↗</span>
+        </button>
+
+        <button
+          type="button"
+          class="contact-card"
+          data-action="phone"
+        >
+          <span class="contact-icon" aria-hidden="true">☎</span>
+          <span class="contact-info">
+            <strong data-i18n="phoneTitle">الهاتف</strong>
+            <small>+20 155 441 6094</small>
+          </span>
+          <span class="contact-arrow" aria-hidden="true">↗</span>
+        </button>
+
+        <button
+          type="button"
+          class="contact-card"
+          data-action="email"
+        >
+          <span class="contact-icon" aria-hidden="true">@</span>
+          <span class="contact-info">
+            <strong>Email</strong>
+            <small>minadeveloper43@gmail.com</small>
+          </span>
+          <span class="contact-arrow" aria-hidden="true">↗</span>
+        </button>
+
+        <a
+          href="https://github.com/menamon713-bit"
+          class="contact-card"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <span class="contact-icon" aria-hidden="true">GH</span>
+          <span class="contact-info">
+            <strong>GitHub</strong>
+            <small>menamon713-bit</small>
+          </span>
+          <span class="contact-arrow" aria-hidden="true">↗</span>
+        </a>
+
+      </div>
+
+      <div class="contact-footer-card reveal">
+        <span class="contact-footer-icon" aria-hidden="true">✦</span>
+        <h2 data-i18n="contactFooterTitle">شكراً لزيارتك</h2>
+        <p data-i18n="contactFooterText">
+          أقدّر وقتك واهتمامك باستكشاف أعمالي.
+        </p>
+      </div>
+
+    </section>
+
+    <!-- Footer -->
+    <footer class="main-footer">
+      <p>© 2026 <strong>M.A.S.H CYVEX</strong>. <span data-i18n="rights">جميع الحقوق محفوظة.</span></p>
+      <p data-i18n="footerMade">صُنع باهتمام بالتفاصيل.</p>
+    </footer>
+
+  </main>
+
+  <!-- Theme Toggle -->
+  <button
+    type="button"
+    class="theme-btn"
+    id="themeToggle"
+    aria-label="تغيير المظهر"
+    title="تغيير المظهر"
+  >☀️</button>
+
+  <!-- Language Toggle -->
+  <button
+    type="button"
+    class="language-btn"
+    id="languageToggle"
+    aria-label="Switch language"
+    title="Switch language"
+  >EN</button>
+
+  <!-- Report Modal -->
+  <div
+    class="modal"
+    id="reportModal"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="reportModalTitle"
+    aria-hidden="true"
+  >
+    <div class="modal-content">
+
+      <button
+        type="button"
+        class="modal-close"
+        data-action="close-modal"
+        aria-label="إغلاق"
+      >×</button>
+
+      <span class="section-kicker" data-i18n="reportModalKicker">SECURITY PROJECT</span>
+
+      <h2 id="reportModalTitle" data-i18n="reportModalTitle">تقرير التقييم الأمني</h2>
+
+      <p data-i18n="reportModalIntro">
+        عرض توضيحي لطريقة تنظيم نتائج التقييم الأمني وتوثيق الملاحظات.
+      </p>
+
+      <div class="modal-details">
+
+        <div class="modal-detail">
+          <strong data-i18n="reportScopeTitle">نطاق العمل</strong>
+          <p data-i18n="reportScopeText">تقييم أمني ضمن نطاق محدد ومصرح به.</p>
+        </div>
+
+        <div class="modal-detail">
+          <strong data-i18n="reportMethodTitle">المنهجية</strong>
+          <p data-i18n="reportMethodText">جمع المعلومات، مراجعة النتائج، وتوثيق الملاحظات.</p>
+        </div>
+
+        <div class="modal-detail">
+          <strong data-i18n="reportOutputTitle">المخرجات</strong>
+          <p data-i18n="reportOutputText">ملخص للملاحظات الأمنية وتوصيات المعالجة.</p>
+        </div>
+
+      </div>
+
     </div>
   </div>
 
-  <!-- نافذة ReconXplorer -->
-  <div class="modal" id="reconModal" role="dialog" aria-modal="true" aria-labelledby="reconModalTitle">
+  <!-- ReconXplorer Modal -->
+  <div
+    class="modal"
+    id="reconModal"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="reconModalTitle"
+    aria-hidden="true"
+  >
     <div class="modal-content">
-      <button class="modal-close" type="button" data-action="close-recon" aria-label="إغلاق">✕</button>
 
-      <h3 class="modal-title" id="reconModalTitle">📡 ReconXplorer v5.3</h3>
+      <button
+        type="button"
+        class="modal-close"
+        data-action="close-modal"
+        aria-label="إغلاق"
+      >×</button>
 
-      <div class="modal-body">
-        <p><strong>النوع:</strong> أداة أتمتة (Python Script)</p>
-        <p><strong>الوظيفة:</strong> استطلاع الشبكات واكتشاف الثغرات.</p>
+      <span class="section-kicker">RECONXPLORER v5.3</span>
 
-        <hr style="border-color:var(--border);margin:15px 0">
+      <h2 id="reconModalTitle">ReconXplorer v5.3</h2>
 
-        <p><strong style="color:var(--red)">المميزات:</strong></p>
+      <p data-i18n="reconModalIntro">
+        مشروع لاستكشاف المعلومات الأولية وتنظيم نتائج الاستطلاع الأمني.
+      </p>
 
-        <ul>
-          <li>فحص الشبكات في النطاقات المصرّح بها.</li>
-          <li>جمع معلومات مفتوحة المصدر (OSINT).</li>
-          <li>تحليل أمان تطبيقات الويب.</li>
-          <li>توفير خطوات المعالجة الأمنية (Remediation).</li>
-        </ul>
+      <div class="modal-details">
 
-        <p class="report-note">
-          تم تطوير هذه الأداة بواسطة M.A.S.H. والكود المصدري محفوظ وخاص.
-        </p>
+        <div class="modal-detail">
+          <strong data-i18n="reconPurposeTitle">الهدف</strong>
+          <p data-i18n="reconPurposeText">المساعدة في تنظيم عملية الاستطلاع وجمع المعلومات العامة.</p>
+        </div>
+
+        <div class="modal-detail">
+          <strong data-i18n="reconUsageTitle">الاستخدام</strong>
+          <p data-i18n="reconUsageText">يُستخدم فقط على الأنظمة والنطاقات التي يوجد تصريح باختبارها.</p>
+        </div>
+
+        <div class="modal-detail">
+          <strong data-i18n="reconTechTitle">التقنيات</strong>
+          <p>Python · Cybersecurity · Reconnaissance</p>
+        </div>
+
       </div>
+
     </div>
   </div>
 
-  <script src="script.js" defer></script>
 </body>
 </html>
