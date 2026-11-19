@@ -1,26 +1,44 @@
-// ================================================
-// M.A.S.H CYVEX — Main JavaScript
-// Navigation / Theme / Language / Modals / Contact
-// ================================================
+/* =====================================================
+   M.A.S.H CYVEX — Main JavaScript
+   Compatible with the provided index.html
+   Language / Theme / Navigation / Modals / Contact
+===================================================== */
 
-(function () {
+(() => {
   "use strict";
+
+  /* =====================================================
+     HELPERS
+  ===================================================== */
+
+  const $ = (selector, root = document) => root.querySelector(selector);
+  const $$ = (selector, root = document) =>
+    Array.from(root.querySelectorAll(selector));
 
   const html = document.documentElement;
   const body = document.body;
 
-  const $ = (selector, root = document) => root.querySelector(selector);
-  const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
+  const safeStorage = {
+    get(key, fallback = null) {
+      try {
+        return localStorage.getItem(key) ?? fallback;
+      } catch {
+        return fallback;
+      }
+    },
 
-  const themeToggle = $("#themeToggle");
-  const languageToggle = $("#languageToggle");
-  const menuBtn = $("#menuBtn");
-  const sidebar = $("#sidebar");
-  const overlay = $("#overlay");
+    set(key, value) {
+      try {
+        localStorage.setItem(key, value);
+      } catch {
+        // Storage may be unavailable.
+      }
+    }
+  };
 
-  // ================================================
-  // TRANSLATIONS
-  // ================================================
+  /* =====================================================
+     TRANSLATIONS
+  ===================================================== */
 
   const translations = {
     ar: {
@@ -38,7 +56,8 @@
       heroLabel: "مرحباً بك في مساحتي التقنية",
       heroGreeting: "أهلاً، أنا",
       heroSubtitle: "مطور واجهات ويب وباحث في الأمن السيبراني",
-      heroDescription: "أعمل على بناء تجارب ويب حديثة، وأهتم بأمن التطبيقات والشبكات واكتشاف الثغرات ومعالجتها.",
+      heroDescription:
+        "أعمل على بناء تجارب ويب حديثة، وأهتم بأمن التطبيقات والشبكات واكتشاف الثغرات ومعالجتها.",
       viewProjects: "استكشف مشاريعي",
       contactMe: "تواصل معي",
       location: "سوهاج، مصر",
@@ -53,7 +72,8 @@
       focusWebTitle: "تطوير الويب",
       focusWebText: "تصميم وتطوير واجهات ويب حديثة ومتجاوبة.",
       focusSecurityTitle: "الأمن السيبراني",
-      focusSecurityText: "فهم المخاطر الأمنية واكتشاف نقاط الضعف ومعالجتها.",
+      focusSecurityText:
+        "فهم المخاطر الأمنية واكتشاف نقاط الضعف ومعالجتها.",
       focusNetworkTitle: "أمن الشبكات",
       focusNetworkText: "تحليل الشبكات وتحسين إعدادات الحماية.",
 
@@ -61,9 +81,12 @@
       aboutTitle: "من أنا؟",
       aboutSubtitle: "نبذة عن اهتماماتي ومجالات عملي التقنية.",
       aboutHello: "مرحباً، أنا M.A.S.H CYVEX",
-      aboutTextOne: "مطور ويب مهتم ببناء واجهات مستخدم عملية وحديثة، مع اهتمام بالأداء وتجربة المستخدم والتوافق مع مختلف الأجهزة.",
-      aboutTextTwo: "أهتم أيضاً بالأمن السيبراني، وأعمل على تعلم وتحليل أمن التطبيقات والشبكات واكتشاف الثغرات الأمنية والتعامل معها بطريقة مسؤولة.",
-      aboutTextThree: "أطور مهاراتي باستمرار من خلال التعلم والتطبيق العملي وبناء المشاريع التقنية.",
+      aboutTextOne:
+        "مطور ويب مهتم ببناء واجهات مستخدم عملية وحديثة، مع اهتمام بالأداء وتجربة المستخدم والتوافق مع مختلف الأجهزة.",
+      aboutTextTwo:
+        "أهتم أيضاً بالأمن السيبراني، وأعمل على تعلم وتحليل أمن التطبيقات والشبكات واكتشاف الثغرات الأمنية والتعامل معها بطريقة مسؤولة.",
+      aboutTextThree:
+        "أطور مهاراتي باستمرار من خلال التعلم والتطبيق العملي وبناء المشاريع التقنية.",
 
       detailName: "الاسم",
       detailRole: "المجال",
@@ -85,20 +108,25 @@
       skillNetwork: "أمن الشبكات",
       skillWebSecurity: "أمن تطبيقات الويب",
       skillVulnerability: "اكتشاف ومعالجة الثغرات",
-      skillsNote: "مستويات التقدم المعروضة تقديرية وتعبر عن تقييم ذاتي للمهارات، وليست شهادات أو اختبارات رسمية.",
+      skillsNote:
+        "مستويات التقدم المعروضة تقديرية وتعبر عن تقييم ذاتي للمهارات، وليست شهادات أو اختبارات رسمية.",
 
       projectsKicker: "أعمالي التقنية",
       projectsTitle: "المشاريع",
       projectsSubtitle: "مجموعة من المشاريع والتجارب التي عملت عليها.",
-      projectReportTitle: "تقرير تقييم أمني",
-      projectReportText: "نموذج تقرير يعرض نتائج تقييم أمني وملاحظات حول نقاط الضعف والتوصيات.",
       viewDetails: "عرض التفاصيل",
-      projectMalwareText: "مشروع لتحليل الملفات بشكل ثابت والمساعدة في فحص خصائصها ومؤشراتها.",
       viewGithub: "عرض على GitHub",
-      projectReconText: "أداة لاستكشاف المعلومات وجمع البيانات الأولية ضمن نطاقات اختبار مصرح بها.",
+      liveDemo: "الموقع المباشر",
+
+      projectReportTitle: "تقرير تقييم أمني",
+      projectReportText:
+        "نموذج تقرير يعرض نتائج تقييم أمني وملاحظات حول نقاط الضعف والتوصيات.",
+      projectMalwareText:
+        "مشروع لتحليل الملفات بشكل ثابت والمساعدة في فحص خصائصها ومؤشراتها.",
+      projectReconText:
+        "أداة لاستكشاف المعلومات وجمع البيانات الأولية ضمن نطاقات اختبار مصرح بها.",
       projectAwidaTitle: "مطعم عويضة الجمهورية",
       projectAwidaText: "موقع ويب تعريفي لمطعم يعرض معلوماته وخدماته.",
-      liveDemo: "الموقع المباشر",
       projectLetsGoText: "موقع ويب تعريفي لمقهى بتصميم متجاوب.",
 
       contactKicker: "لنتواصل",
@@ -106,18 +134,20 @@
       contactSubtitle: "للاستفسارات أو مناقشة مشروع أو تعاون تقني.",
       contactHeadline: "هل لديك فكرة أو مشروع؟",
       contactText: "يمكنك التواصل معي من خلال إحدى الوسائل التالية.",
+
       formSubmit: "إرسال الرسالة",
       whatsappLabel: "ابدأ محادثة",
       phoneTitle: "الهاتف",
+
       contactFooterTitle: "شكراً لزيارتك",
       contactFooterText: "أقدّر وقتك واهتمامك باستكشاف أعمالي.",
-
       rights: "جميع الحقوق محفوظة.",
       footerMade: "صُنع باهتمام بالتفاصيل.",
 
       reportModalKicker: "مشروع أمني",
       reportModalTitle: "تقرير التقييم الأمني",
-      reportModalIntro: "عرض توضيحي لطريقة تنظيم نتائج التقييم الأمني وتوثيق الملاحظات.",
+      reportModalIntro:
+        "عرض توضيحي لطريقة تنظيم نتائج التقييم الأمني وتوثيق الملاحظات.",
       reportScopeTitle: "نطاق العمل",
       reportScopeText: "تقييم أمني ضمن نطاق محدد ومصرح به.",
       reportMethodTitle: "المنهجية",
@@ -125,30 +155,47 @@
       reportOutputTitle: "المخرجات",
       reportOutputText: "ملخص للملاحظات الأمنية وتوصيات المعالجة.",
 
-      reconModalIntro: "مشروع لاستكشاف المعلومات الأولية وتنظيم نتائج الاستطلاع الأمني.",
+      reconModalIntro:
+        "مشروع لاستكشاف المعلومات الأولية وتنظيم نتائج الاستطلاع الأمني.",
       reconPurposeTitle: "الهدف",
       reconPurposeText: "المساعدة في تنظيم عملية الاستطلاع وجمع المعلومات العامة.",
       reconUsageTitle: "الاستخدام",
-      reconUsageText: "يُستخدم فقط على الأنظمة والنطاقات التي يوجد تصريح باختبارها.",
-      reconTechTitle: "التقنيات"
+      reconUsageText:
+        "يُستخدم فقط على الأنظمة والنطاقات التي يوجد تصريح باختبارها.",
+      reconTechTitle: "التقنيات",
+
+      closeMenu: "إغلاق القائمة",
+      openMenu: "فتح القائمة",
+      changeTheme: "تغيير المظهر",
+      switchLanguage: "تغيير اللغة",
+
+      nameLabel: "الاسم",
+      emailLabel: "البريد الإلكتروني",
+      subjectLabel: "الموضوع",
+      messageLabel: "الرسالة",
+
+      whatsappBusiness: "فتح WhatsApp",
+      whatsappNormal: "فتح رابط WhatsApp",
+      cancel: "إلغاء"
     },
 
     en: {
       brandCaption: "DEVELOPER PORTFOLIO",
       profileRole: "Web Developer & Cybersecurity Researcher",
-      available: "Available for Projects",
+      available: "Available for projects",
 
       navHome: "Home",
-      navAbout: "About Me",
+      navAbout: "About",
       navSkills: "Skills",
       navProjects: "Projects",
       navContact: "Contact",
       downloadCV: "Download CV",
 
-      heroLabel: "Welcome to My Tech Space",
+      heroLabel: "Welcome to my tech space",
       heroGreeting: "Hello, I'm",
       heroSubtitle: "Web Developer & Cybersecurity Researcher",
-      heroDescription: "I build modern web experiences and focus on application security, network security, vulnerability discovery, and remediation.",
+      heroDescription:
+        "I build modern web experiences and focus on application security, network security, vulnerability discovery, and remediation.",
       viewProjects: "Explore My Projects",
       contactMe: "Contact Me",
       location: "Sohag, Egypt",
@@ -158,36 +205,40 @@
       statTwo: "Bug Bounty Participation",
       statThree: "Technical Projects",
 
-      focusKicker: "Areas of Work",
+      focusKicker: "What I Do",
       focusTitle: "What Do I Focus On?",
       focusWebTitle: "Web Development",
-      focusWebText: "Designing and developing modern, responsive web interfaces.",
+      focusWebText: "Building modern and responsive web interfaces.",
       focusSecurityTitle: "Cybersecurity",
-      focusSecurityText: "Understanding security risks, discovering vulnerabilities, and addressing them.",
+      focusSecurityText:
+        "Understanding security risks, identifying weaknesses, and addressing them.",
       focusNetworkTitle: "Network Security",
       focusNetworkText: "Analyzing networks and improving security configurations.",
 
       aboutKicker: "Get to Know Me",
       aboutTitle: "About Me",
-      aboutSubtitle: "An overview of my interests and technical fields.",
+      aboutSubtitle: "An overview of my interests and technical work.",
       aboutHello: "Hello, I'm M.A.S.H CYVEX",
-      aboutTextOne: "A web developer interested in building practical, modern user interfaces, with a focus on performance, user experience, and cross-device compatibility.",
-      aboutTextTwo: "I'm also interested in cybersecurity, learning and analyzing application and network security, discovering vulnerabilities, and handling them responsibly.",
-      aboutTextThree: "I continuously develop my skills through learning, practical work, and building technical projects.",
+      aboutTextOne:
+        "A web developer interested in building practical and modern user interfaces, with a focus on performance, user experience, and cross-device compatibility.",
+      aboutTextTwo:
+        "I'm also interested in cybersecurity, learning and analyzing application and network security, discovering vulnerabilities, and handling them responsibly.",
+      aboutTextThree:
+        "I continuously develop my skills through learning, hands-on practice, and building technical projects.",
 
       detailName: "Name",
       detailRole: "Field",
       detailRoleValue: "Web Development & Cybersecurity",
       detailLocation: "Location",
-      detailLanguage: "English Language",
-      detailAvailability: "Availability",
+      detailLanguage: "English",
+      detailAvailability: "Status",
 
       valueOneTitle: "Continuous Learning",
-      valueOneText: "Continuously developing technical knowledge and skills.",
-      valueTwoTitle: "Practical Application",
+      valueOneText: "Continuously improving technical knowledge and skills.",
+      valueTwoTitle: "Practical Experience",
       valueTwoText: "Turning ideas into practical projects and experiences.",
       valueThreeTitle: "Security & Responsibility",
-      valueThreeText: "Building more secure and reliable solutions.",
+      valueThreeText: "Building safer and more reliable solutions.",
 
       skillsKicker: "Technical Abilities",
       skillsTitle: "Skills",
@@ -195,20 +246,26 @@
       skillNetwork: "Network Security",
       skillWebSecurity: "Web Application Security",
       skillVulnerability: "Vulnerability Discovery & Remediation",
-      skillsNote: "The progress levels shown are estimates based on self-assessment. They are not official certifications or test results.",
+      skillsNote:
+        "The displayed progress levels are estimates based on self-assessment, not official certificates or test results.",
 
-      projectsKicker: "My Technical Work",
+      projectsKicker: "My Work",
       projectsTitle: "Projects",
       projectsSubtitle: "A collection of projects and experiments I have worked on.",
-      projectReportTitle: "Security Assessment Report",
-      projectReportText: "A sample report presenting security assessment findings, vulnerability observations, and recommendations.",
       viewDetails: "View Details",
-      projectMalwareText: "A project for static file analysis and examining file properties and indicators.",
       viewGithub: "View on GitHub",
-      projectReconText: "An information discovery tool for collecting initial data within authorized testing scopes.",
+      liveDemo: "Live Demo",
+
+      projectReportTitle: "Security Assessment Report",
+      projectReportText:
+        "A sample report presenting security assessment findings, weaknesses, and recommendations.",
+      projectMalwareText:
+        "A static file analysis project that helps inspect file properties and indicators.",
+      projectReconText:
+        "An information-gathering tool for authorized testing scopes.",
       projectAwidaTitle: "Awida Republic Restaurant",
-      projectAwidaText: "An informational website presenting a restaurant and its services.",
-      liveDemo: "Live Website",
+      projectAwidaText:
+        "An informational restaurant website presenting its details and services.",
       projectLetsGoText: "A responsive informational website for a cafe.",
 
       contactKicker: "Get in Touch",
@@ -216,74 +273,86 @@
       contactSubtitle: "For inquiries, project discussions, or technical collaboration.",
       contactHeadline: "Have an Idea or a Project?",
       contactText: "You can contact me through one of the following methods.",
-      formSubmit: "Send Message",
-      whatsappLabel: "Start a Conversation",
-      phoneTitle: "Phone",
-      contactFooterTitle: "Thank You for Visiting",
-      contactFooterText: "I appreciate your time and interest in exploring my work.",
 
+      formSubmit: "Send Message",
+      whatsappLabel: "Start a conversation",
+      phoneTitle: "Phone",
+
+      contactFooterTitle: "Thanks for Visiting",
+      contactFooterText: "I appreciate your time and interest in exploring my work.",
       rights: "All rights reserved.",
       footerMade: "Made with attention to detail.",
 
       reportModalKicker: "SECURITY PROJECT",
       reportModalTitle: "Security Assessment Report",
-      reportModalIntro: "A demonstration of how security assessment findings and observations are organized.",
+      reportModalIntro:
+        "A demonstration of how security assessment findings and observations are organized.",
       reportScopeTitle: "Scope",
       reportScopeText: "A security assessment within a defined and authorized scope.",
       reportMethodTitle: "Methodology",
-      reportMethodText: "Information gathering, reviewing results, and documenting observations.",
+      reportMethodText: "Information gathering, reviewing results, and documenting findings.",
       reportOutputTitle: "Deliverables",
-      reportOutputText: "A summary of security findings and remediation recommendations.",
+      reportOutputText: "A summary of security observations and remediation recommendations.",
 
-      reconModalIntro: "A project for discovering initial information and organizing security reconnaissance results.",
+      reconModalIntro:
+        "A project for gathering initial information and organizing security reconnaissance results.",
       reconPurposeTitle: "Purpose",
-      reconPurposeText: "Helping organize reconnaissance and collect publicly available information.",
+      reconPurposeText:
+        "Helping organize reconnaissance and collect publicly available information.",
       reconUsageTitle: "Usage",
-      reconUsageText: "Used only on systems and domains where testing is authorized.",
-      reconTechTitle: "Technologies"
+      reconUsageText:
+        "Used only on systems and domains where testing is authorized.",
+      reconTechTitle: "Technologies",
+
+      closeMenu: "Close menu",
+      openMenu: "Open menu",
+      changeTheme: "Change appearance",
+      switchLanguage: "Switch language",
+
+      nameLabel: "Name",
+      emailLabel: "Email",
+      subjectLabel: "Subject",
+      messageLabel: "Message",
+
+      whatsappBusiness: "Open WhatsApp",
+      whatsappNormal: "Open WhatsApp link",
+      cancel: "Cancel"
     }
   };
 
-  // ================================================
-  // STORAGE
-  // ================================================
+  /* =====================================================
+     LANGUAGE
+  ===================================================== */
 
-  function storageGet(key) {
-    try {
-      return localStorage.getItem(key);
-    } catch (_) {
-      return null;
-    }
-  }
-
-  function storageSet(key, value) {
-    try {
-      localStorage.setItem(key, value);
-    } catch (_) {}
-  }
-
-  // ================================================
-  // LANGUAGE
-  // ================================================
+  const languageToggle = $("#languageToggle");
 
   function translateElement(element, value) {
-    // Preserve nested icons and decorative spans.
-    const textNode = [...element.childNodes].find(
-      node => node.nodeType === Node.TEXT_NODE &&
-      node.textContent.trim().length > 0
+    if (!element || typeof value !== "string") return;
+
+    // Preserve icons and other child elements.
+    const walker = document.createTreeWalker(
+      element,
+      NodeFilter.SHOW_TEXT,
+      {
+        acceptNode(node) {
+          return node.nodeValue.trim()
+            ? NodeFilter.FILTER_ACCEPT
+            : NodeFilter.FILTER_REJECT;
+        }
+      }
     );
 
+    const textNode = walker.nextNode();
+
     if (textNode) {
-      textNode.textContent = " " + value + " ";
-    } else if (!element.children.length) {
-      element.textContent = value;
+      textNode.nodeValue = value;
     } else {
       element.textContent = value;
     }
   }
 
   function setLanguage(language) {
-    const lang = language === "en" ? "en" : "ar";
+    const lang = translations[language] ? language : "ar";
     const dictionary = translations[lang];
 
     html.lang = lang;
@@ -297,59 +366,39 @@
       }
     });
 
-    // Contact form labels
-    const labels = {
-      contactName: lang === "ar" ? "الاسم" : "Name",
-      contactEmail: lang === "ar" ? "البريد الإلكتروني" : "Email",
-      contactSubject: lang === "ar" ? "الموضوع" : "Subject",
-      contactMessage: lang === "ar" ? "الرسالة" : "Message"
+    // Contact form labels.
+    const formLabels = {
+      contactName: dictionary.nameLabel,
+      contactEmail: dictionary.emailLabel,
+      contactSubject: dictionary.subjectLabel,
+      contactMessage: dictionary.messageLabel
     };
 
-    Object.entries(labels).forEach(([id, value]) => {
+    Object.entries(formLabels).forEach(([id, value]) => {
       const label = $(`label[for="${id}"]`);
       if (label) label.textContent = value;
     });
 
-    // Honeypot label
-    const honeypotLabel = $('label[for="contactWebsite"]');
-    if (honeypotLabel) {
-      honeypotLabel.textContent = "Website";
-    }
-
-    // Language button
+    // Language button.
     if (languageToggle) {
       languageToggle.textContent = lang === "ar" ? "EN" : "عربي";
       languageToggle.setAttribute(
         "aria-label",
-        lang === "ar" ? "Switch language" : "تغيير اللغة"
+        dictionary.switchLanguage
       );
-      languageToggle.title =
-        lang === "ar" ? "Switch language" : "تغيير اللغة";
+      languageToggle.title = dictionary.switchLanguage;
     }
 
-    // Accessibility labels
-    if (menuBtn) {
-      menuBtn.setAttribute(
-        "aria-label",
-        lang === "ar" ? "فتح القائمة" : "Open Menu"
-      );
-    }
-
-    $$("[data-action='close-modal']").forEach(button => {
-      button.setAttribute(
-        "aria-label",
-        lang === "ar" ? "إغلاق" : "Close"
-      );
-    });
-
+    // Theme and menu accessibility labels.
+    const themeToggle = $("#themeToggle");
     if (themeToggle) {
-      themeToggle.setAttribute(
-        "aria-label",
-        lang === "ar" ? "تغيير المظهر" : "Change Theme"
-      );
+      themeToggle.setAttribute("aria-label", dictionary.changeTheme);
+      themeToggle.title = dictionary.changeTheme;
     }
 
-    // Document metadata
+    updateMenuAccessibility();
+
+    // Document metadata.
     document.title = lang === "ar"
       ? "M.A.S.H CYVEX | مطور ويب وباحث أمن سيبراني"
       : "M.A.S.H CYVEX | Web Developer & Cybersecurity Researcher";
@@ -358,89 +407,76 @@
 
     if (description) {
       description.content = lang === "ar"
-        ? "M.A.S.H CYVEX — مطور واجهات ويب وباحث في الأمن السيبراني من سوهاج، مصر."
-        : "M.A.S.H CYVEX — Web Developer and Cybersecurity Researcher from Sohag, Egypt.";
+        ? "M.A.S.H CYVEX — مطور واجهات ويب وباحث في الأمن السيبراني من سوهاج، مصر. استكشف المشاريع والمهارات والأعمال التقنية."
+        : "M.A.S.H CYVEX — Web Developer & Cybersecurity Researcher from Sohag, Egypt. Explore projects, skills, and technical work.";
     }
 
-    storageSet("mash-language", lang);
-  }
-
-  // ================================================
-  // THEME
-  // ================================================
-
-  function setTheme(theme) {
-    const nextTheme = theme === "light" ? "light" : "dark";
-
-    html.dataset.theme = nextTheme;
-
-    if (themeToggle) {
-      themeToggle.setAttribute(
-        "aria-label",
-        html.lang === "ar" ? "تغيير المظهر" : "Change Theme"
-      );
-
-      themeToggle.setAttribute(
-        "aria-pressed",
-        String(nextTheme === "dark")
-      );
-
-      themeToggle.textContent =
-        nextTheme === "dark" ? "☀️" : "🌙";
+    const ogLocale = $('meta[property="og:locale"]');
+    if (ogLocale) {
+      ogLocale.content = lang === "ar" ? "ar_EG" : "en_US";
     }
 
-    storageSet("mash-theme", nextTheme);
+    safeStorage.set("mash-language", lang);
   }
 
-  // ================================================
-  // SIDEBAR
-  // ================================================
-
-  function openSidebar() {
-    sidebar?.classList.add("open", "active");
-    overlay?.classList.add("active", "show");
-    menuBtn?.setAttribute("aria-expanded", "true");
-    body.classList.add("sidebar-open");
-  }
-
-  function closeSidebar() {
-    sidebar?.classList.remove("open", "active");
-    overlay?.classList.remove("active", "show");
-    menuBtn?.setAttribute("aria-expanded", "false");
-    body.classList.remove("sidebar-open");
-  }
-
-  menuBtn?.addEventListener("click", () => {
-    const isOpen =
-      sidebar?.classList.contains("open") ||
-      sidebar?.classList.contains("active");
-
-    if (isOpen) closeSidebar();
-    else openSidebar();
+  languageToggle?.addEventListener("click", () => {
+    const nextLanguage = html.lang === "ar" ? "en" : "ar";
+    setLanguage(nextLanguage);
   });
 
-  overlay?.addEventListener("click", closeSidebar);
+  /* =====================================================
+     THEME
+  ===================================================== */
 
-  // ================================================
-  // NAVIGATION
-  // ================================================
+  const themeToggle = $("#themeToggle");
 
-  const pageLinks = $$("[data-page]");
+  function setTheme(theme) {
+    const selectedTheme = theme === "light" ? "light" : "dark";
+
+    html.dataset.theme = selectedTheme;
+
+    if (themeToggle) {
+      themeToggle.textContent =
+        selectedTheme === "dark" ? "☀️" : "🌙";
+
+      const label = translations[html.lang] || translations.ar;
+
+      themeToggle.setAttribute("aria-label", label.changeTheme);
+      themeToggle.title = label.changeTheme;
+    }
+
+    safeStorage.set("mash-theme", selectedTheme);
+  }
+
+  themeToggle?.addEventListener("click", () => {
+    const nextTheme =
+      html.dataset.theme === "dark" ? "light" : "dark";
+
+    setTheme(nextTheme);
+  });
+
+  /* =====================================================
+     NAVIGATION
+  ===================================================== */
+
   const pages = $$(".page");
+  const navLinks = $$(".nav-link");
+  const pageLinks = $$("[data-page]");
 
-  function showPage(pageId, updateHistory = true) {
+  function showPage(pageId, updateHash = true) {
     const target = document.getElementById(pageId);
 
-    if (!target || !target.classList.contains("page")) return;
+    if (!target || !target.classList.contains("page")) {
+      return;
+    }
 
     pages.forEach(page => {
-      const active = page.id === pageId;
-      page.classList.toggle("active", active);
-      page.setAttribute("aria-hidden", String(!active));
+      page.classList.toggle("active", page.id === pageId);
     });
 
-    pageLinks.forEach(link => {
+    navLinks.forEach(link => {
       const active = link.dataset.page === pageId;
+
       link.classList.toggle("active", active);
 
       if (active) {
@@ -450,20 +486,25 @@
       }
     });
 
-    closeSidebar();
-
-    if (updateHistory) {
-      try {
-        history.pushState({ page: pageId }, "", `#${pageId}`);
-      } catch (_) {}
+    if (updateHash) {
+      history.replaceState(null, "", `#${pageId}`);
     }
 
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    closeSidebar();
+
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth"
+    });
+
+    refreshReveal();
+    animateSkills(target);
   }
 
   pageLinks.forEach(link => {
     link.addEventListener("click", event => {
       const pageId = link.dataset.page;
+
       if (!pageId) return;
 
       event.preventDefault();
@@ -471,177 +512,328 @@
     });
   });
 
-  window.addEventListener("popstate", () => {
-    const pageId = location.hash.replace("#", "");
-    if (pageId) showPage(pageId, false);
+  // Handle direct links and browser navigation.
+  function handleHashNavigation() {
+    const pageId = window.location.hash.replace("#", "");
+    const validPage = pages.some(page => page.id === pageId);
+
+    if (validPage) {
+      showPage(pageId, false);
+    } else if (!pageId) {
+      showPage("home", false);
+    }
+  }
+
+  window.addEventListener("hashchange", handleHashNavigation);
+
+  /* =====================================================
+     MOBILE SIDEBAR
+  ===================================================== */
+
+  const menuBtn = $("#menuBtn");
+  const sidebar = $("#sidebar");
+  const overlay = $("#overlay");
+
+  function updateMenuAccessibility() {
+    if (!menuBtn) return;
+
+    const isOpen = body.classList.contains("menu-open");
+    const label = translations[html.lang] || translations.ar;
+
+    menuBtn.setAttribute("aria-expanded", String(isOpen));
+    menuBtn.setAttribute(
+      "aria-label",
+      isOpen ? label.closeMenu : label.openMenu
+    );
+  }
+
+  function openSidebar() {
+    body.classList.add("menu-open");
+    updateMenuAccessibility();
+  }
+
+  function closeSidebar() {
+    body.classList.remove("menu-open");
+    updateMenuAccessibility();
+  }
+
+  menuBtn?.addEventListener("click", () => {
+    if (body.classList.contains("menu-open")) {
+      closeSidebar();
+    } else {
+      openSidebar();
+    }
   });
 
-  // ================================================
-  // MODALS
-  // ================================================
+  overlay?.addEventListener("click", closeSidebar);
+
+  /* =====================================================
+     MODALS
+  ===================================================== */
 
   const modals = $$(".modal");
+  let previousFocus = null;
 
-  function openModal(modal) {
+  function openModal(modalId) {
+    const modal = document.getElementById(modalId);
+
     if (!modal) return;
 
-    modal.classList.add("active", "show");
+    previousFocus = document.activeElement;
+
+    modals.forEach(item => {
+      item.classList.remove("active");
+      item.setAttribute("aria-hidden", "true");
+    });
+
+    modal.classList.add("active");
     modal.setAttribute("aria-hidden", "false");
     body.classList.add("modal-open");
 
-    $("[data-action='close-modal']", modal)?.focus();
+    const closeButton = $('[data-action="close-modal"]', modal);
+    closeButton?.focus();
   }
 
   function closeModal(modal) {
     if (!modal) return;
 
-    modal.classList.remove("active", "show");
+    modal.classList.remove("active");
     modal.setAttribute("aria-hidden", "true");
 
-    const stillOpen = modals.some(item =>
-      item.classList.contains("active") ||
-      item.classList.contains("show")
+    const anotherOpen = modals.some(item =>
+      item.classList.contains("active")
     );
 
-    if (!stillOpen) {
+    if (!anotherOpen) {
       body.classList.remove("modal-open");
+
+      if (previousFocus && typeof previousFocus.focus === "function") {
+        previousFocus.focus();
+      }
     }
   }
 
+  function closeAllModals() {
+    modals.forEach(modal => closeModal(modal));
+  }
+
+  /* =====================================================
+     CONTACT ACTIONS
+  ===================================================== */
+
+  const PHONE_NUMBER = "201554416094";
+  const EMAIL_ADDRESS = "minadeveloper43@gmail.com";
+
+  function openWhatsApp() {
+    const url = `https://wa.me/${PHONE_NUMBER}`;
+
+    window.open(url, "_blank", "noopener,noreferrer");
+  }
+
+  function openPhone() {
+    window.location.href = `tel:+${PHONE_NUMBER}`;
+  }
+
+  function openEmail() {
+    window.location.href = `mailto:${EMAIL_ADDRESS}`;
+  }
+
+  /* =====================================================
+     ACTION BUTTONS
+  ===================================================== */
+
   $$("[data-action]").forEach(element => {
-    element.addEventListener("click", event => {
+    element.addEventListener("click", () => {
       const action = element.dataset.action;
 
-      if (action === "open-report") {
-        event.preventDefault();
-        openModal($("#reportModal"));
-      }
+      switch (action) {
+        case "open-report":
+          openModal("reportModal");
+          break;
 
-      if (action === "open-recon") {
-        event.preventDefault();
-        openModal($("#reconModal"));
-      }
+        case "open-recon":
+          openModal("reconModal");
+          break;
 
-      if (action === "close-modal") {
-        event.preventDefault();
-        closeModal(element.closest(".modal"));
-      }
+        case "close-modal":
+          closeModal(element.closest(".modal"));
+          break;
 
-      if (action === "whatsapp") {
-        const number = "201554416094";
+        case "whatsapp":
+          openWhatsApp();
+          break;
 
-        window.open(
-          `https://wa.me/${number}`,
-          "_blank",
-          "noopener,noreferrer"
-        );
-      }
+        case "phone":
+          openPhone();
+          break;
 
-      if (action === "phone") {
-        location.href = "tel:+201554416094";
-      }
+        case "email":
+          openEmail();
+          break;
 
-      if (action === "email") {
-        location.href = "mailto:minadeveloper43@gmail.com";
+        default:
+          break;
       }
     });
   });
 
+  // Close modal when clicking its backdrop.
   modals.forEach(modal => {
     modal.addEventListener("click", event => {
-      if (event.target === modal) closeModal(modal);
+      if (event.target === modal) {
+        closeModal(modal);
+      }
     });
   });
+
+  /* =====================================================
+     KEYBOARD ACCESSIBILITY
+  ===================================================== */
 
   document.addEventListener("keydown", event => {
     if (event.key === "Escape") {
+      closeAllModals();
       closeSidebar();
-      modals.forEach(closeModal);
     }
   });
 
-  // ================================================
-  // SKILL PROGRESS
-  // ================================================
+  /* =====================================================
+     REVEAL ANIMATIONS
+  ===================================================== */
 
-  $$("[data-progress]").forEach(bar => {
-    const rawValue = Number(bar.dataset.progress);
+  let revealObserver = null;
 
-    const value = Number.isFinite(rawValue)
-      ? Math.min(100, Math.max(0, rawValue))
-      : 0;
+  function refreshReveal() {
+    const elements = $$(".reveal");
 
-    bar.style.setProperty("--progress", `${value}%`);
-    bar.style.width = `${value}%`;
+    if (!("IntersectionObserver" in window)) {
+      elements.forEach(element => {
+        element.classList.add("visible");
+      });
+      return;
+    }
 
-    bar.setAttribute("role", "progressbar");
-    bar.setAttribute("aria-valuemin", "0");
-    bar.setAttribute("aria-valuemax", "100");
-    bar.setAttribute("aria-valuenow", String(value));
-  });
+    if (revealObserver) {
+      revealObserver.disconnect();
+    }
 
-  // ================================================
-  // SCROLL REVEAL
-  // ================================================
-
-  const revealItems = $$(".reveal, [data-reveal]");
-
-  if ("IntersectionObserver" in window && revealItems.length) {
-    const observer = new IntersectionObserver(
-      (entries, currentObserver) => {
+    revealObserver = new IntersectionObserver(
+      (entries, observer) => {
         entries.forEach(entry => {
           if (entry.isIntersecting) {
-            entry.target.classList.add("visible", "revealed");
-            currentObserver.unobserve(entry.target);
+            entry.target.classList.add("visible");
+            observer.unobserve(entry.target);
           }
         });
       },
-      { threshold: 0.12 }
+      {
+        threshold: 0.12,
+        rootMargin: "0px 0px -30px 0px"
+      }
     );
 
-    revealItems.forEach(item => observer.observe(item));
-  } else {
-    revealItems.forEach(item => {
-      item.classList.add("visible", "revealed");
+    elements.forEach(element => {
+      if (!element.classList.contains("visible")) {
+        revealObserver.observe(element);
+      }
     });
   }
 
-  // ================================================
-  // IMAGE FALLBACK
-  // ================================================
+  /* =====================================================
+     SKILLS ANIMATION
+  ===================================================== */
 
-  $$("img").forEach(img => {
-    img.addEventListener("error", () => {
-      img.classList.add("image-load-failed");
+  const animatedSkills = new WeakSet();
 
-      const wrapper = img.closest(
-        ".profile-image-wrap, .profile-image, .image-wrapper, .avatar"
-      );
+  function animateSkills(container = document) {
+    const skills = $$(".skill-progress", container);
 
-      wrapper?.classList.add("profile-image-failed");
-    }, { once: true });
-  });
+    skills.forEach(skill => {
+      if (animatedSkills.has(skill)) return;
 
-  // ================================================
-  // INITIALIZATION
-  // ================================================
+      const progress = Number(skill.dataset.progress);
 
-  const savedLanguage = storageGet("mash-language") || "ar";
-  const savedTheme = storageGet("mash-theme") || html.dataset.theme || "dark";
+      if (!Number.isFinite(progress)) return;
 
-  setLanguage(savedLanguage);
-  setTheme(savedTheme);
+      const safeProgress = Math.min(100, Math.max(0, progress));
 
-  const initialPage = location.hash.replace("#", "");
+      skill.style.width = "0%";
 
-  if (
-    initialPage &&
-    document.getElementById(initialPage)?.classList.contains("page")
-  ) {
-    showPage(initialPage, false);
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          skill.style.width = `${safeProgress}%`;
+        });
+      });
+
+      animatedSkills.add(skill);
+    });
+  }
+
+  /* =====================================================
+     PROFILE IMAGE FALLBACK
+  ===================================================== */
+
+  const profileImage = $(".profile-image");
+  const profileFallback = $(".profile-fallback");
+
+  if (profileImage && profileFallback) {
+    const showFallback = () => {
+      profileImage.style.display = "none";
+      profileFallback.style.display = "flex";
+    };
+
+    profileImage.addEventListener("error", showFallback);
+
+    if (profileImage.complete && profileImage.naturalWidth === 0) {
+      showFallback();
+    }
+  }
+
+  /* =====================================================
+     CONTACT FORM LABELS
+     Form submission is handled by contact.js
+  ===================================================== */
+
+  /* =====================================================
+     INITIALIZATION
+  ===================================================== */
+
+  function initialize() {
+    const savedLanguage = safeStorage.get("mash-language", "ar");
+    const savedTheme = safeStorage.get(
+      "mash-theme",
+      html.dataset.theme || "dark"
+    );
+
+    setTheme(savedTheme);
+    setLanguage(savedLanguage);
+
+    const initialPage = window.location.hash.replace("#", "");
+    const pageExists = pages.some(page => page.id === initialPage);
+
+    showPage(pageExists ? initialPage : "home", false);
+
+    refreshReveal();
+    animateSkills(document);
+
+    // Recheck images that may have failed before initialization.
+    if (
+      profileImage &&
+      profileFallback &&
+      profileImage.complete &&
+      profileImage.naturalWidth === 0
+    ) {
+      profileImage.style.display = "none";
+      profileFallback.style.display = "flex";
+    }
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initialize, {
+      once: true
+    });
   } else {
-    const activePage = $(".page.active") || $("#home");
-    if (activePage) showPage(activePage.id, false);
+    initialize();
   }
 
 })();
