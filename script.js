@@ -1,7 +1,7 @@
 /* =====================================================
    M.A.S.H CYVEX — Main JavaScript
-   Compatible with the provided index.html
-   Language / Theme / Navigation / Modals / Contact
+   Fixed: Sidebar / Modals / Navigation
+   Language / Theme / Contact / Animations
 ===================================================== */
 
 (() => {
@@ -329,7 +329,6 @@
   function translateElement(element, value) {
     if (!element || typeof value !== "string") return;
 
-    // Preserve icons and other child elements.
     const walker = document.createTreeWalker(
       element,
       NodeFilter.SHOW_TEXT,
@@ -366,7 +365,6 @@
       }
     });
 
-    // Contact form labels.
     const formLabels = {
       contactName: dictionary.nameLabel,
       contactEmail: dictionary.emailLabel,
@@ -379,26 +377,21 @@
       if (label) label.textContent = value;
     });
 
-    // Language button.
     if (languageToggle) {
       languageToggle.textContent = lang === "ar" ? "EN" : "عربي";
-      languageToggle.setAttribute(
-        "aria-label",
-        dictionary.switchLanguage
-      );
+      languageToggle.setAttribute("aria-label", dictionary.switchLanguage);
       languageToggle.title = dictionary.switchLanguage;
     }
 
-    // Theme and menu accessibility labels.
-    const themeToggle = $("#themeToggle");
-    if (themeToggle) {
-      themeToggle.setAttribute("aria-label", dictionary.changeTheme);
-      themeToggle.title = dictionary.changeTheme;
+    const themeButton = $("#themeToggle");
+
+    if (themeButton) {
+      themeButton.setAttribute("aria-label", dictionary.changeTheme);
+      themeButton.title = dictionary.changeTheme;
     }
 
     updateMenuAccessibility();
 
-    // Document metadata.
     document.title = lang === "ar"
       ? "M.A.S.H CYVEX | مطور ويب وباحث أمن سيبراني"
       : "M.A.S.H CYVEX | Web Developer & Cybersecurity Researcher";
@@ -412,6 +405,7 @@
     }
 
     const ogLocale = $('meta[property="og:locale"]');
+
     if (ogLocale) {
       ogLocale.content = lang === "ar" ? "ar_EG" : "en_US";
     }
@@ -420,8 +414,7 @@
   }
 
   languageToggle?.addEventListener("click", () => {
-    const nextLanguage = html.lang === "ar" ? "en" : "ar";
-    setLanguage(nextLanguage);
+    setLanguage(html.lang === "ar" ? "en" : "ar");
   });
 
   /* =====================================================
@@ -449,11 +442,63 @@
   }
 
   themeToggle?.addEventListener("click", () => {
-    const nextTheme =
-      html.dataset.theme === "dark" ? "light" : "dark";
-
-    setTheme(nextTheme);
+    setTheme(html.dataset.theme === "dark" ? "light" : "dark");
   });
+
+  /* =====================================================
+     SIDEBAR ELEMENTS
+  ===================================================== */
+
+  const menuBtn = $("#menuBtn");
+  const sidebar = $("#sidebar");
+  const overlay = $("#overlay");
+
+  function updateMenuAccessibility() {
+    if (!menuBtn) return;
+
+    const isOpen = body.classList.contains("menu-open");
+    const label = translations[html.lang] || translations.ar;
+
+    menuBtn.setAttribute("aria-expanded", String(isOpen));
+    menuBtn.setAttribute(
+      "aria-label",
+      isOpen ? label.closeMenu : label.openMenu
+    );
+  }
+
+  /* =====================================================
+     MOBILE SIDEBAR — FIXED
+  ===================================================== */
+
+  function openSidebar() {
+    body.classList.add("menu-open");
+
+    // Classes required by the original CSS.
+    sidebar?.classList.add("open");
+    overlay?.classList.add("show");
+
+    updateMenuAccessibility();
+  }
+
+  function closeSidebar() {
+    body.classList.remove("menu-open");
+
+    // Remove both original and compatibility classes.
+    sidebar?.classList.remove("open");
+    overlay?.classList.remove("show");
+
+    updateMenuAccessibility();
+  }
+
+  menuBtn?.addEventListener("click", () => {
+    if (body.classList.contains("menu-open")) {
+      closeSidebar();
+    } else {
+      openSidebar();
+    }
+  });
+
+  overlay?.addEventListener("click", closeSidebar);
 
   /* =====================================================
      NAVIGATION
@@ -512,7 +557,6 @@
     });
   });
 
-  // Handle direct links and browser navigation.
   function handleHashNavigation() {
     const pageId = window.location.hash.replace("#", "");
     const validPage = pages.some(page => page.id === pageId);
@@ -527,48 +571,7 @@
   window.addEventListener("hashchange", handleHashNavigation);
 
   /* =====================================================
-     MOBILE SIDEBAR
-  ===================================================== */
-
-  const menuBtn = $("#menuBtn");
-  const sidebar = $("#sidebar");
-  const overlay = $("#overlay");
-
-  function updateMenuAccessibility() {
-    if (!menuBtn) return;
-
-    const isOpen = body.classList.contains("menu-open");
-    const label = translations[html.lang] || translations.ar;
-
-    menuBtn.setAttribute("aria-expanded", String(isOpen));
-    menuBtn.setAttribute(
-      "aria-label",
-      isOpen ? label.closeMenu : label.openMenu
-    );
-  }
-
-  function openSidebar() {
-    body.classList.add("menu-open");
-    updateMenuAccessibility();
-  }
-
-  function closeSidebar() {
-    body.classList.remove("menu-open");
-    updateMenuAccessibility();
-  }
-
-  menuBtn?.addEventListener("click", () => {
-    if (body.classList.contains("menu-open")) {
-      closeSidebar();
-    } else {
-      openSidebar();
-    }
-  });
-
-  overlay?.addEventListener("click", closeSidebar);
-
-  /* =====================================================
-     MODALS
+     MODALS — FIXED
   ===================================================== */
 
   const modals = $$(".modal");
@@ -577,17 +580,20 @@
   function openModal(modalId) {
     const modal = document.getElementById(modalId);
 
-    if (!modal) return;
+    if (!modal || !modal.classList.contains("modal")) return;
 
     previousFocus = document.activeElement;
 
     modals.forEach(item => {
-      item.classList.remove("active");
+      item.classList.remove("active", "show");
       item.setAttribute("aria-hidden", "true");
     });
 
-    modal.classList.add("active");
+    // "show" matches the original CSS.
+    // "active" remains for compatibility with the previous patch.
+    modal.classList.add("show", "active");
     modal.setAttribute("aria-hidden", "false");
+
     body.classList.add("modal-open");
 
     const closeButton = $('[data-action="close-modal"]', modal);
@@ -597,11 +603,12 @@
   function closeModal(modal) {
     if (!modal) return;
 
-    modal.classList.remove("active");
+    modal.classList.remove("active", "show");
     modal.setAttribute("aria-hidden", "true");
 
     const anotherOpen = modals.some(item =>
-      item.classList.contains("active")
+      item.classList.contains("active") ||
+      item.classList.contains("show")
     );
 
     if (!anotherOpen) {
@@ -610,11 +617,20 @@
       if (previousFocus && typeof previousFocus.focus === "function") {
         previousFocus.focus();
       }
+
+      previousFocus = null;
     }
   }
 
   function closeAllModals() {
-    modals.forEach(modal => closeModal(modal));
+    modals.forEach(modal => {
+      if (
+        modal.classList.contains("active") ||
+        modal.classList.contains("show")
+      ) {
+        closeModal(modal);
+      }
+    });
   }
 
   /* =====================================================
@@ -626,7 +642,6 @@
 
   function openWhatsApp() {
     const url = `https://wa.me/${PHONE_NUMBER}`;
-
     window.open(url, "_blank", "noopener,noreferrer");
   }
 
@@ -790,11 +805,6 @@
   }
 
   /* =====================================================
-     CONTACT FORM LABELS
-     Form submission is handled by contact.js
-  ===================================================== */
-
-  /* =====================================================
      INITIALIZATION
   ===================================================== */
 
@@ -816,7 +826,6 @@
     refreshReveal();
     animateSkills(document);
 
-    // Recheck images that may have failed before initialization.
     if (
       profileImage &&
       profileFallback &&
