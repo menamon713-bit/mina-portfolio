@@ -9,831 +9,484 @@
   const html = document.documentElement;
   const body = document.body;
 
-  const themeToggle = document.getElementById("themeToggle");
-  const languageToggle = document.getElementById("languageToggle");
+  const $ = (selector, root = document) => root.querySelector(selector);
+  const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
 
-  const menuBtn = document.getElementById("menuBtn");
-  const sidebar = document.getElementById("sidebar");
-  const overlay = document.getElementById("overlay");
-
-  const allowedPages = [
-    "home",
-    "about",
-    "skills",
-    "projects",
-    "contact"
-  ];
-
-  const CONTACT = Object.freeze({
-    phone: "201554416094",
-    email: "minadeveloper43@gmail.com",
-    whatsapp: "201554416094"
-  });
-
-  let currentLanguage = "ar";
-  let previousFocus = null;
-  let lastContactAction = 0;
-  let revealObserver = null;
-
-  const reducedMotion = window.matchMedia(
-    "(prefers-reduced-motion: reduce)"
-  );
-
-  // ================================================
-  // Translation Dictionary
-  // ================================================
+  const themeToggle = $("#themeToggle");
+  const languageToggle = $("#languageToggle");
+  const menuBtn = $("#menuBtn");
+  const sidebar = $("#sidebar");
+  const overlay = $("#overlay");
 
   const translations = {
     ar: {
-      brandCaption: "DEVELOPER PORTFOLIO",
-      profileRole: "مطور ويب وباحث أمن سيبراني",
-      available: "متاح للمشاريع",
-
-      navHome: "الرئيسية",
-      navAbout: "من أنا",
-      navSkills: "المهارات",
-      navProjects: "المشاريع",
-      navContact: "تواصل معي",
-      downloadCV: "تحميل السيرة الذاتية",
-
-      heroLabel: "مرحباً بك في مساحتي التقنية",
-      heroGreeting: "أهلاً، أنا",
-      heroSubtitle: "مطور واجهات ويب وباحث في الأمن السيبراني",
-      heroDescription: "أعمل على بناء تجارب ويب حديثة، وأهتم بأمن التطبيقات والشبكات واكتشاف الثغرات ومعالجتها.",
-      viewProjects: "استكشف مشاريعي",
-      contactMe: "تواصل معي",
-      location: "سوهاج، مصر",
-      englishLevel: "الإنجليزية: متوسط",
-
-      statOne: "ثغرات تم اكتشافها",
-      statTwo: "مشاركة في Bug Bounty",
-      statThree: "مشاريع تقنية",
-
-      focusKicker: "مجالات العمل",
-      focusTitle: "ما الذي أركز عليه؟",
-      focusWebTitle: "تطوير الويب",
-      focusWebText: "تصميم وتطوير واجهات ويب حديثة ومتجاوبة.",
-      focusSecurityTitle: "الأمن السيبراني",
-      focusSecurityText: "فهم المخاطر الأمنية واكتشاف نقاط الضعف ومعالجتها.",
-      focusNetworkTitle: "أمن الشبكات",
-      focusNetworkText: "تحليل الشبكات وتحسين إعدادات الحماية.",
-
-      aboutKicker: "تعرف عليّ",
-      aboutTitle: "من أنا؟",
-      aboutSubtitle: "نبذة عن اهتماماتي ومجالات عملي التقنية.",
-      aboutHello: "مرحباً، أنا M.A.S.H CYVEX",
-      aboutTextOne: "مطور ويب مهتم ببناء واجهات مستخدم عملية وحديثة، مع اهتمام بالأداء وتجربة المستخدم والتوافق مع مختلف الأجهزة.",
-      aboutTextTwo: "أهتم أيضاً بالأمن السيبراني، وأعمل على تعلم وتحليل أمن التطبيقات والشبكات واكتشاف الثغرات الأمنية والتعامل معها بطريقة مسؤولة.",
-      aboutTextThree: "أطور مهاراتي باستمرار من خلال التعلم والتطبيق العملي وبناء المشاريع التقنية.",
-
-      detailName: "الاسم",
-      detailRole: "المجال",
-      detailRoleValue: "تطوير الويب والأمن السيبراني",
-      detailLocation: "الموقع",
-      detailLanguage: "اللغة الإنجليزية",
-      detailAvailability: "الحالة",
-
-      valueOneTitle: "التعلم المستمر",
-      valueOneText: "تطوير المعرفة والمهارات التقنية باستمرار.",
-      valueTwoTitle: "التطبيق العملي",
-      valueTwoText: "تحويل الأفكار إلى مشاريع وتجارب عملية.",
-      valueThreeTitle: "الأمان والمسؤولية",
-      valueThreeText: "الاهتمام ببناء حلول أكثر أماناً وموثوقية.",
-
-      skillsKicker: "قدراتي التقنية",
-      skillsTitle: "المهارات",
-      skillsSubtitle: "التقنيات والأدوات التي أتعلمها وأستخدمها في مشاريعي.",
-      skillNetwork: "أمن الشبكات",
-      skillWebSecurity: "أمن تطبيقات الويب",
-      skillVulnerability: "اكتشاف ومعالجة الثغرات",
-      skillsNote: "مستويات التقدم المعروضة تقديرية وتعبر عن تقييم ذاتي للمهارات، وليست شهادات أو اختبارات رسمية.",
-
-      projectsKicker: "أعمالي التقنية",
-      projectsTitle: "المشاريع",
-      projectsSubtitle: "مجموعة من المشاريع والتجارب التي عملت عليها.",
-      projectReportTitle: "تقرير تقييم أمني",
-      projectReportText: "نموذج تقرير يعرض نتائج تقييم أمني وملاحظات حول نقاط الضعف والتوصيات.",
-      viewDetails: "عرض التفاصيل",
-      projectMalwareText: "مشروع لتحليل الملفات بشكل ثابت والمساعدة في فحص خصائصها ومؤشراتها.",
-      viewGithub: "عرض على GitHub",
-      projectReconText: "أداة لاستكشاف المعلومات وجمع البيانات الأولية ضمن نطاقات اختبار مصرح بها.",
-      projectAwidaTitle: "مطعم عويضة الجمهورية",
-      projectAwidaText: "موقع ويب تعريفي لمطعم يعرض معلوماته وخدماته.",
-      projectLetsGoText: "موقع ويب تعريفي لمقهى بتصميم متجاوب.",
-      liveDemo: "الموقع المباشر",
-
-      contactKicker: "لنتواصل",
-      contactTitle: "تواصل معي",
-      contactSubtitle: "للاستفسارات أو مناقشة مشروع أو تعاون تقني.",
-      contactHeadline: "هل لديك فكرة أو مشروع؟",
-      contactText: "يمكنك التواصل معي من خلال إحدى الوسائل التالية.",
-      whatsappLabel: "ابدأ محادثة",
-      phoneTitle: "الهاتف",
-      contactFooterTitle: "شكراً لزيارتك",
-      contactFooterText: "أقدّر وقتك واهتمامك باستكشاف أعمالي.",
-
-      formSuccess: "تم إرسال رسالتك بنجاح.",
-      formError: "تعذر إرسال الرسالة. حاول مرة أخرى.",
-      formInvalid: "يرجى التأكد من صحة البيانات المدخلة.",
-      formSending: "جارٍ إرسال رسالتك...",
-      formNetworkError: "تعذر الاتصال بالخادم. تحقق من الإنترنت وحاول مجدداً.",
-
-      rights: "جميع الحقوق محفوظة.",
-      footerMade: "صُنع باهتمام بالتفاصيل.",
-
-      reportModalKicker: "مشروع أمني",
-      reportModalTitle: "تقرير التقييم الأمني",
-      reportModalIntro: "عرض توضيحي لطريقة تنظيم نتائج التقييم الأمني وتوثيق الملاحظات.",
-      reportScopeTitle: "نطاق العمل",
-      reportScopeText: "تقييم أمني ضمن نطاق محدد ومصرح به.",
-      reportMethodTitle: "المنهجية",
-      reportMethodText: "جمع المعلومات، مراجعة النتائج، وتوثيق الملاحظات.",
-      reportOutputTitle: "المخرجات",
-      reportOutputText: "ملخص للملاحظات الأمنية وتوصيات المعالجة.",
-
-      reconModalIntro: "مشروع لاستكشاف المعلومات الأولية وتنظيم نتائج الاستطلاع الأمني.",
-      reconPurposeTitle: "الهدف",
-      reconPurposeText: "المساعدة في تنظيم عملية الاستطلاع وجمع المعلومات العامة.",
-      reconUsageTitle: "الاستخدام",
-      reconUsageText: "يُستخدم فقط على الأنظمة والنطاقات التي يوجد تصريح باختبارها.",
-      reconTechTitle: "التقنيات",
-
-      menuOpen: "فتح القائمة",
-      menuClose: "إغلاق القائمة",
-      themeLight: "تفعيل الوضع الفاتح",
-      themeDark: "تفعيل الوضع الداكن",
-      languageSwitch: "Switch language",
-      modalClose: "إغلاق",
-      whatsappMessage: "مرحباً، أود التواصل معك بخصوص مشروع أو استفسار تقني."
+      "nav.home": "الرئيسية",
+      "nav.about": "من أنا",
+      "nav.skills": "المهارات",
+      "nav.projects": "المشاريع",
+      "nav.contact": "تواصل معي",
+      "hero.greeting": "مرحباً، أنا",
+      "hero.role": "مطور ويب ومهتم بالأمن السيبراني",
+      "hero.description": "أبني تجارب رقمية حديثة وأهتم بتطوير الويب وأمن التطبيقات والشبكات.",
+      "hero.projects": "استكشف أعمالي",
+      "hero.contact": "تواصل معي",
+      "about.title": "من أنا",
+      "about.description": "مطور ويب ومهتم بالأمن السيبراني، أعمل على بناء واجهات وتجارب رقمية عملية مع الاهتمام بالأداء والأمان.",
+      "skills.title": "المهارات",
+      "projects.title": "المشاريع",
+      "contact.title": "تواصل معي",
+      "contact.name": "الاسم",
+      "contact.email": "البريد الإلكتروني",
+      "contact.subject": "الموضوع",
+      "contact.message": "اكتب رسالتك",
+      "contact.send": "إرسال الرسالة",
+      "contact.sending": "جارٍ الإرسال...",
+      "contact.success": "تم إرسال رسالتك بنجاح.",
+      "contact.error": "تعذر إرسال الرسالة. حاول مرة أخرى.",
+      "footer.rights": "جميع الحقوق محفوظة."
     },
-
     en: {
-      brandCaption: "DEVELOPER PORTFOLIO",
-      profileRole: "Web Developer & Cybersecurity Researcher",
-      available: "Available for projects",
-
-      navHome: "Home",
-      navAbout: "About",
-      navSkills: "Skills",
-      navProjects: "Projects",
-      navContact: "Contact",
-      downloadCV: "Download CV",
-
-      heroLabel: "Welcome to my technical space",
-      heroGreeting: "Hello, I'm",
-      heroSubtitle: "Web Developer & Cybersecurity Researcher",
-      heroDescription: "I build modern web experiences and focus on application security, network security, vulnerability discovery, and remediation.",
-      viewProjects: "Explore Projects",
-      contactMe: "Contact Me",
-      location: "Sohag, Egypt",
-      englishLevel: "English: Intermediate",
-
-      statOne: "Vulnerabilities Discovered",
-      statTwo: "Bug Bounty Participation",
-      statThree: "Technical Projects",
-
-      focusKicker: "What I Do",
-      focusTitle: "My Main Focus",
-      focusWebTitle: "Web Development",
-      focusWebText: "Building modern and responsive web interfaces.",
-      focusSecurityTitle: "Cybersecurity",
-      focusSecurityText: "Understanding security risks and identifying weaknesses responsibly.",
-      focusNetworkTitle: "Network Security",
-      focusNetworkText: "Analyzing networks and improving security configurations.",
-
-      aboutKicker: "Get to Know Me",
-      aboutTitle: "About Me",
-      aboutSubtitle: "A brief overview of my interests and technical work.",
-      aboutHello: "Hello, I'm M.A.S.H CYVEX",
-      aboutTextOne: "I'm a web developer interested in building practical, modern user interfaces, with a focus on performance, user experience, and device compatibility.",
-      aboutTextTwo: "I'm also interested in cybersecurity, learning and analyzing application and network security, discovering vulnerabilities, and handling them responsibly.",
-      aboutTextThree: "I continuously develop my skills through learning, practical work, and building technical projects.",
-
-      detailName: "Name",
-      detailRole: "Field",
-      detailRoleValue: "Web Development & Cybersecurity",
-      detailLocation: "Location",
-      detailLanguage: "English",
-      detailAvailability: "Status",
-
-      valueOneTitle: "Continuous Learning",
-      valueOneText: "Continuously improving technical knowledge and skills.",
-      valueTwoTitle: "Practical Experience",
-      valueTwoText: "Turning ideas into practical projects and experiments.",
-      valueThreeTitle: "Security & Responsibility",
-      valueThreeText: "Building solutions with better security and reliability.",
-
-      skillsKicker: "Technical Abilities",
-      skillsTitle: "Skills",
-      skillsSubtitle: "Technologies and tools I learn and use in my projects.",
-      skillNetwork: "Network Security",
-      skillWebSecurity: "Web Application Security",
-      skillVulnerability: "Vulnerability Discovery & Remediation",
-      skillsNote: "The displayed progress levels are estimates based on self-assessment. They are not official certifications or test results.",
-
-      projectsKicker: "My Technical Work",
-      projectsTitle: "Projects",
-      projectsSubtitle: "A collection of projects and experiments I've worked on.",
-      projectReportTitle: "Security Assessment Report",
-      projectReportText: "A sample report presenting security assessment findings, observations, and recommendations.",
-      viewDetails: "View Details",
-      projectMalwareText: "A static file analysis project designed to inspect file properties and indicators.",
-      viewGithub: "View on GitHub",
-      projectReconText: "An information discovery tool for gathering initial data within authorized testing scopes.",
-      projectAwidaTitle: "Awida Republic Restaurant",
-      projectAwidaText: "A restaurant website presenting its information and services.",
-      projectLetsGoText: "A responsive website for a cafe.",
-      liveDemo: "Live Website",
-
-      contactKicker: "Get in Touch",
-      contactTitle: "Contact Me",
-      contactSubtitle: "For inquiries, project discussions, or technical collaboration.",
-      contactHeadline: "Have an idea or a project?",
-      contactText: "You can contact me through one of the following channels.",
-      whatsappLabel: "Start a conversation",
-      phoneTitle: "Phone",
-      contactFooterTitle: "Thanks for Visiting",
-      contactFooterText: "I appreciate your time and interest in exploring my work.",
-
-      formSuccess: "Your message was sent successfully.",
-      formError: "Your message could not be sent. Please try again.",
-      formInvalid: "Please check the information you entered.",
-      formSending: "Sending your message...",
-      formNetworkError: "Unable to connect to the server. Check your internet connection.",
-
-      rights: "All rights reserved.",
-      footerMade: "Built with attention to detail.",
-
-      reportModalKicker: "Security Project",
-      reportModalTitle: "Security Assessment Report",
-      reportModalIntro: "A demonstration of how security assessment findings and observations can be organized.",
-      reportScopeTitle: "Scope",
-      reportScopeText: "A security assessment within a defined and authorized scope.",
-      reportMethodTitle: "Methodology",
-      reportMethodText: "Information gathering, reviewing findings, and documenting observations.",
-      reportOutputTitle: "Deliverables",
-      reportOutputText: "A summary of security observations and remediation recommendations.",
-
-      reconModalIntro: "A project for initial information discovery and organizing reconnaissance findings.",
-      reconPurposeTitle: "Purpose",
-      reconPurposeText: "Helping organize reconnaissance and collect publicly available information.",
-      reconUsageTitle: "Usage",
-      reconUsageText: "Only use on systems and domains you are authorized to test.",
-      reconTechTitle: "Technologies",
-
-      menuOpen: "Open menu",
-      menuClose: "Close menu",
-      themeLight: "Enable light mode",
-      themeDark: "Enable dark mode",
-      languageSwitch: "تغيير اللغة",
-      modalClose: "Close",
-      whatsappMessage: "Hello, I would like to contact you about a project or technical inquiry."
+      "nav.home": "Home",
+      "nav.about": "About",
+      "nav.skills": "Skills",
+      "nav.projects": "Projects",
+      "nav.contact": "Contact",
+      "hero.greeting": "Hello, I'm",
+      "hero.role": "Web Developer & Cybersecurity Enthusiast",
+      "hero.description": "I build modern digital experiences and focus on web development, application security, and networks.",
+      "hero.projects": "Explore My Work",
+      "hero.contact": "Contact Me",
+      "about.title": "About Me",
+      "about.description": "A web developer and cybersecurity enthusiast focused on practical digital experiences, performance, and security.",
+      "skills.title": "Skills",
+      "projects.title": "Projects",
+      "contact.title": "Contact Me",
+      "contact.name": "Name",
+      "contact.email": "Email",
+      "contact.subject": "Subject",
+      "contact.message": "Write your message",
+      "contact.send": "Send Message",
+      "contact.sending": "Sending...",
+      "contact.success": "Your message was sent successfully.",
+      "contact.error": "Could not send your message. Please try again.",
+      "footer.rights": "All rights reserved."
     }
   };
 
-  // ================================================
-  // Safe Storage Helpers
-  // ================================================
-
-  function readStorage(key, fallback) {
+  function safeStorageGet(key) {
     try {
-      return localStorage.getItem(key) || fallback;
-    } catch {
-      return fallback;
+      return localStorage.getItem(key);
+    } catch (_) {
+      return null;
     }
   }
 
-  function writeStorage(key, value) {
+  function safeStorageSet(key, value) {
     try {
       localStorage.setItem(key, value);
-    } catch {
-      // Storage may be unavailable.
-    }
+    } catch (_) {}
   }
-
-  // ================================================
-  // Theme
-  // ================================================
 
   function setTheme(theme) {
-    const selectedTheme = theme === "light" ? "light" : "dark";
+    const nextTheme = theme === "light" ? "light" : "dark";
 
-    html.setAttribute("data-theme", selectedTheme);
+    html.dataset.theme = nextTheme;
 
     if (themeToggle) {
-      themeToggle.textContent =
-        selectedTheme === "light" ? "☀️" : "🌙";
+      themeToggle.setAttribute(
+        "aria-label",
+        nextTheme === "dark"
+          ? "Switch to light theme"
+          : "Switch to dark theme"
+      );
 
-      const label = translations[currentLanguage][
-        selectedTheme === "light" ? "themeDark" : "themeLight"
-      ];
-
-      themeToggle.setAttribute("aria-label", label);
-      themeToggle.setAttribute("title", label);
+      themeToggle.setAttribute(
+        "aria-pressed",
+        String(nextTheme === "dark")
+      );
     }
 
-    writeStorage("theme", selectedTheme);
+    safeStorageSet("mash-theme", nextTheme);
   }
 
-  setTheme(readStorage("theme", "dark"));
+  function setLanguage(language) {
+    const nextLanguage = language === "en" ? "en" : "ar";
 
-  if (themeToggle) {
-    themeToggle.addEventListener("click", function () {
-      const currentTheme = html.getAttribute("data-theme") || "dark";
-      setTheme(currentTheme === "dark" ? "light" : "dark");
-    });
-  }
+    html.lang = nextLanguage;
+    html.dir = nextLanguage === "ar" ? "rtl" : "ltr";
 
-  // ================================================
-  // Language
-  // ================================================
+    $$("[data-i18n]").forEach((element) => {
+      const key = element.dataset.i18n;
+      const value = translations[nextLanguage][key];
 
-  function translatePage(language) {
-    currentLanguage = language === "en" ? "en" : "ar";
-
-    html.lang = currentLanguage;
-    html.dir = currentLanguage === "ar" ? "rtl" : "ltr";
-
-    document.querySelectorAll("[data-i18n]").forEach(function (element) {
-      const key = element.getAttribute("data-i18n");
-      const translatedText = translations[currentLanguage][key];
-
-      if (typeof translatedText === "string") {
-        element.textContent = translatedText;
+      if (typeof value === "string") {
+        element.textContent = value;
       }
     });
 
-    document.querySelectorAll("[data-i18n-attr]").forEach(function (element) {
-      const entries = element.getAttribute("data-i18n-attr");
+    $$("[data-i18n-placeholder]").forEach((element) => {
+      const key = element.dataset.i18nPlaceholder;
+      const value = translations[nextLanguage][key];
 
-      if (!entries) return;
-
-      entries.split(";").forEach(function (entry) {
-        const parts = entry.split(":");
-        const attribute = parts[0];
-        const key = parts[1];
-
-        if (!attribute || !key) return;
-
-        const translatedValue = translations[currentLanguage][key];
-
-        if (typeof translatedValue === "string") {
-          element.setAttribute(attribute, translatedValue);
-        }
-      });
+      if (typeof value === "string") {
+        element.setAttribute("placeholder", value);
+      }
     });
 
     if (languageToggle) {
-      languageToggle.textContent = currentLanguage === "ar" ? "EN" : "عربي";
+      languageToggle.textContent =
+        nextLanguage === "ar" ? "EN" : "عربي";
 
-      const label = translations[currentLanguage].languageSwitch;
-
-      languageToggle.setAttribute("aria-label", label);
-      languageToggle.setAttribute("title", label);
-    }
-
-    if (menuBtn) {
-      const menuIsOpen = sidebar && sidebar.classList.contains("open");
-
-      menuBtn.setAttribute(
+      languageToggle.setAttribute(
         "aria-label",
-        translations[currentLanguage][menuIsOpen ? "menuClose" : "menuOpen"]
+        nextLanguage === "ar"
+          ? "Switch language to English"
+          : "تغيير اللغة إلى العربية"
       );
     }
 
-    if (themeToggle) {
-      const activeTheme = html.getAttribute("data-theme") || "dark";
+    safeStorageSet("mash-language", nextLanguage);
+  }
 
-      const label = translations[currentLanguage][
-        activeTheme === "light" ? "themeDark" : "themeLight"
-      ];
+  setTheme(
+    safeStorageGet("mash-theme") ||
+    html.dataset.theme ||
+    "dark"
+  );
 
-      themeToggle.setAttribute("aria-label", label);
-      themeToggle.setAttribute("title", label);
+  setLanguage(
+    safeStorageGet("mash-language") ||
+    html.lang ||
+    "ar"
+  );
+
+  themeToggle?.addEventListener("click", () => {
+    setTheme(
+      html.dataset.theme === "dark" ? "light" : "dark"
+    );
+  });
+
+  languageToggle?.addEventListener("click", () => {
+    setLanguage(html.lang === "ar" ? "en" : "ar");
+  });
+
+  // ---------------- Navigation ----------------
+
+  const pageLinks = $$("[data-page]");
+  const pages = $$(".page");
+
+  function showPage(pageId, updateHistory = true) {
+    const target = document.getElementById(pageId);
+
+    if (!target || !target.classList.contains("page")) {
+      return;
     }
 
-    document.querySelectorAll(".modal-close").forEach(function (button) {
-      button.setAttribute(
-        "aria-label",
-        translations[currentLanguage].modalClose
-      );
+    pages.forEach((page) => {
+      const active = page.id === pageId;
+
+      page.classList.toggle("active", active);
+      page.setAttribute("aria-hidden", String(!active));
     });
 
-    writeStorage("language", currentLanguage);
-  }
+    pageLinks.forEach((link) => {
+      const active = link.dataset.page === pageId;
 
-  translatePage(readStorage("language", "ar"));
+      link.classList.toggle("active", active);
 
-  if (languageToggle) {
-    languageToggle.addEventListener("click", function () {
-      translatePage(currentLanguage === "ar" ? "en" : "ar");
-    });
-  }
-
-  // ================================================
-  // Navigation
-  // ================================================
-
-  function closeSidebar() {
-    if (sidebar) sidebar.classList.remove("open");
-    if (overlay) overlay.classList.remove("show");
-
-    if (menuBtn) {
-      menuBtn.setAttribute("aria-expanded", "false");
-      menuBtn.setAttribute(
-        "aria-label",
-        translations[currentLanguage].menuOpen
-      );
-    }
-
-    body.classList.remove("sidebar-open");
-  }
-
-  function openSidebar() {
-    if (sidebar) sidebar.classList.add("open");
-    if (overlay) overlay.classList.add("show");
-
-    if (menuBtn) {
-      menuBtn.setAttribute("aria-expanded", "true");
-      menuBtn.setAttribute(
-        "aria-label",
-        translations[currentLanguage].menuClose
-      );
-    }
-
-    body.classList.add("sidebar-open");
-  }
-
-  function showPage(pageId) {
-    if (!allowedPages.includes(pageId)) return;
-
-    const targetPage = document.getElementById(pageId);
-
-    if (!targetPage || !targetPage.classList.contains("page")) return;
-
-    document.querySelectorAll(".page").forEach(function (page) {
-      page.classList.remove("active");
-    });
-
-    targetPage.classList.add("active");
-
-    document.querySelectorAll("[data-page]").forEach(function (link) {
-      const isActive = link.getAttribute("data-page") === pageId;
-
-      link.classList.toggle("active", isActive);
-
-      if (link.classList.contains("nav-link")) {
-        if (isActive) {
-          link.setAttribute("aria-current", "page");
-        } else {
-          link.removeAttribute("aria-current");
-        }
+      if (active) {
+        link.setAttribute("aria-current", "page");
+      } else {
+        link.removeAttribute("aria-current");
       }
     });
 
     closeSidebar();
 
+    if (updateHistory) {
+      try {
+        history.pushState(
+          { page: pageId },
+          "",
+          `#${pageId}`
+        );
+      } catch (_) {}
+    }
+
     window.scrollTo({
       top: 0,
-      behavior: reducedMotion.matches ? "auto" : "smooth"
+      behavior: "smooth"
     });
-
-    observeRevealElements();
   }
 
-  document.addEventListener("click", function (event) {
-    const pageLink = event.target.closest("[data-page]");
+  pageLinks.forEach((link) => {
+    link.addEventListener("click", (event) => {
+      const pageId = link.dataset.page;
 
-    if (!pageLink) return;
+      if (!pageId) return;
 
-    const pageId = pageLink.getAttribute("data-page");
+      event.preventDefault();
+      showPage(pageId);
+    });
+  });
 
-    if (!allowedPages.includes(pageId)) return;
+  window.addEventListener("popstate", () => {
+    const pageId = location.hash.replace("#", "");
 
-    event.preventDefault();
-    showPage(pageId);
-
-    if (window.location.hash !== "#" + pageId) {
-      history.replaceState(null, "", "#" + pageId);
+    if (pageId) {
+      showPage(pageId, false);
     }
   });
 
-  if (menuBtn) {
-    menuBtn.addEventListener("click", function () {
-      const isOpen = sidebar && sidebar.classList.contains("open");
+  const initialPage = location.hash.replace("#", "");
 
-      if (isOpen) {
-        closeSidebar();
-      } else {
-        openSidebar();
-      }
-    });
-  }
+  if (
+    initialPage &&
+    document.getElementById(initialPage)?.classList.contains("page")
+  ) {
+    showPage(initialPage, false);
+  } else {
+    const activePage = $(".page.active") || $("#home");
 
-  if (overlay) {
-    overlay.addEventListener("click", closeSidebar);
-  }
-
-  const initialHash = window.location.hash.replace("#", "");
-
-  showPage(
-    allowedPages.includes(initialHash) ? initialHash : "home"
-  );
-
-  // ================================================
-  // Animated Background
-  // ================================================
-
-  function initializeBackground() {
-    const background = document.querySelector(".bg-anim");
-
-    if (!background) return;
-
-    if (reducedMotion.matches) {
-      background.classList.add("motion-reduced");
-      return;
+    if (activePage) {
+      showPage(activePage.id, false);
     }
-
-    background.classList.remove("motion-reduced");
-    background.classList.add("background-ready");
   }
 
-  initializeBackground();
+  // ---------------- Mobile sidebar ----------------
 
-  if (typeof reducedMotion.addEventListener === "function") {
-    reducedMotion.addEventListener("change", initializeBackground);
+  function openSidebar() {
+    sidebar?.classList.add("open", "active");
+    overlay?.classList.add("active", "show");
+
+    menuBtn?.setAttribute("aria-expanded", "true");
+
+    body.classList.add("sidebar-open");
   }
 
-  // ================================================
-  // Modals
-  // ================================================
+  function closeSidebar() {
+    sidebar?.classList.remove("open", "active");
+    overlay?.classList.remove("active", "show");
 
-  function getVisibleModal() {
-    return document.querySelector(".modal.show");
+    menuBtn?.setAttribute("aria-expanded", "false");
+
+    body.classList.remove("sidebar-open");
   }
 
-  function openModal(modalId) {
-    const modal = document.getElementById(modalId);
+  menuBtn?.addEventListener("click", () => {
+    const isOpen =
+      sidebar?.classList.contains("open") ||
+      sidebar?.classList.contains("active");
 
+    if (isOpen) {
+      closeSidebar();
+    } else {
+      openSidebar();
+    }
+  });
+
+  overlay?.addEventListener("click", closeSidebar);
+
+  // ---------------- Modals ----------------
+
+  const modals = $$(".modal");
+
+  function openModal(modal) {
     if (!modal) return;
 
-    previousFocus = document.activeElement;
-
-    document.querySelectorAll(".modal.show").forEach(function (item) {
-      item.classList.remove("show");
-      item.setAttribute("aria-hidden", "true");
-    });
-
-    modal.classList.add("show");
+    modal.classList.add("active", "show");
     modal.setAttribute("aria-hidden", "false");
 
-    body.style.overflow = "hidden";
+    body.classList.add("modal-open");
 
-    const closeButton = modal.querySelector(".modal-close");
+    const closeButton = $(
+      "[data-action='close-modal']",
+      modal
+    );
 
-    if (closeButton) closeButton.focus();
+    closeButton?.focus();
   }
 
   function closeModal(modal) {
-    const targetModal = modal || getVisibleModal();
+    if (!modal) return;
 
-    if (!targetModal) return;
+    modal.classList.remove("active", "show");
+    modal.setAttribute("aria-hidden", "true");
 
-    targetModal.classList.remove("show");
-    targetModal.setAttribute("aria-hidden", "true");
+    const anotherModalOpen = modals.some((item) =>
+      item.classList.contains("active") ||
+      item.classList.contains("show")
+    );
 
-    if (!getVisibleModal()) {
-      body.style.overflow = "";
-
-      if (previousFocus && typeof previousFocus.focus === "function") {
-        previousFocus.focus();
-      }
-
-      previousFocus = null;
+    if (!anotherModalOpen) {
+      body.classList.remove("modal-open");
     }
   }
 
-  document.addEventListener("click", function (event) {
-    const actionElement = event.target.closest("[data-action]");
+  $$("[data-action]").forEach((element) => {
+    element.addEventListener("click", (event) => {
+      const action = element.dataset.action;
 
-    if (!actionElement) return;
+      if (action === "open-report") {
+        event.preventDefault();
+        openModal($("#reportModal"));
 
-    const action = actionElement.getAttribute("data-action");
+      } else if (action === "open-recon") {
+        event.preventDefault();
+        openModal($("#reconModal"));
 
-    switch (action) {
-      case "open-report":
-        openModal("reportModal");
-        break;
+      } else if (action === "close-modal") {
+        event.preventDefault();
 
-      case "open-recon":
-        openModal("reconModal");
-        break;
+        closeModal(
+          element.closest(".modal") ||
+          element.closest("[role='dialog']")
+        );
 
-      case "close-modal":
-        closeModal(actionElement.closest(".modal"));
-        break;
+      } else if (action === "whatsapp") {
+        const number = (
+          element.dataset.phone || ""
+        ).replace(/[^\d]/g, "");
 
-      case "whatsapp":
-        openWhatsApp();
-        break;
+        if (number) {
+          window.open(
+            `https://wa.me/${number}`,
+            "_blank",
+            "noopener,noreferrer"
+          );
+        }
 
-      case "phone":
-        openPhone();
-        break;
+      } else if (action === "phone") {
+        const phone =
+          element.dataset.phone ||
+          element.getAttribute("href")?.replace(/^tel:/, "");
 
-      case "email":
-        openEmail();
-        break;
+        if (phone) {
+          location.href = `tel:${phone}`;
+        }
 
-      default:
-        break;
-    }
-  });
+      } else if (action === "email") {
+        const email =
+          element.dataset.email ||
+          element.getAttribute("href")?.replace(/^mailto:/, "");
 
-  document.querySelectorAll(".modal").forEach(function (modal) {
-    modal.addEventListener("click", function (event) {
-      if (event.target === modal) closeModal(modal);
+        if (email) {
+          location.href = `mailto:${email}`;
+        }
+      }
     });
   });
 
-  // ================================================
-  // Keyboard Accessibility
-  // ================================================
+  modals.forEach((modal) => {
+    modal.addEventListener("click", (event) => {
+      if (event.target === modal) {
+        closeModal(modal);
+      }
+    });
+  });
 
-  document.addEventListener("keydown", function (event) {
+  document.addEventListener("keydown", (event) => {
     if (event.key === "Escape") {
-      const visibleModal = getVisibleModal();
-
-      if (visibleModal) {
-        closeModal(visibleModal);
-        return;
-      }
-
       closeSidebar();
-    }
-
-    if (event.key === "Tab") {
-      const modal = getVisibleModal();
-
-      if (!modal) return;
-
-      const focusableElements = modal.querySelectorAll(
-        'a[href], button:not([disabled]), input:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
-      );
-
-      if (!focusableElements.length) return;
-
-      const firstElement = focusableElements[0];
-      const lastElement = focusableElements[focusableElements.length - 1];
-
-      if (event.shiftKey && document.activeElement === firstElement) {
-        event.preventDefault();
-        lastElement.focus();
-      } else if (!event.shiftKey && document.activeElement === lastElement) {
-        event.preventDefault();
-        firstElement.focus();
-      }
+      modals.forEach(closeModal);
     }
   });
 
-  // ================================================
-  // Contact Actions
-  // ================================================
+  // ---------------- Skill progress ----------------
 
-  function allowContactAction() {
-    const now = Date.now();
+  $$("[data-progress]").forEach((bar) => {
+    const rawValue = Number(bar.dataset.progress);
 
-    if (now - lastContactAction < 1500) return false;
+    const value = Number.isFinite(rawValue)
+      ? Math.min(100, Math.max(0, rawValue))
+      : 0;
 
-    lastContactAction = now;
-    return true;
-  }
+    bar.style.setProperty("--progress", `${value}%`);
 
-  function openWhatsApp() {
-    if (!allowContactAction()) return;
-
-    const message = encodeURIComponent(
-      translations[currentLanguage].whatsappMessage
-    );
-
-    const url =
-      "https://wa.me/" + CONTACT.whatsapp + "?text=" + message;
-
-    window.open(url, "_blank", "noopener,noreferrer");
-  }
-
-  function openPhone() {
-    if (!allowContactAction()) return;
-
-    window.location.href = "tel:+" + CONTACT.phone;
-  }
-
-  function openEmail() {
-    if (!allowContactAction()) return;
-
-    const subject = encodeURIComponent(
-      currentLanguage === "ar"
-        ? "تواصل من خلال الموقع"
-        : "Contact from portfolio website"
-    );
-
-    const bodyText = encodeURIComponent(
-      currentLanguage === "ar"
-        ? "مرحباً، أود التواصل معك."
-        : "Hello, I would like to contact you."
-    );
-
-    window.location.href =
-      "mailto:" + CONTACT.email +
-      "?subject=" + subject +
-      "&body=" + bodyText;
-  }
-
-  // ================================================
-  // Reveal on Scroll
-  // ================================================
-
-  function observeRevealElements() {
-    const elements = document.querySelectorAll(
-      ".page.active .reveal:not(.visible)"
-    );
-
-    if (!elements.length) return;
-
-    if (reducedMotion.matches || !("IntersectionObserver" in window)) {
-      elements.forEach(function (element) {
-        element.classList.add("visible");
-      });
-
-      return;
+    if (
+      bar.classList.contains("skill-progress") ||
+      bar.classList.contains("progress-fill")
+    ) {
+      bar.style.width = `${value}%`;
     }
 
-    if (revealObserver) revealObserver.disconnect();
+    bar.setAttribute("role", "progressbar");
+    bar.setAttribute("aria-valuemin", "0");
+    bar.setAttribute("aria-valuemax", "100");
+    bar.setAttribute("aria-valuenow", String(value));
+  });
 
-    revealObserver = new IntersectionObserver(
-      function (entries, observer) {
-        entries.forEach(function (entry) {
+  // ---------------- Scroll reveal ----------------
+
+  const revealItems = $$(".reveal, [data-reveal]");
+
+  if (
+    "IntersectionObserver" in window &&
+    revealItems.length
+  ) {
+    const observer = new IntersectionObserver(
+      (entries, currentObserver) => {
+        entries.forEach((entry) => {
           if (entry.isIntersecting) {
-            entry.target.classList.add("visible");
-            observer.unobserve(entry.target);
+            entry.target.classList.add(
+              "visible",
+              "revealed"
+            );
+
+            currentObserver.unobserve(entry.target);
           }
         });
       },
-      {
-        threshold: 0.08,
-        rootMargin: "0px 0px -30px 0px"
-      }
+      { threshold: 0.12 }
     );
 
-    elements.forEach(function (element) {
-      revealObserver.observe(element);
+    revealItems.forEach((item) => {
+      observer.observe(item);
+    });
+
+  } else {
+    revealItems.forEach((item) => {
+      item.classList.add("visible", "revealed");
     });
   }
 
-  observeRevealElements();
+  // ---------------- Image fallback state ----------------
 
-  // ================================================
-  // Image Fallback
-  // ================================================
+  $$("img").forEach((img) => {
+    img.addEventListener(
+      "error",
+      () => {
+        img.classList.add("image-load-failed");
 
-  document.querySelectorAll("img").forEach(function (img) {
-    img.addEventListener("error", function () {
-      if (img.classList.contains("profile-image")) {
-        img.style.display = "none";
+        const wrapper = img.closest(
+          ".profile-image, .image-wrapper, .avatar"
+        );
 
-        const fallback = img.nextElementSibling;
+        wrapper?.classList.add("profile-image-failed");
+      },
+      { once: true }
+    );
+  });
 
-        if (fallback && fallback.classList.contains("profile-fallback")) {
-          fallback.style.display = "flex";
-        }
-      } else if (img.closest(".project-image")) {
-        img.closest(".project-image").style.display = "none";
+  // ---------------- Contact shortcuts ----------------
+
+  $$("[data-contact='whatsapp']").forEach((element) => {
+    element.addEventListener("click", () => {
+      const number = (
+        element.dataset.phone || ""
+      ).replace(/[^\d]/g, "");
+
+      if (number) {
+        window.open(
+          `https://wa.me/${number}`,
+          "_blank",
+          "noopener,noreferrer"
+        );
       }
     });
   });
 
-  // ================================================
-  // Hash Navigation
-  // ================================================
-
-  window.addEventListener("hashchange", function () {
-    const pageId = window.location.hash.replace("#", "");
-
-    if (allowedPages.includes(pageId)) {
-      showPage(pageId);
-    }
-  });
-
-  // ================================================
-  // Initial Accessibility State
-  // ================================================
-
-  if (menuBtn) {
-    menuBtn.setAttribute("aria-expanded", "false");
-  }
-
-  document.querySelectorAll(".modal").forEach(function (modal) {
-    modal.setAttribute("aria-hidden", "true");
-  });
+  // Contact form submission is handled by contact.js.
+  // This file does not make API requests.
 
 })();
