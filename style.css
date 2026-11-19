@@ -444,3 +444,71 @@ html[lang="en"] .project-category { font-family: var(--font-en); }
   }
   .reveal { opacity: 1; transform: none; }
 }
+
+/* =========================================
+   M.A.S.H CYVEX — Interaction Compatibility Fix
+   Sidebar + Security Report + ReconXplorer
+========================================= */
+
+/* Mobile sidebar */
+@media (max-width: 849px) {
+  body.menu-open .sidebar {
+    inset-inline-start: 0;
+    visibility: visible;
+  }
+
+  body.menu-open .sidebar-overlay {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+  }
+
+  body:not(.menu-open) .sidebar-overlay {
+    pointer-events: none;
+  }
+
+  body.menu-open .menu-btn span:first-child {
+    transform: translateY(7px) rotate(45deg);
+  }
+
+  body.menu-open .menu-btn span:nth-child(2) {
+    opacity: 0;
+  }
+
+  body.menu-open .menu-btn span:last-child {
+    transform: translateY(-7px) rotate(-45deg);
+  }
+}
+
+/* Security Report + ReconXplorer modals */
+.modal.active {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.modal.active .modal-content {
+  transform: translateY(0);
+}
+
+/* Prevent background scrolling while modal is open */
+body.modal-open {
+  overflow: hidden;
+}
+
+/* Ensure hidden modals cannot receive clicks */
+.modal:not(.active) {
+  pointer-events: none;
+}
+
+/* Desktop sidebar */
+@media (min-width: 850px) {
+  .sidebar {
+    inset-inline-start: 0;
+    visibility: visible;
+  }
+
+  .sidebar-overlay {
+    display: none;
+  }
+}
