@@ -36,6 +36,7 @@
   let currentLanguage = "ar";
   let previousFocus = null;
   let lastContactAction = 0;
+  let revealObserver = null;
 
   // ================================================
   // Translation Dictionary
@@ -804,8 +805,6 @@
   // ================================================
   // Reveal on Scroll
   // ================================================
-
-  let revealObserver = null;
 
   function observeRevealElements() {
     const elements = document.querySelectorAll(
