@@ -1,234 +1,232 @@
 (function () {
-  'use strict';
+  "use strict";
 
-  // ═══ بيانات التواصل (Base64 = تمويه فقط وليس تشفير) ═══
-  var DATA = Object.freeze({
-    n: "bWluYQ==",
-    e: "bWluYWRldmVsb3BlcjQzQGdtYWlsLmNvbQ==",
-    p: "KzIwMTU1NDQxNjA5NA==",
-    w: "MjAxNTU0NDE2MDk0"
-  });
+  const html = document.documentElement;
 
-  function dec(str) {
-    try { return atob(str); } catch (err) { return ''; }
-  }
+  // Theme
+  const themeToggle = document.getElementById("themeToggle");
 
-  // ═══ تطبيق الاسم في صفحة "عني" ═══
-  document.addEventListener('DOMContentLoaded', function () {
-    var el = document.getElementById('aboutName');
-    if (!el) return;
-    el.textContent = '';
-    var bold = function (t) {
-      var s = document.createElement('strong');
-      s.textContent = t;
-      return s;
-    };
-    el.append('أنا ', bold(dec(DATA.n) + ' (M.A.S.H)'), '، باحث أمني مستقل من ', bold('سوهاج، مصر'),
-      '. تعلمت الأمن السيبراني بنفسي، وعندي شغف كبير بـ ', bold('الـ Red Teaming'), ' وأمن تطبيقات الويب.');
-  });
-
-  // ═══ حماية من الضغط المتكرر على أزرار التواصل ═══
-  var lastContact = 0;
-  function throttled() {
-    var now = Date.now();
-    if (now - lastContact < 1500) return true;
-    lastContact = now;
-    return false;
-  }
-
-  // ═══ دوال التواصل ═══
-  function handleWhatsApp() {
-    if (throttled()) return;
-    var phone = dec(DATA.w);
-    if (!/^\d{8,15}$/.test(phone)) return;
-    var msg = encodeURIComponent('السلام عليكم، عايز أتكلم معاك في مشروع');
-    var webUrl = 'https://wa.me/' + phone + '?text=' + msg;
-
-    // أندرويد: رابط intent بيظهر قائمة "فتح باستخدام" (واتساب / واتساب للأعمال)
-    // ولو مفيش أي تطبيق، المتصفح بيروح لـ wa.me تلقائيًا (من غير فتح مرتين)
-    if (/Android/i.test(navigator.userAgent)) {
-      window.location.href = 'intent://send?phone=' + phone + '&text=' + msg +
-        '#Intent;scheme=whatsapp;S.browser_fallback_url=' + encodeURIComponent(webUrl) + ';end';
-      return;
+  function setTheme(theme) {
+    html.setAttribute("data-theme", theme);
+    if (themeToggle) {
+      themeToggle.textContent = theme === "light" ? "☀️" : "🌙";
     }
-
-    // آيفون والكمبيوتر: wa.me
-    window.location.href = webUrl;
-  }
-
-  function handlePhone() {
-    if (throttled()) return;
-    var phone = dec(DATA.p);
-    if (!/^\+?\d{8,15}$/.test(phone)) return;
-    window.location.href = 'tel:' + phone;
-  }
-
-  function handleEmail() {
-    if (throttled()) return;
-    var email = dec(DATA.e);
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return;
-    window.location.href = 'mailto:' + email;
-  }
-
-  // ═══ Theme Toggle ═══
-  var themeToggle = document.getElementById('themeToggle');
-  var html = document.documentElement;
-
-  function setTheme(mode) {
-    if (mode === 'light') {
-      html.setAttribute('data-theme', 'light');
-      themeToggle.textContent = '☀️';
-    } else {
-      html.removeAttribute('data-theme');
-      themeToggle.textContent = '🌙';
-    }
-    try { localStorage.setItem('theme', mode); } catch (err) {}
+    try {
+      localStorage.setItem("theme", theme);
+    } catch (_) {}
   }
 
   try {
-    if (localStorage.getItem('theme') === 'light') {
-      html.setAttribute('data-theme', 'light');
-      themeToggle.textContent = '☀️';
-    }
-  } catch (err) {}
+    setTheme(localStorage.getItem("theme") || "dark");
+  } catch (_) {
+    setTheme("dark");
+  }
 
-  themeToggle.addEventListener('click', function () {
-    setTheme(html.getAttribute('data-theme') === 'light' ? 'dark' : 'light');
+  themeToggle?.addEventListener("click", function () {
+    setTheme(
+      html.getAttribute("data-theme") === "light" ? "dark" : "light"
+    );
   });
 
-  // ═══ Intro Animation ═══
-  (function () {
-    var container = document.getElementById('introName');
-    var intro = document.getElementById('intro');
-    if (!container || !intro) return;
+  // Intro animation
+  const intro = document.getElementById("intro");
+  const introName = document.getElementById("introName");
 
-    'M.A.S.H'.split('').forEach(function (ch, i) {
-      var span = document.createElement('span');
-      span.className = 'intro-letter';
-      span.textContent = ch === ' ' ? '\u00A0' : ch;
-      span.style.animationDelay = (0.4 + i * 0.12) + 's';
-      container.appendChild(span);
+  if (intro && introName) {
+    "M.A.S.H".split("").forEach((letter, index) => {
+      const span = document.createElement("span");
+      span.className = "intro-letter";
+      span.textContent = letter;
+      span.style.animationDelay = `${0.4 + index * 0.12}s`;
+      introName.appendChild(span);
     });
 
-    setTimeout(function () {
-      intro.classList.add('hide');
-      setTimeout(function () { intro.style.display = 'none'; }, 1000);
+    window.setTimeout(() => {
+      intro.classList.add("hide");
+      window.setTimeout(() => {
+        intro.style.display = "none";
+      }, 1000);
     }, 4500);
-  })();
+  }
 
-  // ═══ Sidebar ═══
-  var menuBtn = document.getElementById('menuBtn');
-  var sidebar = document.getElementById('sidebar');
-  var overlay = document.getElementById('overlay');
+  // Mobile sidebar
+  const menuBtn = document.getElementById("menuBtn");
+  const sidebar = document.getElementById("sidebar");
+  const overlay = document.getElementById("overlay");
 
   function closeSidebar() {
-    sidebar.classList.remove('open');
-    overlay.classList.remove('show');
+    sidebar?.classList.remove("open");
+    overlay?.classList.remove("show");
+    menuBtn?.setAttribute("aria-expanded", "false");
   }
 
-  menuBtn.addEventListener('click', function () {
-    sidebar.classList.toggle('open');
-    overlay.classList.toggle('show');
+  menuBtn?.addEventListener("click", () => {
+    const opened = sidebar?.classList.toggle("open");
+    overlay?.classList.toggle("show", Boolean(opened));
+    menuBtn.setAttribute("aria-expanded", String(Boolean(opened)));
   });
-  overlay.addEventListener('click', closeSidebar);
 
-  // ═══ التنقل بين الصفحات (مع whitelist) ═══
-  var ALLOWED_PAGES = ['home', 'about', 'skills', 'projects', 'contact'];
-  var navBtns = document.querySelectorAll('.nav-btn');
+  overlay?.addEventListener("click", closeSidebar);
 
-  navBtns.forEach(function (btn) {
-    btn.addEventListener('click', function () {
-      var pageId = this.getAttribute('data-page');
-      if (ALLOWED_PAGES.indexOf(pageId) === -1) return;
-      var target = document.getElementById('page-' + pageId);
-      if (!target) return;
+  // Navigation
+  const allowedPages = ["home", "about", "skills", "projects", "contact"];
+  const navButtons = document.querySelectorAll(".nav-btn");
 
-      document.querySelectorAll('.page').forEach(function (p) { p.classList.remove('active'); });
-      target.classList.add('active');
-      navBtns.forEach(function (b) { b.classList.remove('active'); });
-      this.classList.add('active');
-      closeSidebar();
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+  function showPage(pageId) {
+    if (!allowedPages.includes(pageId)) return;
 
-      if (pageId === 'skills') {
-        setTimeout(function () {
-          document.querySelectorAll('.skill-bar-fill').forEach(function (bar, i) {
-            bar.style.transition = 'none';
-            bar.style.transform = 'scaleX(0)';
-            setTimeout(function () {
-              bar.style.transition = 'transform 1s cubic-bezier(.34,1.56,.64,1)';
-              bar.style.transform = 'scaleX(1)';
-            }, 100 + i * 100);
-          });
-        }, 100);
-      }
+    const target = document.getElementById(`page-${pageId}`);
+    if (!target) return;
+
+    document.querySelectorAll(".page").forEach(page => {
+      page.classList.remove("active");
     });
-  });
 
-  // ═══ Modals ═══
-  function modalToggle(id, show) {
-    var m = document.getElementById(id);
-    if (m) m.classList[show ? 'add' : 'remove']('show');
-  }
-  function openReport()  { modalToggle('reportModal', true); }
-  function closeReport() { modalToggle('reportModal', false); }
-  function openRecon()   { modalToggle('reconModal', true); }
-  function closeRecon()  { modalToggle('reconModal', false); }
+    target.classList.add("active");
 
-  ['reportModal', 'reconModal'].forEach(function (id) {
-    var m = document.getElementById(id);
-    if (m) m.addEventListener('click', function (e) {
-      if (e.target === m) modalToggle(id, false);
+    navButtons.forEach(button => {
+      const active = button.dataset.page === pageId;
+      button.classList.toggle("active", active);
+      button.setAttribute("aria-current", active ? "page" : "false");
     });
-  });
 
-  // ═══ Scroll Reveal ═══
-  document.addEventListener('DOMContentLoaded', function () {
-    var reveals = document.querySelectorAll('.reveal');
-    if (!('IntersectionObserver' in window)) {
-      reveals.forEach(function (r) { r.classList.add('visible'); });
-      return;
+    closeSidebar();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+
+    if (pageId === "skills") {
+      target.querySelectorAll(".skill-bar-fill").forEach((bar, index) => {
+        bar.style.transform = "scaleX(0)";
+        window.setTimeout(() => {
+          bar.style.transform = "scaleX(1)";
+        }, 100 + index * 100);
+      });
     }
-    var observer = new IntersectionObserver(function (entries) {
-      entries.forEach(function (entry) {
+  }
+
+  navButtons.forEach(button => {
+    button.addEventListener("click", () => {
+      showPage(button.dataset.page);
+    });
+  });
+
+  // Contact information
+  const CONTACT = Object.freeze({
+    email: "minadeveloper43@gmail.com",
+    phone: "+201554416094",
+    whatsapp: "201554416094"
+  });
+
+  let lastContactAction = 0;
+
+  function allowContact() {
+    const now = Date.now();
+    if (now - lastContactAction < 1500) return false;
+    lastContactAction = now;
+    return true;
+  }
+
+  function handleWhatsApp() {
+    if (!allowContact()) return;
+
+    const message = encodeURIComponent(
+      "السلام عليكم، عايز أتكلم معاك في مشروع"
+    );
+
+    const url = `https://wa.me/${CONTACT.whatsapp}?text=${message}`;
+    window.open(url, "_blank", "noopener,noreferrer");
+  }
+
+  function handlePhone() {
+    if (!allowContact()) return;
+    window.location.href = `tel:${CONTACT.phone}`;
+  }
+
+  function handleEmail() {
+    if (!allowContact()) return;
+    window.location.href = `mailto:${CONTACT.email}`;
+  }
+
+  // Modals
+  function toggleModal(id, show) {
+    const modal = document.getElementById(id);
+    if (!modal) return;
+    modal.classList.toggle("show", show);
+  }
+
+  const actions = {
+    "open-report": () => toggleModal("reportModal", true),
+    "close-report": () => toggleModal("reportModal", false),
+    "open-recon": () => toggleModal("reconModal", true),
+    "close-recon": () => toggleModal("reconModal", false),
+    whatsapp: handleWhatsApp,
+    phone: handlePhone,
+    email: handleEmail
+  };
+
+  document.addEventListener("click", event => {
+    const button = event.target.closest("[data-action]");
+    if (!button) return;
+
+    const action = actions[button.dataset.action];
+    if (typeof action === "function") action();
+  });
+
+  ["reportModal", "reconModal"].forEach(id => {
+    const modal = document.getElementById(id);
+    modal?.addEventListener("click", event => {
+      if (event.target === modal) toggleModal(id, false);
+    });
+  });
+
+  document.addEventListener("keydown", event => {
+    if (event.key === "Escape") {
+      toggleModal("reportModal", false);
+      toggleModal("reconModal", false);
+      closeSidebar();
+    }
+  });
+
+  // Reveal animations
+  const revealElements = document.querySelectorAll(".reveal");
+
+  if ("IntersectionObserver" in window) {
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
         if (entry.isIntersecting) {
-          entry.target.classList.add('visible');
+          entry.target.classList.add("visible");
           observer.unobserve(entry.target);
         }
       });
-    }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
-    reveals.forEach(function (r) { observer.observe(r); });
-  });
+    }, {
+      threshold: 0.1,
+      rootMargin: "0px 0px -40px 0px"
+    });
 
-  // ═══ ربط الأزرار (data-action) ═══
-  var actions = Object.freeze({
-    'open-report': openReport, 'close-report': closeReport,
-    'open-recon': openRecon, 'close-recon': closeRecon,
-    'whatsapp': handleWhatsApp, 'phone': handlePhone, 'email': handleEmail
-  });
-
-  document.addEventListener('click', function (e) {
-    var t = e.target.closest('[data-action]');
-    if (!t) return;
-    var name = t.getAttribute('data-action');
-    if (Object.prototype.hasOwnProperty.call(actions, name)) actions[name]();
-  });
-
-  document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape') { closeReport(); closeRecon(); }
-  });
-
-  // ═══ بدائل الصور ═══
-  function applyFallback(img) {
-    if (img.getAttribute('data-fallback') === 'initials') {
-      img.style.display = 'none';
-      if (img.parentElement) img.parentElement.textContent = 'M.A.S.H';
-    } else {
-      img.style.display = 'none';
-    }
+    revealElements.forEach(element => observer.observe(element));
+  } else {
+    revealElements.forEach(element => {
+      element.classList.add("visible");
+    });
   }
-  document.querySelectorAll('img[data-fallback]').forEach(function (img) {
-    img.addEventListener('error', function () { applyFallback(img); });
-    if (img.complete && img.naturalWidth === 0) applyFallback(img);
+
+  // Image fallback
+  document.querySelectorAll("img[data-fallback]").forEach(img => {
+    function fallback() {
+      if (img.dataset.fallback === "initials") {
+        img.style.display = "none";
+        if (img.parentElement) {
+          img.parentElement.textContent = "M.A.S.H";
+        }
+      } else {
+        img.style.display = "none";
+      }
+    }
+
+    img.addEventListener("error", fallback);
+
+    if (img.complete && img.naturalWidth === 0) {
+      fallback();
+    }
   });
+
 })();
