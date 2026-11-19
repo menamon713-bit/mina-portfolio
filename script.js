@@ -1,6 +1,7 @@
 // ================================================
 // M.A.S.H CYVEX — Main JavaScript
 // Navigation / Theme / Language / Modals / Contact
+// Animated Background — No Intro Screen
 // ================================================
 
 (function () {
@@ -15,9 +16,6 @@
   const menuBtn = document.getElementById("menuBtn");
   const sidebar = document.getElementById("sidebar");
   const overlay = document.getElementById("overlay");
-
-  const intro = document.getElementById("intro");
-  const introName = document.getElementById("introName");
 
   const allowedPages = [
     "home",
@@ -37,6 +35,10 @@
   let previousFocus = null;
   let lastContactAction = 0;
   let revealObserver = null;
+
+  const reducedMotion = window.matchMedia(
+    "(prefers-reduced-motion: reduce)"
+  );
 
   // ================================================
   // Translation Dictionary
@@ -311,26 +313,18 @@
       themeToggle.textContent =
         selectedTheme === "light" ? "☀️" : "🌙";
 
-      themeToggle.setAttribute(
-        "aria-label",
-        translations[currentLanguage][
-          selectedTheme === "light" ? "themeDark" : "themeLight"
-        ]
-      );
+      const label = translations[currentLanguage][
+        selectedTheme === "light" ? "themeDark" : "themeLight"
+      ];
 
-      themeToggle.setAttribute(
-        "title",
-        translations[currentLanguage][
-          selectedTheme === "light" ? "themeDark" : "themeLight"
-        ]
-      );
+      themeToggle.setAttribute("aria-label", label);
+      themeToggle.setAttribute("title", label);
     }
 
     writeStorage("theme", selectedTheme);
   }
 
-  const savedTheme = readStorage("theme", "dark");
-  setTheme(savedTheme);
+  setTheme(readStorage("theme", "dark"));
 
   if (themeToggle) {
     themeToggle.addEventListener("click", function () {
@@ -381,15 +375,10 @@
     if (languageToggle) {
       languageToggle.textContent = currentLanguage === "ar" ? "EN" : "عربي";
 
-      languageToggle.setAttribute(
-        "aria-label",
-        translations[currentLanguage].languageSwitch
-      );
+      const label = translations[currentLanguage].languageSwitch;
 
-      languageToggle.setAttribute(
-        "title",
-        translations[currentLanguage].languageSwitch
-      );
+      languageToggle.setAttribute("aria-label", label);
+      languageToggle.setAttribute("title", label);
     }
 
     if (menuBtn) {
@@ -404,19 +393,12 @@
     if (themeToggle) {
       const activeTheme = html.getAttribute("data-theme") || "dark";
 
-      themeToggle.setAttribute(
-        "aria-label",
-        translations[currentLanguage][
-          activeTheme === "light" ? "themeDark" : "themeLight"
-        ]
-      );
+      const label = translations[currentLanguage][
+        activeTheme === "light" ? "themeDark" : "themeLight"
+      ];
 
-      themeToggle.setAttribute(
-        "title",
-        translations[currentLanguage][
-          activeTheme === "light" ? "themeDark" : "themeLight"
-        ]
-      );
+      themeToggle.setAttribute("aria-label", label);
+      themeToggle.setAttribute("title", label);
     }
 
     document.querySelectorAll(".modal-close").forEach(function (button) {
@@ -429,13 +411,11 @@
     writeStorage("language", currentLanguage);
   }
 
-  const savedLanguage = readStorage("language", "ar");
-  translatePage(savedLanguage);
+  translatePage(readStorage("language", "ar"));
 
   if (languageToggle) {
     languageToggle.addEventListener("click", function () {
-      const nextLanguage = currentLanguage === "ar" ? "en" : "ar";
-      translatePage(nextLanguage);
+      translatePage(currentLanguage === "ar" ? "en" : "ar");
     });
   }
 
@@ -444,13 +424,8 @@
   // ================================================
 
   function closeSidebar() {
-    if (sidebar) {
-      sidebar.classList.remove("open");
-    }
-
-    if (overlay) {
-      overlay.classList.remove("show");
-    }
+    if (sidebar) sidebar.classList.remove("open");
+    if (overlay) overlay.classList.remove("show");
 
     if (menuBtn) {
       menuBtn.setAttribute("aria-expanded", "false");
@@ -464,13 +439,8 @@
   }
 
   function openSidebar() {
-    if (sidebar) {
-      sidebar.classList.add("open");
-    }
-
-    if (overlay) {
-      overlay.classList.add("show");
-    }
+    if (sidebar) sidebar.classList.add("open");
+    if (overlay) overlay.classList.add("show");
 
     if (menuBtn) {
       menuBtn.setAttribute("aria-expanded", "true");
@@ -484,19 +454,15 @@
   }
 
   function showPage(pageId) {
-    if (!allowedPages.includes(pageId)) {
-      return;
-    }
+    if (!allowedPages.includes(pageId)) return;
+
+    const targetPage = document.getElementById(pageId);
+
+    if (!targetPage || !targetPage.classList.contains("page")) return;
 
     document.querySelectorAll(".page").forEach(function (page) {
       page.classList.remove("active");
     });
-
-    const targetPage = document.getElementById(pageId);
-
-    if (!targetPage || !targetPage.classList.contains("page")) {
-      return;
-    }
 
     targetPage.classList.add("active");
 
@@ -518,9 +484,7 @@
 
     window.scrollTo({
       top: 0,
-      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
-        ? "auto"
-        : "smooth"
+      behavior: reducedMotion.matches ? "auto" : "smooth"
     });
 
     observeRevealElements();
@@ -559,56 +523,36 @@
     overlay.addEventListener("click", closeSidebar);
   }
 
-  // Support direct links such as #projects
   const initialHash = window.location.hash.replace("#", "");
 
-  if (allowedPages.includes(initialHash)) {
-    showPage(initialHash);
-  } else {
-    showPage("home");
-  }
+  showPage(
+    allowedPages.includes(initialHash) ? initialHash : "home"
+  );
 
   // ================================================
-  // Intro Animation
+  // Animated Background
+  // No intro screen or intro timers
   // ================================================
 
-  function runIntro() {
-    if (!intro) return;
+  function initializeBackground() {
+    const background = document.querySelector(".bg-anim");
 
-    const reducedMotion = window.matchMedia(
-      "(prefers-reduced-motion: reduce)"
-    ).matches;
+    if (!background) return;
 
-    if (reducedMotion) {
-      intro.classList.add("hide");
+    if (reducedMotion.matches) {
+      background.classList.add("motion-reduced");
       return;
     }
 
-    if (introName) {
-      const letters = ["M", ".", "A", ".", "S", ".", "H"];
-
-      introName.textContent = "";
-
-      letters.forEach(function (letter, index) {
-        const span = document.createElement("span");
-
-        span.textContent = letter;
-        span.style.animationDelay = (index * 0.09) + "s";
-
-        introName.appendChild(span);
-      });
-    }
-
-    window.setTimeout(function () {
-      intro.classList.add("hide");
-    }, 2800);
-
-    window.setTimeout(function () {
-      intro.style.display = "none";
-    }, 3600);
+    background.classList.remove("motion-reduced");
+    background.classList.add("background-ready");
   }
 
-  runIntro();
+  initializeBackground();
+
+  if (typeof reducedMotion.addEventListener === "function") {
+    reducedMotion.addEventListener("change", initializeBackground);
+  }
 
   // ================================================
   // Modals
@@ -637,9 +581,7 @@
 
     const closeButton = modal.querySelector(".modal-close");
 
-    if (closeButton) {
-      closeButton.focus();
-    }
+    if (closeButton) closeButton.focus();
   }
 
   function closeModal(modal) {
@@ -700,9 +642,7 @@
 
   document.querySelectorAll(".modal").forEach(function (modal) {
     modal.addEventListener("click", function (event) {
-      if (event.target === modal) {
-        closeModal(modal);
-      }
+      if (event.target === modal) closeModal(modal);
     });
   });
 
@@ -722,7 +662,6 @@
       closeSidebar();
     }
 
-    // Keep keyboard focus inside an open modal.
     if (event.key === "Tab") {
       const modal = getVisibleModal();
 
@@ -754,9 +693,7 @@
   function allowContactAction() {
     const now = Date.now();
 
-    if (now - lastContactAction < 1500) {
-      return false;
-    }
+    if (now - lastContactAction < 1500) return false;
 
     lastContactAction = now;
     return true;
@@ -811,7 +748,9 @@
       ".page.active .reveal:not(.visible)"
     );
 
-    if (!("IntersectionObserver" in window)) {
+    if (!elements.length) return;
+
+    if (reducedMotion.matches || !("IntersectionObserver" in window)) {
       elements.forEach(function (element) {
         element.classList.add("visible");
       });
@@ -819,9 +758,7 @@
       return;
     }
 
-    if (revealObserver) {
-      revealObserver.disconnect();
-    }
+    if (revealObserver) revealObserver.disconnect();
 
     revealObserver = new IntersectionObserver(
       function (entries, observer) {
