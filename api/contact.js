@@ -4,21 +4,84 @@ const { neon } = require("@neondatabase/serverless");
 
 const MAX_REQUESTS = 5;
 const WINDOW_SECONDS = 600;
+const MAX_BODY_BYTES = 12 * 1024;
 
 function getClientIP(req) {
   const forwarded = req.headers["x-forwarded-for"];
 
   if (typeof forwarded === "string" && forwarded.trim()) {
-    return forwarded.split(",")[0].trim().slice(0, 100);
+    const ip = forwarded.split(",")[0].trim();
+
+    if (ip && ip.length <= 100) return ip;
   }
 
   const realIP = req.headers["x-real-ip"];
 
   if (typeof realIP === "string" && realIP.trim()) {
-    return realIP.trim().slice(0, 100);
+    const ip = realIP.trim();
+
+    if (ip.length <= 100) return ip;
   }
 
-  return "unknown";
+  return null;
+}
+
+function validateBody(body) {
+  if (!body || typeof body !== "object" || Array.isArray(body)) {
+    return { valid: false, error: "Invalid request" };
+  }
+
+  if (
+    body.website !== undefined &&
+    typeof body.website !== "string"
+  ) {
+    return { valid: false, error: "Invalid request" };
+  }
+
+  if (typeof body.website === "string" && body.website.trim()) {
+    return { valid: true, spam: true };
+  }
+
+  const fields = ["name", "email", "subject", "message"];
+
+  for (const field of fields) {
+    if (
+      body[field] !== undefined &&
+      typeof body[field] !== "string"
+    ) {
+      return { valid: false, error: "Invalid input" };
+    }
+  }
+
+  const name = (body.name || "").trim();
+  const email = (body.email || "").trim().toLowerCase();
+  const subject = (body.subject || "").trim();
+  const message = (body.message || "").trim();
+
+  if (!name || !email || !message) {
+    return { valid: false, error: "Required fields are missing" };
+  }
+
+  if (
+    name.length > 100 ||
+    email.length > 254 ||
+    subject.length > 200 ||
+    message.length < 10 ||
+    message.length > 5000
+  ) {
+    return { valid: false, error: "Invalid input length" };
+  }
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  if (!emailRegex.test(email)) {
+    return { valid: false, error: "Invalid email address" };
+  }
+
+  return {
+    valid: true,
+    data: { name, email, subject, message }
+  };
 }
 
 async function checkRateLimit(ip) {
@@ -31,7 +94,6 @@ async function checkRateLimit(ip) {
 
   const key = `mash:contact:${encodeURIComponent(ip)}`;
 
-  // Atomic increment with automatic expiration.
   const script = `
     local count = redis.call("INCR", KEYS[1])
     if count == 1 then
@@ -43,7 +105,7 @@ async function checkRateLimit(ip) {
   const response = await fetch(url, {
     method: "POST",
     headers: {
-      "Authorization": `Bearer ${token}`,
+      Authorization: `Bearer ${token}`,
       "Content-Type": "application/json"
     },
     body: JSON.stringify([
@@ -59,17 +121,22 @@ async function checkRateLimit(ip) {
     throw new Error("Redis request failed");
   }
 
-  const data = await response.json();
+  const result = await response.json();
 
-  if (typeof data.result !== "number") {
+  if (
+    result.error ||
+    !Number.isSafeInteger(result.result) ||
+    result.result < 1
+  ) {
     throw new Error("Invalid Redis response");
   }
 
-  return data.result > MAX_REQUESTS;
+  return result.result > MAX_REQUESTS;
 }
 
 module.exports = async function handler(req, res) {
   res.setHeader("Cache-Control", "no-store");
+  res.setHeader("X-Content-Type-Options", "nosniff");
 
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
@@ -92,7 +159,39 @@ module.exports = async function handler(req, res) {
   }
 
   try {
+    const body = req.body;
+
+    if (!body || typeof body !== "object" || Array.isArray(body)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid request"
+      });
+    }
+
+    const validation = validateBody(body);
+
+    if (!validation.valid) {
+      return res.status(400).json({
+        success: false,
+        message: validation.error
+      });
+    }
+
+    if (validation.spam) {
+      return res.status(200).json({
+        success: true,
+        message: "Message received"
+      });
+    }
+
     const ip = getClientIP(req);
+
+    if (!ip) {
+      return res.status(400).json({
+        success: false,
+        message: "Unable to process request"
+      });
+    }
 
     let limited;
 
@@ -114,74 +213,7 @@ module.exports = async function handler(req, res) {
       });
     }
 
-    const body = req.body;
-
-    if (
-      !body ||
-      typeof body !== "object" ||
-      Array.isArray(body)
-    ) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid request"
-      });
-    }
-
-    // Honeypot
-    if (
-      typeof body.website === "string" &&
-      body.website.trim() !== ""
-    ) {
-      return res.status(200).json({
-        success: true,
-        message: "Message received"
-      });
-    }
-
-    const name = typeof body.name === "string"
-      ? body.name.trim()
-      : "";
-
-    const email = typeof body.email === "string"
-      ? body.email.trim().toLowerCase()
-      : "";
-
-    const subject = typeof body.subject === "string"
-      ? body.subject.trim()
-      : "";
-
-    const message = typeof body.message === "string"
-      ? body.message.trim()
-      : "";
-
-    if (!name || !email || !message) {
-      return res.status(400).json({
-        success: false,
-        message: "Required fields are missing"
-      });
-    }
-
-    if (
-      name.length > 100 ||
-      email.length > 254 ||
-      subject.length > 200 ||
-      message.length < 10 ||
-      message.length > 5000
-    ) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid input length"
-      });
-    }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-    if (!emailRegex.test(email)) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid email address"
-      });
-    }
+    const { name, email, subject, message } = validation.data;
 
     const sql = neon(process.env.DATABASE_URL);
 
