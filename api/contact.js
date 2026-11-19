@@ -3,30 +3,69 @@
 const { neon } = require("@neondatabase/serverless");
 
 const MAX_REQUESTS = 5;
-const WINDOW_MS = 10 * 60 * 1000;
-const requests = new Map();
+const WINDOW_SECONDS = 600;
 
 function getClientIP(req) {
   const forwarded = req.headers["x-forwarded-for"];
 
-  if (typeof forwarded === "string") {
-    return forwarded.split(",")[0].trim();
+  if (typeof forwarded === "string" && forwarded.trim()) {
+    return forwarded.split(",")[0].trim().slice(0, 100);
   }
 
-  return req.headers["x-real-ip"] || "unknown";
+  const realIP = req.headers["x-real-ip"];
+
+  if (typeof realIP === "string" && realIP.trim()) {
+    return realIP.trim().slice(0, 100);
+  }
+
+  return "unknown";
 }
 
-function isRateLimited(ip) {
-  const now = Date.now();
-  const record = requests.get(ip);
+async function checkRateLimit(ip) {
+  const url = process.env.KV_REST_API_URL;
+  const token = process.env.KV_REST_API_TOKEN;
 
-  if (!record || now - record.start > WINDOW_MS) {
-    requests.set(ip, { start: now, count: 1 });
-    return false;
+  if (!url || !token) {
+    throw new Error("Redis configuration missing");
   }
 
-  record.count += 1;
-  return record.count > MAX_REQUESTS;
+  const key = `mash:contact:${encodeURIComponent(ip)}`;
+
+  // Atomic increment with automatic expiration.
+  const script = `
+    local count = redis.call("INCR", KEYS[1])
+    if count == 1 then
+      redis.call("EXPIRE", KEYS[1], ARGV[1])
+    end
+    return count
+  `;
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${token}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify([
+      "EVAL",
+      script,
+      "1",
+      key,
+      String(WINDOW_SECONDS)
+    ])
+  });
+
+  if (!response.ok) {
+    throw new Error("Redis request failed");
+  }
+
+  const data = await response.json();
+
+  if (typeof data.result !== "number") {
+    throw new Error("Invalid Redis response");
+  }
+
+  return data.result > MAX_REQUESTS;
 }
 
 module.exports = async function handler(req, res) {
@@ -34,13 +73,18 @@ module.exports = async function handler(req, res) {
 
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
+
     return res.status(405).json({
       success: false,
       message: "Method not allowed"
     });
   }
 
-  if (!process.env.DATABASE_URL) {
+  if (
+    !process.env.DATABASE_URL ||
+    !process.env.KV_REST_API_URL ||
+    !process.env.KV_REST_API_TOKEN
+  ) {
     return res.status(500).json({
       success: false,
       message: "Server configuration error"
@@ -48,10 +92,46 @@ module.exports = async function handler(req, res) {
   }
 
   try {
-    const body = req.body || {};
+    const ip = getClientIP(req);
+
+    let limited;
+
+    try {
+      limited = await checkRateLimit(ip);
+    } catch (error) {
+      console.error("Rate limiter unavailable");
+
+      return res.status(503).json({
+        success: false,
+        message: "Service temporarily unavailable"
+      });
+    }
+
+    if (limited) {
+      return res.status(429).json({
+        success: false,
+        message: "Too many requests. Please try again later."
+      });
+    }
+
+    const body = req.body;
+
+    if (
+      !body ||
+      typeof body !== "object" ||
+      Array.isArray(body)
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid request"
+      });
+    }
 
     // Honeypot
-    if (body.website) {
+    if (
+      typeof body.website === "string" &&
+      body.website.trim() !== ""
+    ) {
       return res.status(200).json({
         success: true,
         message: "Message received"
@@ -100,15 +180,6 @@ module.exports = async function handler(req, res) {
       return res.status(400).json({
         success: false,
         message: "Invalid email address"
-      });
-    }
-
-    const ip = getClientIP(req);
-
-    if (isRateLimited(ip)) {
-      return res.status(429).json({
-        success: false,
-        message: "Too many requests. Please try again later."
       });
     }
 
