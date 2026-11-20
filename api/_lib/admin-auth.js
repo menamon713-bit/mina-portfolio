@@ -8,8 +8,13 @@ const SESSION_SECONDS = 8 * 60 * 60;
 function getSecret() {
   const secret = process.env.ADMIN_SESSION_SECRET;
 
-  if (!secret || secret.length < 32) {
-    throw new Error("ADMIN_SESSION_SECRET is missing or too short.");
+  if (
+    typeof secret !== "string" ||
+    Buffer.byteLength(secret, "utf8") < 32
+  ) {
+    throw new Error(
+      "ADMIN_SESSION_SECRET is missing or too short."
+    );
   }
 
   return secret;
@@ -25,7 +30,7 @@ function sign(value) {
 function createSession() {
   const payload = {
     exp: Date.now() + SESSION_SECONDS * 1000,
-    nonce: crypto.randomBytes(16).toString("hex")
+    nonce: crypto.randomBytes(32).toString("hex")
   };
 
   const encoded = Buffer
@@ -36,12 +41,27 @@ function createSession() {
 }
 
 function verifySession(token) {
-  if (typeof token !== "string") return false;
+  if (
+    typeof token !== "string" ||
+    token.length > 2048
+  ) {
+    return false;
+  }
 
   const parts = token.split(".");
-  if (parts.length !== 2) return false;
+
+  if (parts.length !== 2) {
+    return false;
+  }
 
   const [payload, signature] = parts;
+
+  if (
+    !/^[A-Za-z0-9_-]+$/.test(payload) ||
+    !/^[A-Za-z0-9_-]+$/.test(signature)
+  ) {
+    return false;
+  }
 
   try {
     const expected = Buffer.from(sign(payload));
@@ -59,12 +79,14 @@ function verifySession(token) {
     );
 
     return (
-      data &&
-      Number.isFinite(data.exp) &&
+      data !== null &&
+      typeof data === "object" &&
+      Number.isSafeInteger(data.exp) &&
       data.exp > Date.now() &&
-      typeof data.nonce === "string"
+      typeof data.nonce === "string" &&
+      /^[a-f0-9]{64}$/.test(data.nonce)
     );
-  } catch (_) {
+  } catch {
     return false;
   }
 }
@@ -72,10 +94,13 @@ function verifySession(token) {
 function getCookie(req) {
   const header = req.headers.cookie || "";
 
-  const cookies = header.split(";");
+  if (typeof header !== "string") {
+    return null;
+  }
 
-  for (const item of cookies) {
+  for (const item of header.split(";")) {
     const index = item.indexOf("=");
+
     if (index === -1) continue;
 
     const name = item.slice(0, index).trim();
@@ -107,6 +132,11 @@ function requireAdmin(req, res) {
   const token = getCookie(req);
 
   if (!verifySession(token)) {
+    res.setHeader(
+      "Set-Cookie",
+      `${COOKIE_NAME}=; HttpOnly; Secure; SameSite=Strict; Path=/api/admin; Max-Age=0`
+    );
+
     res.status(401).json({
       error: "Unauthorized."
     });
@@ -120,17 +150,54 @@ function requireAdmin(req, res) {
 function checkSameOrigin(req) {
   const origin = req.headers.origin;
 
-  if (!origin) return true;
+  if (
+    typeof origin !== "string" ||
+    origin.length > 2048
+  ) {
+    return false;
+  }
+
+  const forwardedHost =
+    req.headers["x-forwarded-host"];
 
   const host =
-    req.headers["x-forwarded-host"] ||
-    req.headers.host;
+    typeof forwardedHost === "string"
+      ? forwardedHost.split(",")[0].trim()
+      : req.headers.host;
 
-  if (!host) return false;
+  if (
+    typeof host !== "string" ||
+    !host ||
+    host.includes(",")
+  ) {
+    return false;
+  }
+
+  const forwardedProto =
+    req.headers["x-forwarded-proto"];
+
+  const protocol =
+    typeof forwardedProto === "string"
+      ? forwardedProto.split(",")[0].trim()
+      : "https";
+
+  if (!["https", "http"].includes(protocol)) {
+    return false;
+  }
 
   try {
-    return new URL(origin).host === host;
-  } catch (_) {
+    const originURL = new URL(origin);
+
+    return (
+      originURL.protocol === `${protocol}:` &&
+      originURL.host.toLowerCase() === host.toLowerCase() &&
+      originURL.username === "" &&
+      originURL.password === "" &&
+      originURL.pathname === "/" &&
+      originURL.search === "" &&
+      originURL.hash === ""
+    );
+  } catch {
     return false;
   }
 }
