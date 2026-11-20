@@ -32,11 +32,8 @@
   --glass: rgba(16, 23, 37, 0.78);
   --glass-strong: rgba(12, 17, 29, 0.94);
 
-  --shadow:
-    0 18px 50px rgba(0, 0, 0, 0.28);
-
-  --shadow-red:
-    0 8px 30px rgba(255, 48, 75, 0.15);
+  --shadow: 0 18px 50px rgba(0, 0, 0, 0.28);
+  --shadow-red: 0 8px 30px rgba(255, 48, 75, 0.15);
 
   --radius-sm: 10px;
   --radius-md: 16px;
@@ -67,8 +64,7 @@
   --glass: rgba(255, 255, 255, 0.82);
   --glass-strong: rgba(255, 255, 255, 0.96);
 
-  --shadow:
-    0 18px 50px rgba(20, 30, 50, 0.08);
+  --shadow: 0 18px 50px rgba(20, 30, 50, 0.08);
 }
 
 /* ---------- 2. RESET ---------- */
@@ -229,11 +225,7 @@ img {
   color: #fff;
   font-size: 19px;
   font-weight: 900;
-  background: linear-gradient(
-    135deg,
-    var(--primary),
-    #b81738
-  );
+  background: linear-gradient(135deg, var(--primary), #b81738);
   box-shadow: var(--shadow-red);
 }
 
@@ -340,11 +332,7 @@ img {
   place-items: center;
   flex-shrink: 0;
   border-radius: 50%;
-  background: linear-gradient(
-    135deg,
-    var(--primary),
-    var(--blue)
-  );
+  background: linear-gradient(135deg, var(--primary), var(--blue));
   color: #fff;
   font-weight: 900;
 }
@@ -362,15 +350,23 @@ img {
   inset: 0;
   background: rgba(0, 0, 0, 0.65);
   backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
   opacity: 0;
   visibility: hidden;
-  transition: var(--transition);
+  pointer-events: none;
+  transition:
+    opacity var(--transition),
+    visibility var(--transition);
 }
 
+/* متوافق مع JavaScript: classList.add("active") */
+
+.sidebar-overlay.active,
 .sidebar-overlay.show,
 body.menu-open .sidebar-overlay {
   opacity: 1;
   visibility: visible;
+  pointer-events: auto;
 }
 
 /* ---------- 6. TOPBAR ---------- */
@@ -754,11 +750,7 @@ button.danger-button {
 }
 
 .primary-button {
-  background: linear-gradient(
-    135deg,
-    var(--primary),
-    var(--primary-hover)
-  );
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
   color: #fff;
   box-shadow: var(--shadow-red);
 }
@@ -849,14 +841,16 @@ button:disabled,
 
 .status.success,
 .badge.success,
-.status-badge.success {
+.status-badge.success,
+.status-badge.status-visible {
   background: rgba(66, 211, 146, 0.1);
   color: var(--success);
 }
 
 .status.danger,
 .badge.danger,
-.status-badge.danger {
+.status-badge.danger,
+.status-badge.status-hidden {
   background: rgba(255, 48, 75, 0.1);
   color: var(--danger);
 }
@@ -866,6 +860,26 @@ button:disabled,
 .status-badge.warning {
   background: rgba(255, 189, 89, 0.1);
   color: var(--warning);
+}
+
+.status-badge.status-new {
+  background: rgba(255, 189, 89, 0.1);
+  color: var(--warning);
+}
+
+.status-badge.status-read {
+  background: rgba(102, 140, 255, 0.1);
+  color: var(--blue);
+}
+
+.status-badge.status-replied {
+  background: rgba(66, 211, 146, 0.1);
+  color: var(--success);
+}
+
+.status-badge.status-archived {
+  background: rgba(126, 137, 155, 0.12);
+  color: var(--muted);
 }
 
 /* ---------- 16. PLACEHOLDERS ---------- */
@@ -907,8 +921,10 @@ button:disabled,
   justify-content: center;
   background: rgba(0, 0, 0, 0.72);
   backdrop-filter: blur(7px);
+  -webkit-backdrop-filter: blur(7px);
   opacity: 0;
   visibility: hidden;
+  pointer-events: none;
   transition: var(--transition);
 }
 
@@ -917,6 +933,7 @@ button:disabled,
 .modal-overlay[aria-hidden="false"] {
   opacity: 1;
   visibility: visible;
+  pointer-events: auto;
 }
 
 .modal-content {
@@ -1059,6 +1076,9 @@ select:focus-visible {
     transform: translateX(-110%);
   }
 
+  /* متوافق مع openSidebar و closeSidebar في JavaScript */
+
+  .sidebar.active,
   .sidebar.open,
   body.menu-open .sidebar {
     transform: translateX(0);
