@@ -1,11 +1,20 @@
 (() => {
   "use strict";
 
+  // ==========================================
+  // 1. DOM SELECTORS
+  // ==========================================
+
   const $ = (selector, parent = document) =>
     parent.querySelector(selector);
 
   const $$ = (selector, parent = document) =>
     [...parent.querySelectorAll(selector)];
+
+
+  // ==========================================
+  // 2. API ENDPOINTS
+  // ==========================================
 
   const API = {
     session: "/api/admin/session",
@@ -14,6 +23,11 @@
     skills: "/api/admin/skills",
     logout: "/api/admin/logout"
   };
+
+
+  // ==========================================
+  // 3. APPLICATION STATE
+  // ==========================================
 
   const state = {
     messages: [],
@@ -25,6 +39,11 @@
     loadingMessages: false,
     loadingSkills: false
   };
+
+
+  // ==========================================
+  // 4. MESSAGE STATUS CONFIGURATION
+  // ==========================================
 
   const STATUS_LABELS = {
     new: "جديدة",
@@ -39,6 +58,11 @@
     replied: "status-replied",
     archived: "status-archived"
   };
+
+
+  // ==========================================
+  // 5. API & GENERAL HELPERS
+  // ==========================================
 
   async function api(url, options = {}) {
     const headers = {
@@ -165,6 +189,11 @@
     return STATUS_CLASSES[status] || "";
   }
 
+
+  // ==========================================
+  // 6. DASHBOARD STATISTICS
+  // ==========================================
+
   function updateDashboardStats() {
     const total = $("#statTotalMessages");
     const unread = $("#statNewMessages");
@@ -186,6 +215,11 @@
       skills.textContent = String(state.skills.length);
     }
   }
+
+
+  // ==========================================
+  // 7. NAVIGATION & SIDEBAR
+  // ==========================================
 
   function activateSection(sectionName) {
     const target = $(`#section-${sectionName}`);
@@ -252,6 +286,11 @@
     });
   }
 
+
+  // ==========================================
+  // 8. AUTHENTICATION & LOGOUT
+  // ==========================================
+
   async function checkSession() {
     try {
       const data = await api(API.session);
@@ -284,7 +323,10 @@
     }
   }
 
-  // PROFILE
+
+  // ==========================================
+  // 9. PROFILE MANAGEMENT
+  // ==========================================
 
   function fillProfileForm(profile) {
     const fields = {
@@ -383,7 +425,12 @@
     }
   }
 
-  // SKILLS
+
+  // ==========================================
+  // 10. SKILLS MANAGEMENT
+  // ==========================================
+
+  // Skill Statistics
 
   function updateSkillStats() {
     const total = state.skills.length;
@@ -406,6 +453,9 @@
 
     updateDashboardStats();
   }
+
+
+  // Render Skills
 
   function renderSkills() {
     const tbody = $("#skillsTableBody");
@@ -538,6 +588,9 @@
     });
   }
 
+
+  // Load Skills
+
   async function loadSkills() {
     if (state.loadingSkills) return;
 
@@ -575,6 +628,9 @@
       setVisible($("#skillsLoading"), false);
     }
   }
+
+
+  // Skill Modal
 
   function openSkillModal(skill = null) {
     const modal = $("#skillModal");
@@ -635,6 +691,9 @@
 
     openSkillModal(skill);
   }
+
+
+  // Save Skill
 
   async function saveSkill(event) {
     event.preventDefault();
@@ -701,6 +760,9 @@
     }
   }
 
+
+  // Toggle Skill Visibility
+
   async function toggleSkillVisibility(id, button) {
     const skill = state.skills.find(
       (item) => String(item.id) === String(id)
@@ -728,6 +790,9 @@
       if (button) button.disabled = false;
     }
   }
+
+
+  // Delete Skill
 
   function openDeleteSkillModal(id) {
     const skill = state.skills.find(
@@ -792,7 +857,12 @@
     }
   }
 
-  // MESSAGES
+
+  // ==========================================
+  // 11. MESSAGES MANAGEMENT
+  // ==========================================
+
+  // Recent Messages
 
   function renderRecentMessages() {
     const tbody = $("#dashboardMessages");
@@ -824,6 +894,9 @@
       </tr>
     `).join("");
   }
+
+
+  // Render Messages
 
   function renderMessages() {
     const tbody = $("#messagesTableBody");
@@ -891,6 +964,9 @@
     });
   }
 
+
+  // Load Messages
+
   async function loadMessages() {
     if (state.loadingMessages) return;
 
@@ -922,6 +998,9 @@
       state.loadingMessages = false;
     }
   }
+
+
+  // Message Details Modal
 
   function openMessage(id) {
     const message = state.messages.find(
@@ -1007,6 +1086,9 @@
     state.currentMessage = null;
   }
 
+
+  // Update Message Status
+
   async function updateMessageStatus() {
     const message = state.currentMessage;
     const select = $("#messageStatusSelect");
@@ -1044,7 +1126,10 @@
     }
   }
 
-  // EVENTS
+
+  // ==========================================
+  // 12. EVENT LISTENERS
+  // ==========================================
 
   function initializeEvents() {
     $("#logoutButton")?.addEventListener("click", logout);
@@ -1158,12 +1243,22 @@
     });
   }
 
+
+  // ==========================================
+  // 13. DASHBOARD REFRESH
+  // ==========================================
+
   async function refreshDashboard() {
     await Promise.all([
       loadMessages(),
       loadSkills()
     ]);
   }
+
+
+  // ==========================================
+  // 14. APPLICATION INITIALIZATION
+  // ==========================================
 
   async function init() {
     const authenticated = await checkSession();
@@ -1187,6 +1282,11 @@
       loadProfile()
     ]);
   }
+
+
+  // ==========================================
+  // 15. START APPLICATION
+  // ==========================================
 
   init();
 })();
