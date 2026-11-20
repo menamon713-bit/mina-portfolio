@@ -3,33 +3,41 @@
 
   const $ = (selector) => document.querySelector(selector);
 
+  // Login
+  const loginScreen = $("#loginScreen");
   const loginForm = $("#loginForm");
   const adminPassword = $("#adminPassword");
   const loginButton = $("#loginButton");
   const loginError = $("#loginError");
 
+  // Dashboard
   const dashboard = $("#dashboard");
   const sidebar = $("#sidebar");
   const mobileOverlay = $("#mobileOverlay");
 
+  // Controls
   const menuButton = $("#menuButton");
   const refreshButton = $("#refreshButton");
   const refreshNav = $("#refreshNav");
   const logoutButton = $("#logoutButton");
 
+  // Navigation
   const overviewNav = $("#overviewNav");
   const messagesNav = $("#messagesNav");
 
+  // Statistics
   const totalCount = $("#totalCount");
   const newCount = $("#newCount");
   const readCount = $("#readCount");
   const repliedCount = $("#repliedCount");
 
+  // Messages
   const messagesSection = $("#messagesSection");
   const searchInput = $("#searchInput");
   const statusFilter = $("#statusFilter");
   const messagesTable = $("#messagesTable");
 
+  // Modal
   const messageModal = $("#messageModal");
   const closeModal = $("#closeModal");
 
@@ -41,6 +49,7 @@
   const detailStatus = $("#detailStatus");
   const saveStatusButton = $("#saveStatusButton");
 
+  // Toast
   const toast = $("#toast");
 
   let messages = [];
@@ -55,6 +64,9 @@
     logout: "/api/admin/logout"
   };
 
+  const VALID_STATUSES = ["new", "read", "replied", "archived"];
+
+  // API
   async function apiRequest(url, options = {}) {
     const response = await fetch(url, {
       credentials: "same-origin",
@@ -74,12 +86,17 @@
     }
 
     if (!response.ok) {
-      throw new Error(data.error || data.message || "حدث خطأ في الاتصال بالسيرفر");
+      throw new Error(
+        data.error ||
+        data.message ||
+        "حدث خطأ في الاتصال بالسيرفر"
+      );
     }
 
     return data;
   }
 
+  // Notifications
   function showToast(message, duration = 3000) {
     if (!toast) return;
 
@@ -93,32 +110,57 @@
     }, duration);
   }
 
+  // Loading state
   function setLoading(button, loading, originalText) {
     if (!button) return;
 
     button.disabled = loading;
-    button.textContent = loading ? "جاري التنفيذ..." : originalText;
+
+    if (loading) {
+      button.dataset.originalText = button.textContent;
+      button.textContent = "جاري التنفيذ...";
+    } else {
+      button.textContent =
+        button.dataset.originalText || originalText;
+
+      delete button.dataset.originalText;
+    }
   }
 
+  // Screens
   function showLogin() {
-    if (loginForm) loginForm.closest(".login-container")?.classList.remove("hidden");
-    if (dashboard) dashboard.classList.add("hidden");
+    loginScreen?.classList.remove("hidden");
+    dashboard?.classList.add("hidden");
+
+    closeSidebar();
+    closeMessageModal();
   }
 
   function showDashboard() {
-    if (loginForm) loginForm.closest(".login-container")?.classList.add("hidden");
-    if (dashboard) dashboard.classList.remove("hidden");
+    loginScreen?.classList.add("hidden");
+    dashboard?.classList.remove("hidden");
   }
 
+  // Normalize API response
   function normalizeMessages(data) {
     if (Array.isArray(data)) return data;
-    if (Array.isArray(data.messages)) return data.messages;
-    if (Array.isArray(data.data)) return data.data;
-    if (Array.isArray(data.data?.messages)) return data.data.messages;
+
+    if (Array.isArray(data?.messages)) {
+      return data.messages;
+    }
+
+    if (Array.isArray(data?.data)) {
+      return data.data;
+    }
+
+    if (Array.isArray(data?.data?.messages)) {
+      return data.data.messages;
+    }
 
     return [];
   }
 
+  // Login
   async function login(password) {
     if (loginError) {
       loginError.textContent = "";
@@ -134,11 +176,15 @@
       });
 
       showDashboard();
+
       await loadMessages();
 
-      if (adminPassword) adminPassword.value = "";
+      if (adminPassword) {
+        adminPassword.value = "";
+      }
 
       showToast("تم تسجيل الدخول بنجاح");
+
     } catch (error) {
       if (loginError) {
         loginError.textContent = error.message;
@@ -149,24 +195,28 @@
     }
   }
 
+  // Check admin session
   async function checkSession() {
     try {
       await apiRequest(API.session);
+
       showDashboard();
       await loadMessages();
+
     } catch {
       showLogin();
     }
   }
 
+  // Load messages
   async function loadMessages() {
     if (messagesTable) {
       messagesTable.innerHTML = `
-        <tbody>
-          <tr>
-            <td colspan="6" class="empty-state">جاري تحميل الرسائل...</td>
-          </tr>
-        </tbody>
+        <tr>
+          <td colspan="5" class="empty-state">
+            جاري تحميل الرسائل...
+          </td>
+        </tr>
       `;
     }
 
@@ -177,28 +227,37 @@
 
       updateStats();
       renderMessages();
+
     } catch (error) {
       showToast(error.message);
 
       if (messagesTable) {
         messagesTable.innerHTML = `
-          <tbody>
-            <tr>
-              <td colspan="6" class="empty-state">
-                تعذر تحميل الرسائل. حاول تحديث البيانات.
-              </td>
-            </tr>
-          </tbody>
+          <tr>
+            <td colspan="5" class="empty-state">
+              تعذر تحميل الرسائل. حاول تحديث البيانات.
+            </td>
+          </tr>
         `;
       }
     }
   }
 
+  // Statistics
   function updateStats() {
     const total = messages.length;
-    const newMessages = messages.filter(m => m.status === "new").length;
-    const readMessages = messages.filter(m => m.status === "read").length;
-    const repliedMessages = messages.filter(m => m.status === "replied").length;
+
+    const newMessages = messages.filter(
+      message => message.status === "new"
+    ).length;
+
+    const readMessages = messages.filter(
+      message => message.status === "read"
+    ).length;
+
+    const repliedMessages = messages.filter(
+      message => message.status === "replied"
+    ).length;
 
     if (totalCount) totalCount.textContent = total;
     if (newCount) newCount.textContent = newMessages;
@@ -206,6 +265,7 @@
     if (repliedCount) repliedCount.textContent = repliedMessages;
   }
 
+  // Status labels
   function getStatusLabel(status) {
     const labels = {
       new: "جديدة",
@@ -228,6 +288,7 @@
     return classes[status] || "";
   }
 
+  // Date formatting
   function formatDate(dateValue) {
     if (!dateValue) return "—";
 
@@ -243,63 +304,88 @@
     });
   }
 
-  function createCell(text) {
+  // Safe table cell
+  function createCell(value) {
     const cell = document.createElement("td");
-    cell.textContent = text ?? "—";
+    cell.textContent = value ?? "—";
     return cell;
   }
 
+  // Render messages
   function renderMessages() {
     if (!messagesTable) return;
 
-    const search = (searchInput?.value || "").trim().toLowerCase();
+    const search = (searchInput?.value || "")
+      .trim()
+      .toLowerCase();
+
     const selectedStatus = statusFilter?.value || "all";
 
     const filteredMessages = messages.filter(message => {
+      if (!message || typeof message !== "object") {
+        return false;
+      }
+
       const searchable = [
         message.name,
         message.email,
         message.subject,
         message.message
-      ].join(" ").toLowerCase();
+      ]
+        .map(value => String(value ?? ""))
+        .join(" ")
+        .toLowerCase();
 
       const matchesSearch = searchable.includes(search);
+
       const matchesStatus =
-        selectedStatus === "all" || message.status === selectedStatus;
+        selectedStatus === "all" ||
+        message.status === selectedStatus;
 
       return matchesSearch && matchesStatus;
     });
 
-    const tbody = document.createElement("tbody");
+    const rows = [];
 
     if (filteredMessages.length === 0) {
       const row = document.createElement("tr");
       const cell = document.createElement("td");
 
-      cell.colSpan = 6;
+      cell.colSpan = 5;
       cell.className = "empty-state";
       cell.textContent = "لا توجد رسائل مطابقة";
 
       row.appendChild(cell);
-      tbody.appendChild(row);
+      rows.push(row);
+
     } else {
       filteredMessages.forEach(message => {
         const row = document.createElement("tr");
 
+        // 1. Name
         row.appendChild(createCell(message.name));
-        row.appendChild(createCell(message.email));
-        row.appendChild(createCell(message.subject));
-        row.appendChild(createCell(formatDate(message.created_at)));
 
+        // 2. Subject
+        row.appendChild(createCell(message.subject));
+
+        // 3. Date
+        row.appendChild(
+          createCell(formatDate(message.created_at))
+        );
+
+        // 4. Status
         const statusCell = document.createElement("td");
         const badge = document.createElement("span");
 
-        badge.className = `status-badge ${getStatusClass(message.status)}`;
+        badge.className =
+          `status-badge ${getStatusClass(message.status)}`;
+
         badge.textContent = getStatusLabel(message.status);
 
         statusCell.appendChild(badge);
         row.appendChild(statusCell);
 
+        // 5. Action
         const actionCell = document.createElement("td");
         const viewButton = document.createElement("button");
 
@@ -314,51 +400,76 @@
         actionCell.appendChild(viewButton);
         row.appendChild(actionCell);
 
-        tbody.appendChild(row);
+        rows.push(row);
       });
     }
 
-    messagesTable.replaceChildren(tbody);
+    // messagesTable is already a tbody.
+    // Do not create another tbody inside it.
+    messagesTable.replaceChildren(...rows);
   }
 
+  // Open message details
   function openMessage(message) {
+    if (!message) return;
+
     selectedMessage = message;
 
-    if (detailName) detailName.textContent = message.name || "—";
-    if (detailEmail) detailEmail.textContent = message.email || "—";
-    if (detailSubject) detailSubject.textContent = message.subject || "—";
-    if (detailDate) detailDate.textContent = formatDate(message.created_at);
-    if (detailMessage) detailMessage.textContent = message.message || "—";
+    if (detailName) {
+      detailName.textContent = message.name || "—";
+    }
+
+    if (detailEmail) {
+      detailEmail.textContent = message.email || "—";
+    }
+
+    if (detailSubject) {
+      detailSubject.textContent = message.subject || "—";
+    }
+
+    if (detailDate) {
+      detailDate.textContent = formatDate(message.created_at);
+    }
+
+    if (detailMessage) {
+      detailMessage.textContent = message.message || "—";
+    }
 
     if (detailStatus) {
-      detailStatus.value = message.status || "new";
+      detailStatus.value = VALID_STATUSES.includes(message.status)
+        ? message.status
+        : "new";
     }
 
-    if (messageModal) {
-      messageModal.classList.remove("hidden");
-    }
+    messageModal?.classList.remove("hidden");
   }
 
+  // Close modal
   function closeMessageModal() {
-    if (messageModal) {
-      messageModal.classList.add("hidden");
-    }
-
+    messageModal?.classList.add("hidden");
     selectedMessage = null;
   }
 
+  // Update message status
   async function updateMessageStatus() {
     if (!selectedMessage || !detailStatus) return;
 
     const id = selectedMessage.id;
     const status = detailStatus.value;
 
-    if (!id || !["new", "read", "replied", "archived"].includes(status)) {
+    if (
+      id == null ||
+      !VALID_STATUSES.includes(status)
+    ) {
       showToast("بيانات الحالة غير صحيحة");
       return;
     }
 
-    setLoading(saveStatusButton, true, "حفظ التغييرات");
+    setLoading(
+      saveStatusButton,
+      true,
+      "حفظ التغييرات"
+    );
 
     try {
       await apiRequest(API.updateStatus, {
@@ -366,46 +477,65 @@
         body: JSON.stringify({ id, status })
       });
 
-      selectedMessage.status = status;
+      const existing = messages.find(
+        message => String(message.id) === String(id)
+      );
 
-      const existing = messages.find(message => message.id === id);
-      if (existing) existing.status = status;
+      if (existing) {
+        existing.status = status;
+      }
+
+      selectedMessage.status = status;
 
       updateStats();
       renderMessages();
       closeMessageModal();
 
       showToast("تم تحديث حالة الرسالة");
+
     } catch (error) {
       showToast(error.message);
+
     } finally {
-      setLoading(saveStatusButton, false, "حفظ التغييرات");
+      setLoading(
+        saveStatusButton,
+        false,
+        "حفظ التغييرات"
+      );
     }
   }
 
+  // Logout
   async function logout() {
-    if (logoutButton) logoutButton.disabled = true;
+    if (logoutButton) {
+      logoutButton.disabled = true;
+    }
 
     try {
       await apiRequest(API.logout, {
         method: "POST",
         body: JSON.stringify({})
       });
-    } catch (error) {
-      showToast(error.message);
-    } finally {
+
       messages = [];
       selectedMessage = null;
 
+      updateStats();
       showLogin();
-      closeMessageModal();
-
-      if (logoutButton) logoutButton.disabled = false;
 
       showToast("تم تسجيل الخروج");
+
+    } catch (error) {
+      showToast(error.message);
+
+    } finally {
+      if (logoutButton) {
+        logoutButton.disabled = false;
+      }
     }
   }
 
+  // Mobile sidebar
   function closeSidebar() {
     sidebar?.classList.remove("open");
     mobileOverlay?.classList.remove("show");
@@ -416,6 +546,7 @@
     mobileOverlay?.classList.toggle("show");
   }
 
+  // Navigation
   function showSection(section) {
     if (section === "messages") {
       messagesSection?.scrollIntoView({
@@ -425,6 +556,7 @@
 
       messagesNav?.classList.add("active");
       overviewNav?.classList.remove("active");
+
     } else {
       window.scrollTo({
         top: 0,
@@ -450,6 +582,7 @@
         loginError.textContent = "أدخل كلمة المرور";
         loginError.classList.remove("hidden");
       }
+
       return;
     }
 
@@ -458,6 +591,7 @@
 
   refreshButton?.addEventListener("click", loadMessages);
   refreshNav?.addEventListener("click", loadMessages);
+
   logoutButton?.addEventListener("click", logout);
 
   overviewNav?.addEventListener("click", () => {
@@ -479,10 +613,20 @@
     }
   });
 
-  saveStatusButton?.addEventListener("click", updateMessageStatus);
+  saveStatusButton?.addEventListener(
+    "click",
+    updateMessageStatus
+  );
 
-  menuButton?.addEventListener("click", toggleSidebar);
-  mobileOverlay?.addEventListener("click", closeSidebar);
+  menuButton?.addEventListener(
+    "click",
+    toggleSidebar
+  );
+
+  mobileOverlay?.addEventListener(
+    "click",
+    closeSidebar
+  );
 
   document.addEventListener("keydown", event => {
     if (event.key === "Escape") {
@@ -492,7 +636,6 @@
   });
 
   // Start
-
   checkSession();
 
 })();
