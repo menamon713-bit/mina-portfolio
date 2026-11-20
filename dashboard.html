@@ -14,8 +14,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
   <link rel="stylesheet" href="dashboard.css?v=1">
-
-  <script src="dashboard.js?v=1" defer></script>
+  <script src="dashboard.js?v=2" defer></script>
 </head>
 
 <body>
@@ -31,35 +30,26 @@
   <!-- ADMIN APPLICATION -->
   <div class="admin-app hidden" id="adminApp">
 
-    <!-- MOBILE OVERLAY -->
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
     <!-- SIDEBAR -->
     <aside class="sidebar" id="sidebar">
 
       <div class="sidebar-header">
-
         <a href="index.html" class="brand">
           <span class="brand-mark">M</span>
-
           <span class="brand-info">
             <strong>M.A.S.H</strong>
             <small>CYVEX ADMIN</small>
           </span>
         </a>
 
-        <button
-          type="button"
-          class="sidebar-close"
-          id="sidebarClose"
-          aria-label="إغلاق القائمة">
+        <button type="button" class="sidebar-close" id="sidebarClose" aria-label="إغلاق القائمة">
           ×
         </button>
-
       </div>
 
       <div class="sidebar-profile">
-
         <div class="profile-avatar" id="adminAvatar">M</div>
 
         <div class="profile-info">
@@ -69,7 +59,6 @@
             Secure Session
           </span>
         </div>
-
       </div>
 
       <div class="sidebar-divider"></div>
@@ -79,42 +68,27 @@
         <div class="nav-group">
           <span class="nav-group-title">القائمة الرئيسية</span>
 
-          <button
-            type="button"
-            class="nav-link active"
-            data-section="overview">
+          <button type="button" class="nav-link active" data-section="overview">
             <span class="nav-icon">▦</span>
             <span>نظرة عامة</span>
           </button>
 
-          <button
-            type="button"
-            class="nav-link"
-            data-section="profile">
+          <button type="button" class="nav-link" data-section="profile">
             <span class="nav-icon">◉</span>
             <span>الملف الشخصي</span>
           </button>
 
-          <button
-            type="button"
-            class="nav-link"
-            data-section="skills">
+          <button type="button" class="nav-link" data-section="skills">
             <span class="nav-icon">⌘</span>
             <span>المهارات</span>
           </button>
 
-          <button
-            type="button"
-            class="nav-link"
-            data-section="projects">
+          <button type="button" class="nav-link" data-section="projects">
             <span class="nav-icon">▣</span>
             <span>المشاريع</span>
           </button>
 
-          <button
-            type="button"
-            class="nav-link"
-            data-section="messages">
+          <button type="button" class="nav-link" data-section="messages">
             <span class="nav-icon">✉</span>
             <span>رسائل التواصل</span>
             <span class="nav-badge" id="newMessagesBadge">0</span>
@@ -122,74 +96,50 @@
         </div>
 
         <div class="nav-group">
-
           <span class="nav-group-title">إدارة الموقع</span>
 
-          <button
-            type="button"
-            class="nav-link"
-            data-section="social">
+          <button type="button" class="nav-link" data-section="social">
             <span class="nav-icon">↗</span>
             <span>روابط التواصل</span>
           </button>
 
-          <button
-            type="button"
-            class="nav-link"
-            data-section="pages">
+          <button type="button" class="nav-link" data-section="pages">
             <span class="nav-icon">▤</span>
             <span>الصفحات والمحتوى</span>
           </button>
 
-          <button
-            type="button"
-            class="nav-link"
-            data-section="seo">
+          <button type="button" class="nav-link" data-section="seo">
             <span class="nav-icon">⌕</span>
             <span>إعدادات SEO</span>
           </button>
-
         </div>
 
         <div class="nav-group">
-
           <span class="nav-group-title">النظام</span>
 
-          <button
-            type="button"
-            class="nav-link"
-            data-section="security">
+          <button type="button" class="nav-link" data-section="security">
             <span class="nav-icon">◇</span>
             <span>الأمان</span>
           </button>
 
-          <button
-            type="button"
-            class="nav-link"
-            data-section="settings">
+          <button type="button" class="nav-link" data-section="settings">
             <span class="nav-icon">⚙</span>
             <span>الإعدادات</span>
           </button>
-
         </div>
 
       </nav>
 
       <div class="sidebar-footer">
-
         <a href="index.html" class="back-to-site">
           <span>↗</span>
           زيارة الموقع
         </a>
 
-        <button
-          type="button"
-          class="logout-button"
-          id="logoutButton">
+        <button type="button" class="logout-button" id="logoutButton">
           <span>⇥</span>
           تسجيل الخروج
         </button>
-
       </div>
 
     </aside>
@@ -197,16 +147,10 @@
     <!-- MAIN AREA -->
     <main class="main-area">
 
-      <!-- TOPBAR -->
       <header class="topbar">
 
         <div class="topbar-start">
-
-          <button
-            type="button"
-            class="menu-toggle"
-            id="menuToggle"
-            aria-label="فتح القائمة">
+          <button type="button" class="menu-toggle" id="menuToggle" aria-label="فتح القائمة">
             ☰
           </button>
 
@@ -215,41 +159,28 @@
             <span class="breadcrumb-separator">/</span>
             <strong id="currentPageTitle">نظرة عامة</strong>
           </div>
-
         </div>
 
         <div class="topbar-actions">
-
-          <button
-            type="button"
-            class="topbar-button"
-            id="refreshDashboard"
-            title="تحديث البيانات">
+          <button type="button" class="topbar-button" id="refreshDashboard" title="تحديث البيانات">
             ↻
           </button>
 
-          <a
-            href="index.html"
-            class="topbar-button"
-            title="عرض الموقع">
+          <a href="index.html" class="topbar-button" title="عرض الموقع">
             ↗
           </a>
 
           <div class="topbar-admin">
             <div class="topbar-avatar">M</div>
           </div>
-
         </div>
 
       </header>
 
-      <!-- CONTENT -->
       <div class="dashboard-content">
 
         <!-- OVERVIEW -->
-        <section
-          class="dashboard-section active"
-          id="section-overview">
+        <section class="dashboard-section active" id="section-overview">
 
           <div class="page-heading">
             <div>
@@ -313,18 +244,13 @@
                   <p>أحدث الرسائل الواردة إلى الموقع</p>
                 </div>
 
-                <button
-                  type="button"
-                  class="text-button"
-                  data-section="messages">
+                <button type="button" class="text-button" data-section="messages">
                   عرض الكل ←
                 </button>
               </div>
 
               <div class="recent-messages" id="recentMessages">
-                <div class="panel-empty">
-                  جاري تحميل البيانات...
-                </div>
+                <div class="panel-empty">جاري تحميل البيانات...</div>
               </div>
             </article>
 
@@ -337,7 +263,6 @@
               </div>
 
               <div class="system-status">
-
                 <div class="status-row">
                   <span>جلسة الإدارة</span>
                   <strong class="status-value" id="sessionStatus">جاري الفحص</strong>
@@ -352,7 +277,6 @@
                   <span>واجهة الإدارة</span>
                   <strong class="status-value">نشطة</strong>
                 </div>
-
               </div>
             </article>
 
@@ -361,9 +285,7 @@
         </section>
 
         <!-- PROFILE -->
-        <section
-          class="dashboard-section"
-          id="section-profile">
+        <section class="dashboard-section" id="section-profile">
 
           <div class="page-heading">
             <div>
@@ -373,20 +295,83 @@
             </div>
           </div>
 
-          <div class="panel-card">
-            <div class="section-placeholder">
-              <span>◉</span>
-              <h2>إدارة الملف الشخصي</h2>
-              <p>سيتم ربط بيانات الاسم والنبذة والصورة والمسمى الوظيفي بقاعدة البيانات.</p>
+          <div class="panel-card profile-editor">
+
+            <div class="panel-header">
+              <div>
+                <h2>بيانات الملف الشخصي</h2>
+                <p>التعديلات تُحفظ في قاعدة البيانات</p>
+              </div>
             </div>
+
+            <form id="profileForm" class="profile-form">
+
+              <div class="profile-form-grid">
+
+                <div class="form-field">
+                  <label for="profileFullName">الاسم الكامل</label>
+                  <input type="text" id="profileFullName" maxlength="120" required>
+                </div>
+
+                <div class="form-field">
+                  <label for="profileJobTitle">المسمى الوظيفي</label>
+                  <input type="text" id="profileJobTitle" maxlength="180">
+                </div>
+
+                <div class="form-field full-width">
+                  <label for="profileShortBio">النبذة المختصرة</label>
+                  <textarea id="profileShortBio" rows="3" maxlength="2000"></textarea>
+                </div>
+
+                <div class="form-field full-width">
+                  <label for="profileAbout">من أنا</label>
+                  <textarea id="profileAbout" rows="5" maxlength="5000"></textarea>
+                </div>
+
+                <div class="form-field">
+                  <label for="profileLocation">الموقع</label>
+                  <input type="text" id="profileLocation" maxlength="120">
+                </div>
+
+                <div class="form-field">
+                  <label for="profileEmail">البريد الإلكتروني</label>
+                  <input type="email" id="profileEmail" maxlength="255" dir="ltr">
+                </div>
+
+                <div class="form-field full-width">
+                  <label for="profileImage">رابط الصورة الشخصية</label>
+                  <input
+                    type="url"
+                    id="profileImage"
+                    maxlength="2000"
+                    dir="ltr"
+                    placeholder="https://example.com/image.jpg">
+                </div>
+
+              </div>
+
+              <div class="profile-form-actions">
+
+                <button type="button" class="secondary-button" id="reloadProfile">
+                  إعادة تحميل البيانات
+                </button>
+
+                <button type="submit" class="primary-button" id="saveProfile">
+                  حفظ التغييرات
+                </button>
+
+              </div>
+
+              <p id="profileFormStatus" class="profile-form-status" aria-live="polite"></p>
+
+            </form>
+
           </div>
 
         </section>
 
         <!-- SKILLS -->
-        <section
-          class="dashboard-section"
-          id="section-skills">
+        <section class="dashboard-section" id="section-skills">
 
           <div class="page-heading">
             <div>
@@ -407,9 +392,7 @@
         </section>
 
         <!-- PROJECTS -->
-        <section
-          class="dashboard-section"
-          id="section-projects">
+        <section class="dashboard-section" id="section-projects">
 
           <div class="page-heading">
             <div>
@@ -430,9 +413,7 @@
         </section>
 
         <!-- MESSAGES -->
-        <section
-          class="dashboard-section"
-          id="section-messages">
+        <section class="dashboard-section" id="section-messages">
 
           <div class="page-heading">
             <div>
@@ -452,7 +433,6 @@
             </div>
 
             <div class="message-toolbar">
-
               <input
                 type="search"
                 id="messageSearch"
@@ -466,17 +446,14 @@
                 <option value="replied">تم الرد</option>
                 <option value="archived">مؤرشفة</option>
               </select>
-
             </div>
 
             <div class="table-container">
-
               <table class="admin-table">
-
                 <thead>
                   <tr>
                     <th>الاسم</th>
-                    <th>البريد الإلكتروني</th> 
+                    <th>البريد الإلكتروني</th>
                     <th>الموضوع</th>
                     <th>التاريخ</th>
                     <th>الحالة</th>
@@ -486,14 +463,10 @@
 
                 <tbody id="dashboardMessages">
                   <tr>
-                    <td colspan="5" class="table-empty">
-                      جاري تحميل الرسائل...
-                    </td>
+                    <td colspan="6" class="table-empty">جاري تحميل الرسائل...</td>
                   </tr>
                 </tbody>
-
               </table>
-
             </div>
 
           </div>
@@ -501,9 +474,7 @@
         </section>
 
         <!-- SOCIAL -->
-        <section
-          class="dashboard-section"
-          id="section-social">
+        <section class="dashboard-section" id="section-social">
 
           <div class="page-heading">
             <div>
@@ -524,9 +495,7 @@
         </section>
 
         <!-- PAGES -->
-        <section
-          class="dashboard-section"
-          id="section-pages">
+        <section class="dashboard-section" id="section-pages">
 
           <div class="page-heading">
             <div>
@@ -547,9 +516,7 @@
         </section>
 
         <!-- SEO -->
-        <section
-          class="dashboard-section"
-          id="section-seo">
+        <section class="dashboard-section" id="section-seo">
 
           <div class="page-heading">
             <div>
@@ -570,9 +537,7 @@
         </section>
 
         <!-- SECURITY -->
-        <section
-          class="dashboard-section"
-          id="section-security">
+        <section class="dashboard-section" id="section-security">
 
           <div class="page-heading">
             <div>
@@ -593,9 +558,7 @@
         </section>
 
         <!-- SETTINGS -->
-        <section
-          class="dashboard-section"
-          id="section-settings">
+        <section class="dashboard-section" id="section-settings">
 
           <div class="page-heading">
             <div>
@@ -617,7 +580,6 @@
 
       </div>
 
-      <!-- FOOTER -->
       <footer class="dashboard-footer">
         <span>© <span id="currentYear"></span> M.A.S.H CYVEX</span>
         <span>SECURE ADMINISTRATION SYSTEM</span>
@@ -628,10 +590,7 @@
   </div>
 
   <!-- MESSAGE DETAILS MODAL -->
-  <div
-    class="modal-overlay hidden"
-    id="messageModal"
-    aria-hidden="true">
+  <div class="modal-overlay hidden" id="messageModal" aria-hidden="true">
 
     <div
       class="message-modal"
@@ -683,7 +642,6 @@
 
         <div class="detail-field">
           <label for="modalStatus">حالة الرسالة</label>
-
           <select id="modalStatus">
             <option value="new">جديدة</option>
             <option value="read">مقروءة</option>
@@ -695,21 +653,13 @@
       </div>
 
       <div class="modal-actions">
-
-        <button
-          type="button"
-          class="secondary-button"
-          id="cancelMessageModal">
+        <button type="button" class="secondary-button" id="cancelMessageModal">
           إلغاء
         </button>
 
-        <button
-          type="button"
-          class="primary-button"
-          id="saveMessageStatus">
+        <button type="button" class="primary-button" id="saveMessageStatus">
           حفظ التغييرات
         </button>
-
       </div>
 
     </div>
@@ -717,12 +667,7 @@
   </div>
 
   <!-- TOAST -->
-  <div
-    class="admin-toast hidden"
-    id="adminToast"
-    role="status"
-    aria-live="polite">
-  </div>
+  <div class="admin-toast hidden" id="adminToast" role="status" aria-live="polite"></div>
 
 </body>
 </html>
