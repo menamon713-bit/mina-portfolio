@@ -1,402 +1,78 @@
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<!DOCTYPE html><html lang="ar" dir="rtl" data-theme="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#080808">
-
-  <title>M.A.S.H CYVEX | Secure Admin</title>
-
-  <meta name="description" content="M.A.S.H CYVEX Secure Administration Portal">
-
-  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <meta name="theme-color" content="#080808">  <title>M.A.S.H CYVEX | Admin Login</title>  <meta name="description" content="M.A.S.H CYVEX Secure Administration Portal">
+  <meta name="robots" content="noindex, nofollow">  <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">  <link rel="stylesheet" href="admin.css?v=3">  <script src="admin.js?v=3" defer></script></head><body>  <main class="login-screen" id="loginScreen"><section class="login-card">
 
-  <link rel="stylesheet" href="admin.css?v=2">
+  <div class="brand">
+    <div class="brand-mark">M</div>
 
-  <script src="admin.js?v=2" defer></script>
-</head>
+    <h1>M.A.S.H <span>CYVEX</span></h1>
 
-<body>
-
-  <!-- LOGIN SCREEN -->
-  <section class="login-screen" id="loginScreen">
-
-    <div class="login-card">
-
-      <div class="brand">
-        <h1>M.A.S.H CYVEX</h1>
-        <p>SECURE ADMINISTRATION PORTAL</p>
-      </div>
-
-      <form id="loginForm">
-
-        <label for="adminPassword">كلمة مرور الإدارة</label>
-
-        <input
-          type="password"
-          id="adminPassword"
-          placeholder="أدخل كلمة المرور"
-          autocomplete="current-password"
-          required
-        >
-
-        <div id="loginError" class="login-error hidden"></div>
-
-        <button
-          class="primary-btn"
-          id="loginButton"
-          type="submit"
-        >
-          تسجيل الدخول ←
-        </button>
-
-      </form>
-
-    </div>
-
-  </section>
-
-
-  <!-- DASHBOARD -->
-  <section class="dashboard hidden" id="dashboard">
-
-    <!-- MOBILE OVERLAY -->
-    <div class="mobile-overlay" id="mobileOverlay"></div>
-
-
-    <!-- SIDEBAR -->
-    <aside class="sidebar" id="sidebar">
-
-      <div class="sidebar-brand">
-        <h2>M.A.S.H CYVEX</h2>
-        <p>ADMINISTRATION SYSTEM</p>
-      </div>
-
-      <p class="nav-title">القائمة الرئيسية</p>
-
-      <button class="nav-link active" id="overviewNav">
-        <span class="nav-icon">▦</span>
-        نظرة عامة
-      </button>
-
-      <button class="nav-link" id="messagesNav">
-        <span class="nav-icon">✉</span>
-        رسائل التواصل
-      </button>
-
-      <p class="nav-title">النظام</p>
-
-      <button class="nav-link" id="refreshNav">
-        <span class="nav-icon">↻</span>
-        تحديث البيانات
-      </button>
-
-    </aside>
-
-
-    <!-- MAIN CONTENT -->
-    <main class="main">
-
-      <!-- TOPBAR -->
-      <header class="topbar">
-
-        <div class="admin-info">
-
-          <div class="avatar">M</div>
-
-          <div>
-            <strong>Administrator</strong>
-            <small>Secure Session Active</small>
-          </div>
-
-        </div>
-
-        <div class="topbar-actions">
-
-          <button
-            class="icon-btn"
-            id="menuButton"
-            aria-label="القائمة"
-            type="button"
-          >
-            ☰
-          </button>
-
-          <button
-            class="icon-btn"
-            id="refreshButton"
-            aria-label="تحديث"
-            type="button"
-          >
-            ↻
-          </button>
-
-          <button
-            class="logout-btn"
-            id="logoutButton"
-            type="button"
-          >
-            خروج
-          </button>
-
-        </div>
-
-      </header>
-
-
-      <!-- PAGE CONTENT -->
-      <div class="content">
-
-        <!-- PAGE HEADING -->
-        <div class="page-heading">
-
-          <h1>لوحة التحكم</h1>
-
-          <p>
-            مرحباً بك في نظام إدارة M.A.S.H CYVEX
-          </p>
-
-        </div>
-
-
-        <!-- STATISTICS -->
-        <div class="stats">
-
-          <div class="stat-card">
-
-            <div class="stat-top">
-              <span>إجمالي الرسائل</span>
-              <span class="stat-icon">✉</span>
-            </div>
-
-            <div class="stat-number" id="totalCount">0</div>
-
-            <div class="stat-description">
-              كل الرسائل المسجلة
-            </div>
-
-          </div>
-
-
-          <div class="stat-card">
-
-            <div class="stat-top">
-              <span>رسائل جديدة</span>
-              <span class="stat-icon">●</span>
-            </div>
-
-            <div class="stat-number" id="newCount">0</div>
-
-            <div class="stat-description">
-              تحتاج إلى مراجعة
-            </div>
-
-          </div>
-
-
-          <div class="stat-card">
-
-            <div class="stat-top">
-              <span>تمت قراءتها</span>
-              <span class="stat-icon">✓</span>
-            </div>
-
-            <div class="stat-number" id="readCount">0</div>
-
-            <div class="stat-description">
-              رسائل تمت مراجعتها
-            </div>
-
-          </div>
-
-
-          <div class="stat-card">
-
-            <div class="stat-top">
-              <span>تم الرد عليها</span>
-              <span class="stat-icon">↗</span>
-            </div>
-
-            <div class="stat-number" id="repliedCount">0</div>
-
-            <div class="stat-description">
-              رسائل تم التعامل معها
-            </div>
-
-          </div>
-
-        </div>
-
-
-        <!-- MESSAGES SECTION -->
-        <section class="section-card" id="messagesSection">
-
-          <div class="section-header">
-
-            <h2>إدارة الرسائل</h2>
-
-            <p>
-              عرض وإدارة الرسائل الواردة من نموذج التواصل
-            </p>
-
-          </div>
-
-
-          <!-- TOOLBAR -->
-          <div class="toolbar">
-
-            <input
-              class="search-input"
-              id="searchInput"
-              type="search"
-              placeholder="ابحث بالاسم أو البريد أو الموضوع..."
-            >
-
-            <select class="filter-select" id="statusFilter">
-
-              <option value="all">كل الحالات</option>
-              <option value="new">جديدة</option>
-              <option value="read">مقروءة</option>
-              <option value="replied">تم الرد</option>
-              <option value="archived">مؤرشفة</option>
-
-            </select>
-
-          </div>
-
-
-          <!-- MESSAGES TABLE -->
-          <div class="table-wrap">
-
-            <table>
-
-              <thead>
-                <tr>
-                  <th>الاسم</th>
-                  <th>الموضوع</th>
-                  <th>التاريخ</th>
-                  <th>الحالة</th>
-                  <th>التفاصيل</th>
-                </tr>
-              </thead>
-
-              <tbody id="messagesTable">
-
-                <tr>
-                  <td colspan="5" class="loading-state">
-                    جاري تحميل الرسائل...
-                  </td>
-                </tr>
-
-              </tbody>
-
-            </table>
-
-          </div>
-
-        </section>
-
-      </div>
-
-    </main>
-
-  </section>
-
-
-  <!-- MESSAGE DETAILS MODAL -->
-  <div class="modal-overlay hidden" id="messageModal">
-
-    <div class="modal">
-
-      <div class="modal-header">
-
-        <h2>تفاصيل الرسالة</h2>
-
-        <button
-          class="close-btn"
-          id="closeModal"
-          type="button"
-          aria-label="إغلاق"
-        >
-          ×
-        </button>
-
-      </div>
-
-
-      <div class="modal-body">
-
-        <div class="detail-item">
-          <label>الاسم</label>
-          <p id="detailName">-</p>
-        </div>
-
-
-        <div class="detail-item">
-          <label>البريد الإلكتروني</label>
-          <p id="detailEmail" dir="ltr">-</p>
-        </div>
-
-
-        <div class="detail-item">
-          <label>الموضوع</label>
-          <p id="detailSubject">-</p>
-        </div>
-
-
-        <div class="detail-item">
-          <label>تاريخ الإرسال</label>
-          <p id="detailDate">-</p>
-        </div>
-
-
-        <div class="detail-item">
-
-          <label>محتوى الرسالة</label>
-
-          <div class="message-content" id="detailMessage"></div>
-
-        </div>
-
-
-        <div class="detail-item">
-
-          <label>حالة الرسالة</label>
-
-          <div class="status-actions">
-
-            <select id="detailStatus">
-
-              <option value="new">جديدة</option>
-              <option value="read">مقروءة</option>
-              <option value="replied">تم الرد</option>
-              <option value="archived">مؤرشفة</option>
-
-            </select>
-
-            <button
-              class="save-btn"
-              id="saveStatusButton"
-              type="button"
-            >
-              حفظ الحالة
-            </button>
-
-          </div>
-
-        </div>
-
-      </div>
-
-    </div>
-
+    <p>SECURE ADMINISTRATION PORTAL</p>
   </div>
 
+  <div class="login-divider"></div>
 
-  <!-- TOAST NOTIFICATION -->
-  <div id="toast" class="toast hidden"></div>
+  <div class="login-heading">
+    <h2>تسجيل دخول الإدارة</h2>
+    <p>أدخل كلمة مرور الإدارة للوصول إلى لوحة التحكم.</p>
+  </div>
 
-</body>
+  <form id="loginForm" autocomplete="on">
+
+    <label for="adminPassword">
+      كلمة مرور الإدارة
+    </label>
+
+    <div class="password-wrapper">
+
+      <input
+        type="password"
+        id="adminPassword"
+        name="password"
+        placeholder="أدخل كلمة المرور"
+        autocomplete="current-password"
+        required
+        minlength="1"
+      >
+
+    </div>
+
+    <div
+      id="loginError"
+      class="login-error hidden"
+      role="alert"
+      aria-live="polite"
+    ></div>
+
+    <button
+      class="primary-btn"
+      id="loginButton"
+      type="submit"
+    >
+      تسجيل الدخول
+      <span aria-hidden="true">←</span>
+    </button>
+
+  </form>
+
+  <div class="login-footer">
+    <span class="security-dot"></span>
+    <span>SECURE CONNECTION</span>
+  </div>
+
+  <p class="copyright">
+    © <span id="currentYear"></span> M.A.S.H CYVEX
+  </p>
+
+</section>
+
+  </main>  <script>
+    document.getElementById("currentYear").textContent =
+      new Date().getFullYear();
+  </script></body>
 </html>
