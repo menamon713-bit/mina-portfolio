@@ -21,7 +21,10 @@
     currentMessage: null,
     editingSkillId: null,
     deletingSkillId: null,
-    activeSection: "overview"
+    activeSection: "overview",
+    loadingSkills: false,
+    loadingMessages: false,
+    loadingProfile: false
   };
 
   const elements = {
@@ -29,12 +32,10 @@
     sidebarOverlay: $("#sidebarOverlay"),
     menuToggle: $("#menuToggle"),
     toast: $("#adminToast"),
-
     skillModal: $("#skillModal"),
     deleteSkillModal: $("#deleteSkillModal"),
     skillForm: $("#skillForm"),
     skillTableBody: $("#skillsTableBody"),
-
     messageModal: $("#messageModal"),
     messageModalBody: $("#messageModalBody"),
     messageModalActions: $("#messageModalActions")
@@ -51,12 +52,14 @@
       cache: "no-store",
       headers: {
         Accept: "application/json",
-        ...(options.body ? { "Content-Type": "application/json" } : {}),
+        ...(options.body !== undefined
+          ? { "Content-Type": "application/json" }
+          : {}),
         ...(options.headers || {})
       }
     };
 
-    if (options.body) {
+    if (options.body !== undefined) {
       config.body = JSON.stringify(options.body);
     }
 
@@ -70,10 +73,14 @@
       data = {};
     }
 
-    if (response.status === 401 || response.status === 403) {
-      if (url !== API.session) {
-        showToast("انتهت الجلسة أو لا تملك صلاحية تنفيذ هذا الإجراء.", "error");
-      }
+    if (
+      (response.status === 401 || response.status === 403) &&
+      url !== API.session
+    ) {
+      showToast(
+        "انتهت الجلسة أو لا تملك صلاحية تنفيذ هذا الإجراء.",
+        "error"
+      );
     }
 
     if (!response.ok) {
@@ -114,7 +121,6 @@
 
     toast.classList.remove("success", "error");
     toast.classList.add(type);
-
     toast.classList.add("show");
 
     clearTimeout(showToast.timeout);
@@ -128,13 +134,16 @@
     if (!button) return;
 
     if (loading) {
-      button.dataset.originalText = button.textContent;
+      if (!button.dataset.originalText) {
+        button.dataset.originalText = button.textContent;
+      }
+
       button.disabled = true;
       button.textContent = loadingText;
     } else {
       button.disabled = false;
 
-      if (button.dataset.originalText) {
+      if (button.dataset.originalText !== undefined) {
         button.textContent = button.dataset.originalText;
         delete button.dataset.originalText;
       }
@@ -162,6 +171,11 @@
     });
   }
 
+  function setText(selector, value) {
+    const element = $(selector);
+    if (element) element.textContent = value;
+  }
+
   // =========================================
   // SESSION
   // =========================================
@@ -172,7 +186,6 @@
       return true;
     } catch (error) {
       console.error("Session check failed:", error);
-
       window.location.replace("/admin.html");
       return false;
     }
@@ -186,7 +199,6 @@
     if (!sectionName) return;
 
     const target = $(`#section-${sectionName}`);
-
     if (!target) return;
 
     state.activeSection = sectionName;
@@ -199,37 +211,36 @@
     });
 
     $$(".nav-item").forEach((item) => {
-      item.classList.toggle(
-        "active",
-        item.dataset.section === sectionName
-      );
+      const active = item.dataset.section === sectionName;
+
+      item.classList.toggle("active", active);
+
+      if (active) {
+        item.setAttribute("aria-current", "page");
+      } else {
+        item.removeAttribute("aria-current");
+      }
     });
 
     closeSidebar();
 
-    if (sectionName === "profile") {
-      loadProfile();
-    }
-
-    if (sectionName === "skills") {
-      loadSkills();
-    }
-
-    if (sectionName === "messages") {
-      loadMessages();
-    }
+    if (sectionName === "profile") loadProfile();
+    if (sectionName === "skills") loadSkills();
+    if (sectionName === "messages") loadMessages();
   }
 
   function openSidebar() {
     elements.sidebar?.classList.add("open");
     elements.sidebarOverlay?.classList.add("active");
     elements.sidebarOverlay?.classList.add("show");
+    elements.menuToggle?.setAttribute("aria-expanded", "true");
   }
 
   function closeSidebar() {
     elements.sidebar?.classList.remove("open");
     elements.sidebarOverlay?.classList.remove("active");
     elements.sidebarOverlay?.classList.remove("show");
+    elements.menuToggle?.setAttribute("aria-expanded", "false");
   }
 
   function initializeNavigation() {
@@ -247,6 +258,15 @@
 
     elements.menuToggle?.addEventListener("click", openSidebar);
     elements.sidebarOverlay?.addEventListener("click", closeSidebar);
+
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") {
+        closeSidebar();
+        closeSkillModal();
+        closeDeleteSkillModal();
+        closeMessageModal();
+      }
+    });
   }
 
   // =========================================
@@ -255,7 +275,9 @@
 
   async function loadProfile() {
     const form = $("#profileForm");
-    if (!form) return;
+    if (!form || state.loadingProfile) return;
+
+    state.loadingProfile = true;
 
     const status = $("#profileFormStatus");
 
@@ -285,9 +307,7 @@
         }
       });
 
-      if (status) {
-        status.textContent = "";
-      }
+      if (status) status.textContent = "";
     } catch (error) {
       console.error("Profile loading error:", error);
 
@@ -296,6 +316,8 @@
       }
 
       showToast("فشل تحميل الملف الشخصي.", "error");
+    } finally {
+      state.loadingProfile = false;
     }
   }
 
@@ -336,9 +358,7 @@
     } catch (error) {
       console.error("Profile save error:", error);
 
-      if (status) {
-        status.textContent = error.message;
-      }
+      if (status) status.textContent = error.message;
 
       showToast(error.message || "فشل حفظ البيانات.", "error");
     } finally {
@@ -352,21 +372,17 @@
 
   function updateSkillsStatistics() {
     const total = state.skills.length;
+
     const visible = state.skills.filter(
       (skill) => skill.is_visible === true
     ).length;
 
     const hidden = total - visible;
 
-    const totalElement = $("#skillsTotalCount");
-    const visibleElement = $("#skillsVisibleCount");
-    const hiddenElement = $("#skillsHiddenCount");
-    const dashboardStat = $("#statSkills");
-
-    if (totalElement) totalElement.textContent = total;
-    if (visibleElement) visibleElement.textContent = visible;
-    if (hiddenElement) hiddenElement.textContent = hidden;
-    if (dashboardStat) dashboardStat.textContent = total;
+    setText("#skillsTotalCount", total);
+    setText("#skillsVisibleCount", visible);
+    setText("#skillsHiddenCount", hidden);
+    setText("#statSkills", total);
   }
 
   function getFilteredSkills() {
@@ -382,12 +398,9 @@
         skill.name_en,
         skill.category,
         skill.icon
-      ]
-        .join(" ")
-        .toLowerCase();
+      ].join(" ").toLowerCase();
 
       const matchesSearch = searchableText.includes(search);
-
       const isVisible = skill.is_visible === true;
 
       const matchesFilter =
@@ -440,6 +453,7 @@
       const nameEn = escapeHTML(skill.name_en);
       const category = escapeHTML(skill.category || "بدون تصنيف");
       const icon = escapeHTML(skill.icon || "⌘");
+
       const progress = Math.min(
         100,
         Math.max(0, Number(skill.progress) || 0)
@@ -509,6 +523,10 @@
   }
 
   async function loadSkills() {
+    if (state.loadingSkills) return;
+
+    state.loadingSkills = true;
+
     const loading = $("#skillsLoading");
     const errorBox = $("#skillsError");
     const errorMessage = $("#skillsErrorMessage");
@@ -538,6 +556,8 @@
         errorMessage.textContent =
           error.message || "حدث خطأ أثناء تحميل المهارات.";
       }
+    } finally {
+      state.loadingSkills = false;
     }
   }
 
@@ -565,11 +585,15 @@
     const status = $("#skillFormStatus");
 
     if (title) {
-      title.textContent = skill ? "تعديل المهارة" : "إضافة مهارة جديدة";
+      title.textContent = skill
+        ? "تعديل المهارة"
+        : "إضافة مهارة جديدة";
     }
 
     if (saveButton) {
-      saveButton.textContent = skill ? "حفظ التعديلات" : "حفظ المهارة";
+      saveButton.textContent = skill
+        ? "حفظ التعديلات"
+        : "حفظ المهارة";
     }
 
     if (status) status.textContent = "";
@@ -588,19 +612,20 @@
     const button = $("#saveSkillButton");
     const status = $("#skillFormStatus");
 
-    const nameAr = $("#skillNameAr").value.trim();
-    const nameEn = $("#skillNameEn").value.trim();
+    const nameAr = $("#skillNameAr")?.value.trim() || "";
+    const nameEn = $("#skillNameEn")?.value.trim() || "";
 
     if (!nameAr || !nameEn) {
       if (status) {
-        status.textContent = "يرجى إدخال اسم المهارة بالعربية والإنجليزية.";
+        status.textContent =
+          "يرجى إدخال اسم المهارة بالعربية والإنجليزية.";
       }
 
       return;
     }
 
-    const progress = Number($("#skillProgress").value);
-    const sortOrder = Number($("#skillSortOrder").value);
+    const progress = Number($("#skillProgress")?.value);
+    const sortOrder = Number($("#skillSortOrder")?.value);
 
     if (
       !Number.isInteger(progress) ||
@@ -608,7 +633,8 @@
       progress > 100
     ) {
       if (status) {
-        status.textContent = "مستوى التقدم يجب أن يكون بين 0 و100.";
+        status.textContent =
+          "مستوى التقدم يجب أن يكون بين 0 و100.";
       }
 
       return;
@@ -616,7 +642,8 @@
 
     if (!Number.isInteger(sortOrder)) {
       if (status) {
-        status.textContent = "ترتيب الظهور يجب أن يكون رقمًا صحيحًا.";
+        status.textContent =
+          "ترتيب الظهور يجب أن يكون رقمًا صحيحًا.";
       }
 
       return;
@@ -625,11 +652,11 @@
     const body = {
       name_ar: nameAr,
       name_en: nameEn,
-      icon: $("#skillIcon").value.trim(),
-      category: $("#skillCategory").value.trim(),
+      icon: $("#skillIcon")?.value.trim() || "",
+      category: $("#skillCategory")?.value.trim() || "",
       progress,
       sort_order: sortOrder,
-      is_visible: $("#skillIsVisible").checked
+      is_visible: $("#skillIsVisible")?.checked === true
     };
 
     const editing = state.editingSkillId !== null;
@@ -649,7 +676,6 @@
       });
 
       closeSkillModal();
-
       await loadSkills();
 
       showToast(
@@ -660,9 +686,7 @@
     } catch (error) {
       console.error("Skill save error:", error);
 
-      if (status) {
-        status.textContent = error.message;
-      }
+      if (status) status.textContent = error.message;
 
       showToast(error.message || "تعذر حفظ المهارة.", "error");
     } finally {
@@ -695,7 +719,11 @@
       );
     } catch (error) {
       console.error("Skill visibility error:", error);
-      showToast(error.message || "تعذر تغيير حالة المهارة.", "error");
+
+      showToast(
+        error.message || "تعذر تغيير حالة المهارة.",
+        "error"
+      );
     }
   }
 
@@ -728,12 +756,12 @@
       });
 
       closeDeleteSkillModal();
-
       await loadSkills();
 
       showToast("تم حذف المهارة بنجاح.");
     } catch (error) {
       console.error("Skill delete error:", error);
+
       showToast(error.message || "تعذر حذف المهارة.", "error");
     } finally {
       setButtonLoading(button, false);
@@ -754,12 +782,22 @@
 
     $("#skillSearch")?.addEventListener("input", renderSkills);
 
-    $("#skillVisibilityFilter")?.addEventListener("change", renderSkills);
+    $("#skillVisibilityFilter")?.addEventListener(
+      "change",
+      renderSkills
+    );
 
     elements.skillForm?.addEventListener("submit", saveSkill);
 
-    $("#closeSkillModal")?.addEventListener("click", closeSkillModal);
-    $("#cancelSkillForm")?.addEventListener("click", closeSkillModal);
+    $("#closeSkillModal")?.addEventListener(
+      "click",
+      closeSkillModal
+    );
+
+    $("#cancelSkillForm")?.addEventListener(
+      "click",
+      closeSkillModal
+    );
 
     $("#closeDeleteSkillModal")?.addEventListener(
       "click",
@@ -771,7 +809,10 @@
       closeDeleteSkillModal
     );
 
-    $("#confirmDeleteSkill")?.addEventListener("click", deleteSkill);
+    $("#confirmDeleteSkill")?.addEventListener(
+      "click",
+      deleteSkill
+    );
 
     elements.skillTableBody?.addEventListener("click", (event) => {
       const editButton = event.target.closest(".edit-skill-button");
@@ -787,10 +828,10 @@
       }
 
       if (toggleButton) {
-        const id = toggleButton.dataset.id;
-        const visible = toggleButton.dataset.visible === "true";
-
-        toggleSkillVisibility(id, visible);
+        toggleSkillVisibility(
+          toggleButton.dataset.id,
+          toggleButton.dataset.visible === "true"
+        );
       }
 
       if (deleteButton) {
@@ -823,10 +864,12 @@
   };
 
   function getMessageDate(message) {
-    return message.created_at ||
+    return (
+      message.created_at ||
       message.createdAt ||
       message.date ||
-      null;
+      null
+    );
   }
 
   function getFilteredMessages() {
@@ -842,12 +885,9 @@
         message.email,
         message.subject,
         message.message
-      ]
-        .join(" ")
-        .toLowerCase();
+      ].join(" ").toLowerCase();
 
       const matchesSearch = searchableText.includes(search);
-
       const status = message.status || "new";
 
       const matchesStatus =
@@ -914,8 +954,10 @@
     if (overviewBody) {
       const latest = [...state.messages]
         .sort((a, b) => {
-          return new Date(getMessageDate(b) || 0) -
-            new Date(getMessageDate(a) || 0);
+          return (
+            new Date(getMessageDate(b) || 0) -
+            new Date(getMessageDate(a) || 0)
+          );
         })
         .slice(0, 5);
 
@@ -940,14 +982,15 @@
       (message) => (message.status || "new") === "new"
     ).length;
 
-    const totalElement = $("#statTotalMessages");
-    const newElement = $("#statNewMessages");
-
-    if (totalElement) totalElement.textContent = total;
-    if (newElement) newElement.textContent = newMessages;
+    setText("#statTotalMessages", total);
+    setText("#statNewMessages", newMessages);
   }
 
   async function loadMessages() {
+    if (state.loadingMessages) return;
+
+    state.loadingMessages = true;
+
     try {
       const data = await api(API.messages);
 
@@ -975,6 +1018,8 @@
       }
 
       showToast("تعذر تحميل الرسائل.", "error");
+    } finally {
+      state.loadingMessages = false;
     }
   }
 
@@ -1021,7 +1066,10 @@
 
     setElementVisible(elements.messageModal, true);
 
-    $("#closeMessageAction")?.addEventListener("click", closeMessageModal);
+    $("#closeMessageAction")?.addEventListener(
+      "click",
+      closeMessageModal
+    );
 
     $$("[data-message-status]", actions).forEach((button) => {
       button.addEventListener("click", () => {
@@ -1037,7 +1085,6 @@
 
   async function updateMessageStatus(status) {
     const message = state.currentMessage;
-
     if (!message) return;
 
     try {
@@ -1050,20 +1097,26 @@
       });
 
       closeMessageModal();
-
       await loadMessages();
 
       showToast("تم تحديث حالة الرسالة.");
     } catch (error) {
       console.error("Message update error:", error);
-      showToast(error.message || "تعذر تحديث الرسالة.", "error");
+
+      showToast(
+        error.message || "تعذر تحديث الرسالة.",
+        "error"
+      );
     }
   }
 
   function initializeMessages() {
     $("#messageSearch")?.addEventListener("input", renderMessages);
 
-    $("#messageStatusFilter")?.addEventListener("change", renderMessages);
+    $("#messageStatusFilter")?.addEventListener(
+      "change",
+      renderMessages
+    );
 
     $("#closeMessageModal")?.addEventListener(
       "click",
@@ -1097,7 +1150,7 @@
 
     const projects = $("#statProjects");
 
-    if (projects && projects.textContent === "") {
+    if (projects && projects.textContent.trim() === "") {
       projects.textContent = "—";
     }
 
@@ -1149,16 +1202,25 @@
     initializeSkills();
     initializeMessages();
 
-    $("#profileForm")?.addEventListener("submit", saveProfile);
+    $("#profileForm")?.addEventListener(
+      "submit",
+      saveProfile
+    );
 
-    $("#reloadProfile")?.addEventListener("click", loadProfile);
+    $("#reloadProfile")?.addEventListener(
+      "click",
+      loadProfile
+    );
 
     $("#refreshDashboard")?.addEventListener(
       "click",
       refreshDashboard
     );
 
-    $("#logoutButton")?.addEventListener("click", logout);
+    $("#logoutButton")?.addEventListener(
+      "click",
+      logout
+    );
 
     const year = $("#currentYear");
 
@@ -1166,12 +1228,12 @@
       year.textContent = new Date().getFullYear();
     }
 
-    await loadMessages();
-    await updateStatistics();
+    await Promise.all([
+      loadMessages(),
+      updateStatistics()
+    ]);
 
-    if (state.activeSection === "skills") {
-      await loadSkills();
-    }
+    activateSection(state.activeSection);
   }
 
   initializeDashboard().catch((error) => {
