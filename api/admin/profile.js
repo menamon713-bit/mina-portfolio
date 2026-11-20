@@ -1,12 +1,11 @@
 "use strict";
 
 const { neon } = require("@neondatabase/serverless");
+
 const {
   requireAdmin,
   checkSameOrigin
 } = require("../_lib/admin-auth");
-
-const sql = neon(process.env.DATABASE_URL);
 
 const FIELDS = {
   full_name: 120,
@@ -15,31 +14,46 @@ const FIELDS = {
   about: 5000,
   location: 120,
   email: 255,
-  profile_image: 2000
+  image: 2000
 };
 
 function sendError(res, status, message) {
   return res.status(status).json({ error: message });
 }
 
+function isPlainObject(value) {
+  return (
+    value !== null &&
+    typeof value === "object" &&
+    !Array.isArray(value) &&
+    Object.getPrototypeOf(value) === Object.prototype
+  );
+}
+
 function validateProfile(body) {
-  if (!body || typeof body !== "object" || Array.isArray(body)) {
+  if (!isPlainObject(body)) {
     return "Invalid request body.";
   }
 
-  for (const [field, maxLength] of Object.entries(FIELDS)) {
-    const value = body[field];
+  const allowedFields = Object.keys(FIELDS);
 
-    if (typeof value !== "string") {
+  for (const field of Object.keys(body)) {
+    if (!allowedFields.includes(field)) {
+      return `Unknown field: ${field}`;
+    }
+  }
+
+  for (const [field, maxLength] of Object.entries(FIELDS)) {
+    if (!Object.hasOwn(body, field)) {
+      return `Missing field: ${field}`;
+    }
+
+    if (typeof body[field] !== "string") {
       return `Invalid field: ${field}`;
     }
 
-    if (value.length > maxLength) {
+    if (body[field].length > maxLength) {
       return `${field} exceeds the maximum length.`;
-    }
-
-    if (value.trim() !== value && field === "full_name") {
-      return "Invalid full name.";
     }
   }
 
@@ -48,8 +62,8 @@ function validateProfile(body) {
   }
 
   if (
-    body.email &&
-    !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(body.email)
+    body.email.trim() &&
+    !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(body.email.trim())
   ) {
     return "Invalid email address.";
   }
@@ -65,13 +79,26 @@ module.exports = async function handler(req, res) {
     return sendError(res, 405, "Method not allowed.");
   }
 
-  if (!requireAdmin(req, res)) return;
+  if (!requireAdmin(req, res)) {
+    return;
+  }
 
-  if (req.method === "POST" && !checkSameOrigin(req)) {
+  if (
+    req.method === "POST" &&
+    !checkSameOrigin(req)
+  ) {
     return sendError(res, 403, "Invalid request origin.");
   }
 
+  const databaseUrl = process.env.DATABASE_URL;
+
+  if (!databaseUrl) {
+    return sendError(res, 503, "Database is unavailable.");
+  }
+
   try {
+    const sql = neon(databaseUrl);
+
     if (req.method === "GET") {
       const rows = await sql`
         SELECT
@@ -81,7 +108,7 @@ module.exports = async function handler(req, res) {
           about,
           location,
           email,
-          profile_image,
+          profile_image AS image,
           updated_at
         FROM site_profile
         ORDER BY id ASC
@@ -120,7 +147,7 @@ module.exports = async function handler(req, res) {
         about = ${values.about},
         location = ${values.location},
         email = ${values.email},
-        profile_image = ${values.profile_image},
+        profile_image = ${values.image},
         updated_at = NOW()
       WHERE id = (
         SELECT id
@@ -135,7 +162,7 @@ module.exports = async function handler(req, res) {
         about,
         location,
         email,
-        profile_image,
+        profile_image AS image,
         updated_at
     `;
 
