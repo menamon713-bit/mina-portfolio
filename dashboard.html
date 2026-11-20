@@ -1,1110 +1,1153 @@
-<!DOCTYPE html><html lang="ar" dir="rtl" data-theme="dark">
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-theme="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#090b10">  <title>M.A.S.H CYVEX | Admin Dashboard</title>  <meta name="robots" content="noindex,nofollow">
-  <meta name="referrer" content="same-origin">  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>  <link
-    href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap"
+  <meta name="theme-color" content="#070b14">
+
+  <title>M.A.S.H CYVEX | Admin Dashboard</title>
+
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="referrer" content="same-origin">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+  <link
+    href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap"
     rel="stylesheet"
-  >  <link rel="stylesheet" href="dashboard.css?v=3">
-</head><body>  <div class="dashboard-layout"><div
-  class="sidebar-overlay"
-  id="sidebarOverlay"
-  aria-hidden="true"
-></div>
+  >
 
-<!-- SIDEBAR -->
-<aside class="sidebar" id="sidebar">
+  <link rel="stylesheet" href="dashboard.css?v=4">
+</head>
 
-  <div class="sidebar-brand">
-    <div class="brand-mark">M</div>
+<body>
 
-    <div class="brand-copy">
-      <strong>M.A.S.H</strong>
-      <span>CYVEX CONTROL</span>
-    </div>
-  </div>
+  <div class="dashboard-layout">
 
-  <div class="sidebar-label">القائمة الرئيسية</div>
+    <!-- SIDEBAR OVERLAY -->
+    <div
+      class="sidebar-overlay"
+      id="sidebarOverlay"
+      aria-hidden="true"
+    ></div>
 
-  <nav class="sidebar-nav" aria-label="القائمة الرئيسية">
+    <!-- SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
 
-    <button
-      type="button"
-      class="nav-item active"
-      data-section="overview"
-      aria-current="page"
-    >
-      <span>◫</span>
-      <span>الرئيسية</span>
-    </button>
+      <div class="sidebar-brand">
 
-    <button
-      type="button"
-      class="nav-item"
-      data-section="profile"
-    >
-      <span>◉</span>
-      <span>الملف الشخصي</span>
-    </button>
+        <div class="brand-mark">M</div>
 
-    <button
-      type="button"
-      class="nav-item"
-      data-section="skills"
-    >
-      <span>⌘</span>
-      <span>المهارات</span>
-    </button>
+        <div class="brand-copy">
+          <strong>M.A.S.H</strong>
+          <span>CYVEX CONTROL</span>
+        </div>
 
-    <button
-      type="button"
-      class="nav-item"
-      data-section="projects"
-    >
-      <span>▣</span>
-      <span>المشاريع</span>
-    </button>
-
-    <button
-      type="button"
-      class="nav-item"
-      data-section="messages"
-    >
-      <span>✉</span>
-      <span>الرسائل</span>
-    </button>
-
-    <button
-      type="button"
-      class="nav-item"
-      data-section="social"
-    >
-      <span>◎</span>
-      <span>روابط التواصل</span>
-    </button>
-
-    <button
-      type="button"
-      class="nav-item"
-      data-section="pages"
-    >
-      <span>▤</span>
-      <span>الصفحات والمحتوى</span>
-    </button>
-
-    <button
-      type="button"
-      class="nav-item"
-      data-section="seo"
-    >
-      <span>⌕</span>
-      <span>SEO</span>
-    </button>
-
-    <button
-      type="button"
-      class="nav-item"
-      data-section="security"
-    >
-      <span>◇</span>
-      <span>الأمان والسجلات</span>
-    </button>
-
-    <button
-      type="button"
-      class="nav-item"
-      data-section="settings"
-    >
-      <span>⚙</span>
-      <span>الإعدادات</span>
-    </button>
-
-  </nav>
-
-  <div class="sidebar-bottom">
-
-    <div class="sidebar-user">
-      <div class="sidebar-avatar">M</div>
-
-      <div>
-        <strong>M.A.S.H Admin</strong>
-        <span>Administrator</span>
-      </div>
-    </div>
-
-    <button
-      type="button"
-      class="logout-button"
-      id="logoutButton"
-    >
-      <span>↪</span>
-      تسجيل الخروج
-    </button>
-
-  </div>
-
-</aside>
-
-<!-- MAIN CONTENT -->
-<main class="dashboard-main">
-
-  <!-- TOPBAR -->
-  <header class="topbar">
-
-    <div class="topbar-start">
-
-      <button
-        type="button"
-        class="menu-toggle"
-        id="menuToggle"
-        aria-label="فتح القائمة"
-        aria-controls="sidebar"
-        aria-expanded="false"
-      >
-        ☰
-      </button>
-
-      <div>
-        <span class="topbar-eyebrow">CONTROL PANEL</span>
-        <strong>M.A.S.H CYVEX</strong>
       </div>
 
-    </div>
+      <div class="sidebar-label">القائمة الرئيسية</div>
 
-    <div class="topbar-end">
-      <span class="admin-status">
-        <i></i>
-        متصل
-      </span>
-    </div>
+      <nav class="sidebar-nav" aria-label="القائمة الرئيسية">
 
-  </header>
+        <button
+          type="button"
+          class="nav-item active"
+          data-section="overview"
+          aria-current="page"
+        >
+          <span>◫</span>
+          <span>الرئيسية</span>
+        </button>
 
-  <div class="dashboard-content">
+        <button
+          type="button"
+          class="nav-item"
+          data-section="profile"
+        >
+          <span>◉</span>
+          <span>الملف الشخصي</span>
+        </button>
 
-    <!-- OVERVIEW -->
-    <section
-      class="dashboard-section active"
-      id="section-overview"
-    >
+        <button
+          type="button"
+          class="nav-item"
+          data-section="skills"
+        >
+          <span>⌘</span>
+          <span>المهارات</span>
+        </button>
 
-      <div class="page-heading">
+        <button
+          type="button"
+          class="nav-item"
+          data-section="projects"
+        >
+          <span>▣</span>
+          <span>المشاريع</span>
+        </button>
 
-        <div>
-          <span class="eyebrow">DASHBOARD OVERVIEW</span>
-          <h1>لوحة التحكم</h1>
-          <p>نظرة عامة على محتوى الموقع ونشاطه.</p>
+        <button
+          type="button"
+          class="nav-item"
+          data-section="messages"
+        >
+          <span>✉</span>
+          <span>الرسائل</span>
+        </button>
+
+        <button
+          type="button"
+          class="nav-item"
+          data-section="social"
+        >
+          <span>◎</span>
+          <span>روابط التواصل</span>
+        </button>
+
+        <button
+          type="button"
+          class="nav-item"
+          data-section="pages"
+        >
+          <span>▤</span>
+          <span>الصفحات والمحتوى</span>
+        </button>
+
+        <button
+          type="button"
+          class="nav-item"
+          data-section="seo"
+        >
+          <span>⌕</span>
+          <span>SEO</span>
+        </button>
+
+        <button
+          type="button"
+          class="nav-item"
+          data-section="security"
+        >
+          <span>◇</span>
+          <span>الأمان والسجلات</span>
+        </button>
+
+        <button
+          type="button"
+          class="nav-item"
+          data-section="settings"
+        >
+          <span>⚙</span>
+          <span>الإعدادات</span>
+        </button>
+
+      </nav>
+
+      <div class="sidebar-bottom">
+
+        <div class="sidebar-user">
+
+          <div class="sidebar-avatar">M</div>
+
+          <div class="sidebar-user-info">
+            <strong>M.A.S.H Admin</strong>
+            <span>Administrator</span>
+          </div>
+
         </div>
 
         <button
           type="button"
-          class="secondary-button"
-          id="refreshDashboard"
+          class="logout-button"
+          id="logoutButton"
         >
-          ↻ تحديث البيانات
+          <span>↪</span>
+          تسجيل الخروج
         </button>
 
       </div>
 
-      <div class="stats-grid">
+    </aside>
 
-        <article class="stat-card">
-          <span class="stat-icon">✉</span>
-          <span class="stat-label">إجمالي الرسائل</span>
-          <strong id="statTotalMessages">—</strong>
-        </article>
+    <!-- MAIN CONTENT -->
+    <main class="dashboard-main">
 
-        <article class="stat-card">
-          <span class="stat-icon">◷</span>
-          <span class="stat-label">الرسائل الجديدة</span>
-          <strong id="statNewMessages">—</strong>
-        </article>
+      <!-- TOPBAR -->
+      <header class="topbar">
 
-        <article class="stat-card">
-          <span class="stat-icon">▣</span>
-          <span class="stat-label">المشاريع</span>
-          <strong id="statProjects">—</strong>
-        </article>
-
-        <article class="stat-card">
-          <span class="stat-icon">⌘</span>
-          <span class="stat-label">المهارات</span>
-          <strong id="statSkills">—</strong>
-        </article>
-
-      </div>
-
-      <div class="panel-card">
-
-        <div class="panel-header">
-
-          <div>
-            <h2>أحدث الرسائل</h2>
-            <p>آخر الرسائل الواردة من زوار الموقع.</p>
-          </div>
+        <div class="topbar-start">
 
           <button
             type="button"
-            class="secondary-button"
-            data-go-section="messages"
+            class="menu-toggle"
+            id="menuToggle"
+            aria-label="فتح القائمة"
+            aria-controls="sidebar"
+            aria-expanded="false"
           >
-            عرض الكل
+            ☰
           </button>
 
-        </div>
-
-        <div class="table-container">
-
-          <table class="admin-table">
-
-            <thead>
-              <tr>
-                <th>الاسم</th>
-                <th>البريد الإلكتروني</th>
-                <th>الموضوع</th>
-                <th>الحالة</th>
-                <th>التاريخ</th>
-              </tr>
-            </thead>
-
-            <tbody id="dashboardMessages">
-              <tr>
-                <td colspan="5">جاري تحميل الرسائل...</td>
-              </tr>
-            </tbody>
-
-          </table>
-
-        </div>
-
-      </div>
-
-    </section>
-
-    <!-- PROFILE -->
-    <section
-      class="dashboard-section"
-      id="section-profile"
-    >
-
-      <div class="page-heading">
-
-        <div>
-          <span class="eyebrow">PERSONAL INFORMATION</span>
-          <h1>الملف الشخصي</h1>
-          <p>إدارة المعلومات الشخصية المعروضة على الموقع.</p>
-        </div>
-
-      </div>
-
-      <div class="panel-card">
-
-        <div class="panel-header">
-
-          <div>
-            <h2>معلومات الملف الشخصي</h2>
-            <p>تحديث بيانات التعريف والنبذة الشخصية.</p>
-          </div>
-
-          <button
-            type="button"
-            class="secondary-button"
-            id="reloadProfile"
-          >
-            ↻ إعادة تحميل
-          </button>
-
-        </div>
-
-        <form id="profileForm">
-
-          <div class="profile-form-grid">
-
-            <div class="form-field">
-              <label for="profileFullName">الاسم الكامل</label>
-              <input
-                id="profileFullName"
-                name="full_name"
-                type="text"
-                maxlength="150"
-              >
-            </div>
-
-            <div class="form-field">
-              <label for="profileJobTitle">المسمى الوظيفي</label>
-              <input
-                id="profileJobTitle"
-                name="job_title"
-                type="text"
-                maxlength="150"
-              >
-            </div>
-
-            <div class="form-field">
-              <label for="profileLocation">الموقع</label>
-              <input
-                id="profileLocation"
-                name="location"
-                type="text"
-                maxlength="150"
-              >
-            </div>
-
-            <div class="form-field">
-              <label for="profileEmail">البريد الإلكتروني</label>
-              <input
-                id="profileEmail"
-                name="email"
-                type="email"
-                maxlength="254"
-              >
-            </div>
-
-            <div class="form-field full-width">
-              <label for="profileImage">رابط الصورة</label>
-              <input
-                id="profileImage"
-                name="image"
-                type="url"
-                maxlength="1000"
-              >
-            </div>
-
-            <div class="form-field full-width">
-              <label for="profileShortBio">نبذة مختصرة</label>
-              <textarea
-                id="profileShortBio"
-                name="short_bio"
-                rows="3"
-                maxlength="500"
-              ></textarea>
-            </div>
-
-            <div class="form-field full-width">
-              <label for="profileAbout">نبذة تفصيلية</label>
-              <textarea
-                id="profileAbout"
-                name="about"
-                rows="6"
-                maxlength="5000"
-              ></textarea>
-            </div>
-
-          </div>
-
-          <div class="form-footer">
-
-            <p
-              id="profileFormStatus"
-              class="form-status"
-              aria-live="polite"
-            ></p>
-
-            <button
-              type="submit"
-              class="primary-button"
-              id="saveProfile"
-            >
-              حفظ التغييرات
-            </button>
-
-          </div>
-
-        </form>
-
-      </div>
-
-    </section>
-
-    <!-- SKILLS -->
-    <section
-      class="dashboard-section"
-      id="section-skills"
-    >
-
-      <div class="page-heading">
-
-        <div>
-          <span class="eyebrow">TECHNICAL EXPERTISE</span>
-          <h1>المهارات</h1>
-          <p>إضافة المهارات وتعديلها والتحكم في ظهورها وترتيبها.</p>
-        </div>
-
-        <button
-          type="button"
-          class="primary-button"
-          id="addSkillButton"
-        >
-          + إضافة مهارة
-        </button>
-
-      </div>
-
-      <div class="stats-grid skills-stats">
-
-        <article class="stat-card">
-          <span class="stat-icon">⌘</span>
-          <span class="stat-label">إجمالي المهارات</span>
-          <strong id="skillsTotalCount">—</strong>
-        </article>
-
-        <article class="stat-card">
-          <span class="stat-icon">◉</span>
-          <span class="stat-label">مهارات ظاهرة</span>
-          <strong id="skillsVisibleCount">—</strong>
-        </article>
-
-        <article class="stat-card">
-          <span class="stat-icon">◌</span>
-          <span class="stat-label">مهارات مخفية</span>
-          <strong id="skillsHiddenCount">—</strong>
-        </article>
-
-      </div>
-
-      <div class="panel-card">
-
-        <div class="panel-header">
-
-          <div>
-            <h2>قائمة المهارات</h2>
-            <p>يمكنك تعديل بيانات كل مهارة أو إخفاؤها أو حذفها.</p>
-          </div>
-
-          <button
-            type="button"
-            class="secondary-button"
-            id="refreshSkillsButton"
-          >
-            ↻ تحديث
-          </button>
-
-        </div>
-
-        <div class="skills-toolbar">
-
-          <div class="form-field skills-search-field">
-            <label for="skillSearch">البحث عن مهارة</label>
-            <input
-              type="search"
-              id="skillSearch"
-              placeholder="ابحث بالاسم أو التصنيف..."
-            >
-          </div>
-
-          <div class="form-field skills-filter-field">
-            <label for="skillVisibilityFilter">حالة الظهور</label>
-            <select id="skillVisibilityFilter">
-              <option value="all">كل المهارات</option>
-              <option value="visible">ظاهرة فقط</option>
-              <option value="hidden">مخفية فقط</option>
-            </select>
+          <div class="topbar-brand">
+            <span class="topbar-eyebrow">CONTROL PANEL</span>
+            <strong>M.A.S.H CYVEX</strong>
           </div>
 
         </div>
 
-        <div
-          id="skillsLoading"
-          class="section-placeholder"
-        >
-          <span>⌘</span>
-          <h2>جاري تحميل المهارات</h2>
-          <p>يرجى الانتظار...</p>
-        </div>
+        <div class="topbar-end">
 
-        <div
-          id="skillsEmpty"
-          class="section-placeholder"
-          hidden
-        >
-          <span>⌘</span>
-          <h2>لا توجد مهارات حتى الآن</h2>
-          <p>ابدأ بإضافة أول مهارة إلى موقعك.</p>
-
-          <button
-            type="button"
-            class="primary-button"
-            id="addFirstSkillButton"
-          >
-            + إضافة مهارة
-          </button>
-        </div>
-
-        <div
-          id="skillsError"
-          class="section-placeholder"
-          hidden
-        >
-          <span>!</span>
-          <h2>تعذر تحميل المهارات</h2>
-          <p id="skillsErrorMessage">
-            حدث خطأ أثناء جلب البيانات.
-          </p>
-
-          <button
-            type="button"
-            class="secondary-button"
-            id="retrySkillsButton"
-          >
-            إعادة المحاولة
-          </button>
-        </div>
-
-        <div
-          class="table-container"
-          id="skillsTableContainer"
-          hidden
-        >
-
-          <table class="admin-table skills-table">
-
-            <thead>
-              <tr>
-                <th>المهارة</th>
-                <th>التصنيف</th>
-                <th>التقدم</th>
-                <th>الترتيب</th>
-                <th>الظهور</th>
-                <th>الإجراءات</th>
-              </tr>
-            </thead>
-
-            <tbody id="skillsTableBody"></tbody>
-
-          </table>
+          <span class="admin-status">
+            <i></i>
+            متصل
+          </span>
 
         </div>
 
-        <div
-          id="skillsNoResults"
-          class="empty-search-result"
-          hidden
-        >
-          لا توجد نتائج مطابقة لبحثك.
-        </div>
+      </header>
 
-      </div>
+      <!-- DASHBOARD CONTENT -->
+      <div class="dashboard-content">
 
-      <!-- SKILL FORM MODAL -->
-      <div
-        class="modal-overlay"
-        id="skillModal"
-        hidden
-      >
-
-        <div
-          class="modal-content skill-modal-content"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="skillModalTitle"
+        <!-- OVERVIEW -->
+        <section
+          class="dashboard-section active"
+          id="section-overview"
         >
 
-          <div class="modal-header">
+          <div class="page-heading">
 
             <div>
-              <span class="eyebrow">SKILL MANAGEMENT</span>
-              <h2 id="skillModalTitle">إضافة مهارة جديدة</h2>
+              <span class="eyebrow">DASHBOARD OVERVIEW</span>
+              <h1>لوحة التحكم</h1>
+              <p>نظرة عامة على محتوى الموقع ونشاطه.</p>
             </div>
-
-            <button
-              type="button"
-              class="modal-close"
-              id="closeSkillModal"
-              aria-label="إغلاق"
-            >
-              ×
-            </button>
-
-          </div>
-
-          <form id="skillForm">
-
-            <input
-              type="hidden"
-              id="skillId"
-            >
-
-            <div class="skill-form-grid">
-
-              <div class="form-field">
-                <label for="skillNameAr">اسم المهارة بالعربية *</label>
-                <input
-                  id="skillNameAr"
-                  type="text"
-                  maxlength="150"
-                  required
-                >
-              </div>
-
-              <div class="form-field">
-                <label for="skillNameEn">اسم المهارة بالإنجليزية *</label>
-                <input
-                  id="skillNameEn"
-                  type="text"
-                  maxlength="150"
-                  required
-                >
-              </div>
-
-              <div class="form-field">
-                <label for="skillIcon">الأيقونة</label>
-                <input
-                  id="skillIcon"
-                  type="text"
-                  maxlength="100"
-                  placeholder="مثال: code أو HTML"
-                >
-              </div>
-
-              <div class="form-field">
-                <label for="skillCategory">التصنيف</label>
-                <input
-                  id="skillCategory"
-                  type="text"
-                  maxlength="100"
-                  placeholder="مثال: Frontend"
-                >
-              </div>
-
-              <div class="form-field">
-                <label for="skillProgress">مستوى التقدم (0 - 100)</label>
-                <input
-                  id="skillProgress"
-                  type="number"
-                  min="0"
-                  max="100"
-                  step="1"
-                  value="0"
-                >
-              </div>
-
-              <div class="form-field">
-                <label for="skillSortOrder">ترتيب الظهور</label>
-                <input
-                  id="skillSortOrder"
-                  type="number"
-                  step="1"
-                  value="0"
-                >
-              </div>
-
-              <div class="form-field full-width">
-
-                <label
-                  class="checkbox-field"
-                  for="skillIsVisible"
-                >
-                  <input
-                    id="skillIsVisible"
-                    type="checkbox"
-                    checked
-                  >
-                  <span>إظهار المهارة على الموقع</span>
-                </label>
-
-              </div>
-
-            </div>
-
-            <p
-              id="skillFormStatus"
-              class="form-status"
-              aria-live="polite"
-            ></p>
-
-            <div class="modal-actions">
-
-              <button
-                type="button"
-                class="secondary-button"
-                id="cancelSkillForm"
-              >
-                إلغاء
-              </button>
-
-              <button
-                type="submit"
-                class="primary-button"
-                id="saveSkillButton"
-              >
-                حفظ المهارة
-              </button>
-
-            </div>
-
-          </form>
-
-        </div>
-
-      </div>
-
-      <!-- DELETE CONFIRMATION -->
-      <div
-        class="modal-overlay"
-        id="deleteSkillModal"
-        hidden
-      >
-
-        <div
-          class="modal-content delete-modal-content"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="deleteSkillTitle"
-        >
-
-          <div class="modal-header">
-
-            <h2 id="deleteSkillTitle">حذف المهارة</h2>
-
-            <button
-              type="button"
-              class="modal-close"
-              id="closeDeleteSkillModal"
-              aria-label="إغلاق"
-            >
-              ×
-            </button>
-
-          </div>
-
-          <p>
-            هل أنت متأكد من حذف هذه المهارة؟
-            لا يمكن التراجع عن هذا الإجراء.
-          </p>
-
-          <input
-            type="hidden"
-            id="deleteSkillId"
-          >
-
-          <div class="modal-actions">
 
             <button
               type="button"
               class="secondary-button"
-              id="cancelDeleteSkill"
+              id="refreshDashboard"
             >
-              إلغاء
+              ↻ تحديث البيانات
             </button>
+
+          </div>
+
+          <div class="stats-grid">
+
+            <article class="stat-card">
+              <span class="stat-icon">✉</span>
+              <span class="stat-label">إجمالي الرسائل</span>
+              <strong id="statTotalMessages">—</strong>
+            </article>
+
+            <article class="stat-card">
+              <span class="stat-icon">◷</span>
+              <span class="stat-label">الرسائل الجديدة</span>
+              <strong id="statNewMessages">—</strong>
+            </article>
+
+            <article class="stat-card">
+              <span class="stat-icon">▣</span>
+              <span class="stat-label">المشاريع</span>
+              <strong id="statProjects">—</strong>
+            </article>
+
+            <article class="stat-card">
+              <span class="stat-icon">⌘</span>
+              <span class="stat-label">المهارات</span>
+              <strong id="statSkills">—</strong>
+            </article>
+
+          </div>
+
+          <div class="panel-card">
+
+            <div class="panel-header">
+
+              <div>
+                <h2>أحدث الرسائل</h2>
+                <p>آخر الرسائل الواردة من زوار الموقع.</p>
+              </div>
+
+              <button
+                type="button"
+                class="secondary-button"
+                data-go-section="messages"
+              >
+                عرض الكل
+              </button>
+
+            </div>
+
+            <div class="table-container">
+
+              <table class="admin-table">
+
+                <thead>
+                  <tr>
+                    <th>الاسم</th>
+                    <th>البريد الإلكتروني</th>
+                    <th>الموضوع</th>
+                    <th>الحالة</th>
+                    <th>التاريخ</th>
+                  </tr>
+                </thead>
+
+                <tbody id="dashboardMessages">
+                  <tr>
+                    <td colspan="5">جاري تحميل الرسائل...</td>
+                  </tr>
+                </tbody>
+
+              </table>
+
+            </div>
+
+          </div>
+
+        </section>
+
+        <!-- PROFILE -->
+        <section
+          class="dashboard-section"
+          id="section-profile"
+        >
+
+          <div class="page-heading">
+
+            <div>
+              <span class="eyebrow">PERSONAL INFORMATION</span>
+              <h1>الملف الشخصي</h1>
+              <p>إدارة المعلومات الشخصية المعروضة على الموقع.</p>
+            </div>
+
+          </div>
+
+          <div class="panel-card">
+
+            <div class="panel-header">
+
+              <div>
+                <h2>معلومات الملف الشخصي</h2>
+                <p>تحديث بيانات التعريف والنبذة الشخصية.</p>
+              </div>
+
+              <button
+                type="button"
+                class="secondary-button"
+                id="reloadProfile"
+              >
+                ↻ إعادة تحميل
+              </button>
+
+            </div>
+
+            <form id="profileForm">
+
+              <div class="profile-form-grid">
+
+                <div class="form-field">
+                  <label for="profileFullName">الاسم الكامل</label>
+                  <input
+                    id="profileFullName"
+                    name="full_name"
+                    type="text"
+                    maxlength="150"
+                    autocomplete="name"
+                  >
+                </div>
+
+                <div class="form-field">
+                  <label for="profileJobTitle">المسمى الوظيفي</label>
+                  <input
+                    id="profileJobTitle"
+                    name="job_title"
+                    type="text"
+                    maxlength="150"
+                  >
+                </div>
+
+                <div class="form-field">
+                  <label for="profileLocation">الموقع</label>
+                  <input
+                    id="profileLocation"
+                    name="location"
+                    type="text"
+                    maxlength="150"
+                  >
+                </div>
+
+                <div class="form-field">
+                  <label for="profileEmail">البريد الإلكتروني</label>
+                  <input
+                    id="profileEmail"
+                    name="email"
+                    type="email"
+                    maxlength="254"
+                    autocomplete="email"
+                  >
+                </div>
+
+                <div class="form-field full-width">
+                  <label for="profileImage">رابط الصورة</label>
+                  <input
+                    id="profileImage"
+                    name="image"
+                    type="url"
+                    maxlength="1000"
+                  >
+                </div>
+
+                <div class="form-field full-width">
+                  <label for="profileShortBio">نبذة مختصرة</label>
+                  <textarea
+                    id="profileShortBio"
+                    name="short_bio"
+                    rows="3"
+                    maxlength="500"
+                  ></textarea>
+                </div>
+
+                <div class="form-field full-width">
+                  <label for="profileAbout">نبذة تفصيلية</label>
+                  <textarea
+                    id="profileAbout"
+                    name="about"
+                    rows="6"
+                    maxlength="5000"
+                  ></textarea>
+                </div>
+
+              </div>
+
+              <div class="form-footer">
+
+                <p
+                  id="profileFormStatus"
+                  class="form-status"
+                  aria-live="polite"
+                ></p>
+
+                <button
+                  type="submit"
+                  class="primary-button"
+                  id="saveProfile"
+                >
+                  حفظ التغييرات
+                </button>
+
+              </div>
+
+            </form>
+
+          </div>
+
+        </section>
+
+        <!-- SKILLS -->
+        <section
+          class="dashboard-section"
+          id="section-skills"
+        >
+
+          <div class="page-heading">
+
+            <div>
+              <span class="eyebrow">TECHNICAL EXPERTISE</span>
+              <h1>المهارات</h1>
+              <p>إضافة المهارات وتعديلها والتحكم في ظهورها وترتيبها.</p>
+            </div>
 
             <button
               type="button"
-              class="danger-button"
-              id="confirmDeleteSkill"
+              class="primary-button"
+              id="addSkillButton"
             >
-              حذف نهائي
+              + إضافة مهارة
             </button>
 
           </div>
 
-        </div>
+          <div class="stats-grid skills-stats">
 
-      </div>
+            <article class="stat-card">
+              <span class="stat-icon">⌘</span>
+              <span class="stat-label">إجمالي المهارات</span>
+              <strong id="skillsTotalCount">—</strong>
+            </article>
 
-    </section>
+            <article class="stat-card">
+              <span class="stat-icon">◉</span>
+              <span class="stat-label">مهارات ظاهرة</span>
+              <strong id="skillsVisibleCount">—</strong>
+            </article>
 
-    <!-- PROJECTS -->
-    <section
-      class="dashboard-section"
-      id="section-projects"
-    >
+            <article class="stat-card">
+              <span class="stat-icon">◌</span>
+              <span class="stat-label">مهارات مخفية</span>
+              <strong id="skillsHiddenCount">—</strong>
+            </article>
 
-      <div class="page-heading">
+          </div>
 
-        <div>
-          <span class="eyebrow">PORTFOLIO PROJECTS</span>
-          <h1>المشاريع</h1>
-          <p>إدارة المشاريع المعروضة في الموقع.</p>
-        </div>
+          <div class="panel-card">
 
-      </div>
+            <div class="panel-header">
 
-      <div class="panel-card">
+              <div>
+                <h2>قائمة المهارات</h2>
+                <p>يمكنك تعديل بيانات كل مهارة أو إخفاؤها أو حذفها.</p>
+              </div>
 
-        <div class="section-placeholder">
-          <span>▣</span>
-          <h2>إدارة المشاريع</h2>
-          <p>
-            سيتم توصيل إدارة المشاريع بقاعدة البيانات في المرحلة التالية.
-          </p>
-        </div>
+              <button
+                type="button"
+                class="secondary-button"
+                id="refreshSkillsButton"
+              >
+                ↻ تحديث
+              </button>
 
-      </div>
+            </div>
 
-    </section>
+            <div class="skills-toolbar">
 
-    <!-- MESSAGES -->
-    <section
-      class="dashboard-section"
-      id="section-messages"
-    >
+              <div class="form-field skills-search-field">
+                <label for="skillSearch">البحث عن مهارة</label>
+                <input
+                  type="search"
+                  id="skillSearch"
+                  placeholder="ابحث بالاسم أو التصنيف..."
+                >
+              </div>
 
-      <div class="page-heading">
+              <div class="form-field skills-filter-field">
+                <label for="skillVisibilityFilter">حالة الظهور</label>
+                <select id="skillVisibilityFilter">
+                  <option value="all">كل المهارات</option>
+                  <option value="visible">ظاهرة فقط</option>
+                  <option value="hidden">مخفية فقط</option>
+                </select>
+              </div>
 
-        <div>
-          <span class="eyebrow">INBOX MANAGEMENT</span>
-          <h1>الرسائل</h1>
-          <p>إدارة رسائل زوار الموقع ومتابعة حالتها.</p>
-        </div>
+            </div>
 
-      </div>
-
-      <div class="panel-card">
-
-        <div class="message-toolbar">
-
-          <div class="form-field">
-            <label for="messageSearch">البحث</label>
-            <input
-              type="search"
-              id="messageSearch"
-              placeholder="ابحث في الرسائل..."
+            <div
+              id="skillsLoading"
+              class="section-placeholder"
             >
-          </div>
+              <span>⌘</span>
+              <h2>جاري تحميل المهارات</h2>
+              <p>يرجى الانتظار...</p>
+            </div>
 
-          <div class="form-field">
-            <label for="messageStatusFilter">الحالة</label>
-
-            <select id="messageStatusFilter">
-              <option value="all">كل الرسائل</option>
-              <option value="new">جديدة</option>
-              <option value="read">مقروءة</option>
-              <option value="replied">تم الرد</option>
-              <option value="archived">مؤرشفة</option>
-            </select>
-          </div>
-
-        </div>
-
-        <div class="table-container">
-
-          <table class="admin-table">
-
-            <thead>
-              <tr>
-                <th>الاسم</th>
-                <th>البريد الإلكتروني</th>
-                <th>الموضوع</th>
-                <th>الحالة</th>
-                <th>التاريخ</th>
-                <th>الإجراء</th>
-              </tr>
-            </thead>
-
-            <tbody id="messagesTableBody">
-              <tr>
-                <td colspan="6">جاري تحميل الرسائل...</td>
-              </tr>
-            </tbody>
-
-          </table>
-
-        </div>
-
-      </div>
-
-      <div
-        class="modal-overlay"
-        id="messageModal"
-        hidden
-      >
-
-        <div class="modal-content message-modal">
-
-          <div class="modal-header">
-
-            <h2>تفاصيل الرسالة</h2>
-
-            <button
-              type="button"
-              class="modal-close"
-              id="closeMessageModal"
-              aria-label="إغلاق"
+            <div
+              id="skillsEmpty"
+              class="section-placeholder"
+              hidden
             >
-              ×
-            </button>
+              <span>⌘</span>
+              <h2>لا توجد مهارات حتى الآن</h2>
+              <p>ابدأ بإضافة أول مهارة إلى موقعك.</p>
+
+              <button
+                type="button"
+                class="primary-button"
+                id="addFirstSkillButton"
+              >
+                + إضافة مهارة
+              </button>
+            </div>
+
+            <div
+              id="skillsError"
+              class="section-placeholder"
+              hidden
+            >
+              <span>!</span>
+              <h2>تعذر تحميل المهارات</h2>
+              <p id="skillsErrorMessage">
+                حدث خطأ أثناء جلب البيانات.
+              </p>
+
+              <button
+                type="button"
+                class="secondary-button"
+                id="retrySkillsButton"
+              >
+                إعادة المحاولة
+              </button>
+            </div>
+
+            <div
+              class="table-container"
+              id="skillsTableContainer"
+              hidden
+            >
+
+              <table class="admin-table skills-table">
+
+                <thead>
+                  <tr>
+                    <th>المهارة</th>
+                    <th>التصنيف</th>
+                    <th>التقدم</th>
+                    <th>الترتيب</th>
+                    <th>الظهور</th>
+                    <th>الإجراءات</th>
+                  </tr>
+                </thead>
+
+                <tbody id="skillsTableBody"></tbody>
+
+              </table>
+
+            </div>
+
+            <div
+              id="skillsNoResults"
+              class="empty-search-result"
+              hidden
+            >
+              لا توجد نتائج مطابقة لبحثك.
+            </div>
 
           </div>
 
+          <!-- SKILL FORM MODAL -->
           <div
-            class="modal-content-body"
-            id="messageModalBody"
-          ></div>
+            class="modal-overlay"
+            id="skillModal"
+            hidden
+          >
 
+            <div
+              class="modal-content skill-modal-content"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="skillModalTitle"
+            >
+
+              <div class="modal-header">
+
+                <div>
+                  <span class="eyebrow">SKILL MANAGEMENT</span>
+                  <h2 id="skillModalTitle">إضافة مهارة جديدة</h2>
+                </div>
+
+                <button
+                  type="button"
+                  class="modal-close"
+                  id="closeSkillModal"
+                  aria-label="إغلاق"
+                >
+                  ×
+                </button>
+
+              </div>
+
+              <form id="skillForm">
+
+                <input
+                  type="hidden"
+                  id="skillId"
+                >
+
+                <div class="skill-form-grid">
+
+                  <div class="form-field">
+                    <label for="skillNameAr">اسم المهارة بالعربية *</label>
+                    <input
+                      id="skillNameAr"
+                      type="text"
+                      maxlength="150"
+                      required
+                    >
+                  </div>
+
+                  <div class="form-field">
+                    <label for="skillNameEn">اسم المهارة بالإنجليزية *</label>
+                    <input
+                      id="skillNameEn"
+                      type="text"
+                      maxlength="150"
+                      required
+                    >
+                  </div>
+
+                  <div class="form-field">
+                    <label for="skillIcon">الأيقونة</label>
+                    <input
+                      id="skillIcon"
+                      type="text"
+                      maxlength="100"
+                      placeholder="مثال: code أو HTML"
+                    >
+                  </div>
+
+                  <div class="form-field">
+                    <label for="skillCategory">التصنيف</label>
+                    <input
+                      id="skillCategory"
+                      type="text"
+                      maxlength="100"
+                      placeholder="مثال: Frontend"
+                    >
+                  </div>
+
+                  <div class="form-field">
+                    <label for="skillProgress">مستوى التقدم (0 - 100)</label>
+                    <input
+                      id="skillProgress"
+                      type="number"
+                      min="0"
+                      max="100"
+                      step="1"
+                      value="0"
+                    >
+                  </div>
+
+                  <div class="form-field">
+                    <label for="skillSortOrder">ترتيب الظهور</label>
+                    <input
+                      id="skillSortOrder"
+                      type="number"
+                      step="1"
+                      value="0"
+                    >
+                  </div>
+
+                  <div class="form-field full-width">
+
+                    <label
+                      class="checkbox-field"
+                      for="skillIsVisible"
+                    >
+                      <input
+                        id="skillIsVisible"
+                        type="checkbox"
+                        checked
+                      >
+                      <span>إظهار المهارة على الموقع</span>
+                    </label>
+
+                  </div>
+
+                </div>
+
+                <p
+                  id="skillFormStatus"
+                  class="form-status"
+                  aria-live="polite"
+                ></p>
+
+                <div class="modal-actions">
+
+                  <button
+                    type="button"
+                    class="secondary-button"
+                    id="cancelSkillForm"
+                  >
+                    إلغاء
+                  </button>
+
+                  <button
+                    type="submit"
+                    class="primary-button"
+                    id="saveSkillButton"
+                  >
+                    حفظ المهارة
+                  </button>
+
+                </div>
+
+              </form>
+
+            </div>
+
+          </div>
+
+          <!-- DELETE CONFIRMATION -->
           <div
-            class="modal-actions"
-            id="messageModalActions"
-          ></div>
+            class="modal-overlay"
+            id="deleteSkillModal"
+            hidden
+          >
 
-        </div>
+            <div
+              class="modal-content delete-modal-content"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="deleteSkillTitle"
+            >
+
+              <div class="modal-header">
+
+                <h2 id="deleteSkillTitle">حذف المهارة</h2>
+
+                <button
+                  type="button"
+                  class="modal-close"
+                  id="closeDeleteSkillModal"
+                  aria-label="إغلاق"
+                >
+                  ×
+                </button>
+
+              </div>
+
+              <p>
+                هل أنت متأكد من حذف هذه المهارة؟
+                لا يمكن التراجع عن هذا الإجراء.
+              </p>
+
+              <input
+                type="hidden"
+                id="deleteSkillId"
+              >
+
+              <div class="modal-actions">
+
+                <button
+                  type="button"
+                  class="secondary-button"
+                  id="cancelDeleteSkill"
+                >
+                  إلغاء
+                </button>
+
+                <button
+                  type="button"
+                  class="danger-button"
+                  id="confirmDeleteSkill"
+                >
+                  حذف نهائي
+                </button>
+
+              </div>
+
+            </div>
+
+          </div>
+
+        </section>
+
+        <!-- PROJECTS -->
+        <section
+          class="dashboard-section"
+          id="section-projects"
+        >
+
+          <div class="page-heading">
+
+            <div>
+              <span class="eyebrow">PORTFOLIO PROJECTS</span>
+              <h1>المشاريع</h1>
+              <p>إدارة المشاريع المعروضة في الموقع.</p>
+            </div>
+
+          </div>
+
+          <div class="panel-card">
+
+            <div class="section-placeholder">
+              <span>▣</span>
+              <h2>إدارة المشاريع</h2>
+              <p>
+                سيتم توصيل إدارة المشاريع بقاعدة البيانات في المرحلة التالية.
+              </p>
+            </div>
+
+          </div>
+
+        </section>
+
+        <!-- MESSAGES -->
+        <section
+          class="dashboard-section"
+          id="section-messages"
+        >
+
+          <div class="page-heading">
+
+            <div>
+              <span class="eyebrow">INBOX MANAGEMENT</span>
+              <h1>الرسائل</h1>
+              <p>إدارة رسائل زوار الموقع ومتابعة حالتها.</p>
+            </div>
+
+          </div>
+
+          <div class="panel-card">
+
+            <div class="message-toolbar messages-toolbar">
+
+              <div class="form-field">
+                <label for="messageSearch">البحث</label>
+                <input
+                  type="search"
+                  id="messageSearch"
+                  placeholder="ابحث في الرسائل..."
+                >
+              </div>
+
+              <div class="form-field">
+                <label for="messageStatusFilter">الحالة</label>
+
+                <select id="messageStatusFilter">
+                  <option value="all">كل الرسائل</option>
+                  <option value="new">جديدة</option>
+                  <option value="read">مقروءة</option>
+                  <option value="replied">تم الرد</option>
+                  <option value="archived">مؤرشفة</option>
+                </select>
+              </div>
+
+            </div>
+
+            <div class="table-container">
+
+              <table class="admin-table">
+
+                <thead>
+                  <tr>
+                    <th>الاسم</th>
+                    <th>البريد الإلكتروني</th>
+                    <th>الموضوع</th>
+                    <th>الحالة</th>
+                    <th>التاريخ</th>
+                    <th>الإجراء</th>
+                  </tr>
+                </thead>
+
+                <tbody id="messagesTableBody">
+                  <tr>
+                    <td colspan="6">جاري تحميل الرسائل...</td>
+                  </tr>
+                </tbody>
+
+              </table>
+
+            </div>
+
+          </div>
+
+          <!-- MESSAGE DETAILS MODAL -->
+          <div
+            class="modal-overlay"
+            id="messageModal"
+            hidden
+          >
+
+            <div
+              class="modal-content message-modal"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="messageModalTitle"
+            >
+
+              <div class="modal-header">
+
+                <h2 id="messageModalTitle">تفاصيل الرسالة</h2>
+
+                <button
+                  type="button"
+                  class="modal-close"
+                  id="closeMessageModal"
+                  aria-label="إغلاق"
+                >
+                  ×
+                </button>
+
+              </div>
+
+              <div
+                class="modal-content-body"
+                id="messageModalBody"
+              ></div>
+
+              <div
+                class="modal-actions"
+                id="messageModalActions"
+              ></div>
+
+            </div>
+
+          </div>
+
+        </section>
+
+        <!-- SOCIAL -->
+        <section
+          class="dashboard-section"
+          id="section-social"
+        >
+
+          <div class="page-heading">
+
+            <div>
+              <span class="eyebrow">SOCIAL PRESENCE</span>
+              <h1>روابط التواصل</h1>
+              <p>إدارة روابط حسابات التواصل الاجتماعي.</p>
+            </div>
+
+          </div>
+
+          <div class="panel-card">
+
+            <div class="section-placeholder">
+              <span>◎</span>
+              <h2>إدارة روابط التواصل</h2>
+              <p>سيتم تفعيل إدارة الروابط في المرحلة التالية.</p>
+            </div>
+
+          </div>
+
+        </section>
+
+        <!-- PAGES -->
+        <section
+          class="dashboard-section"
+          id="section-pages"
+        >
+
+          <div class="page-heading">
+
+            <div>
+              <span class="eyebrow">SITE CONTENT</span>
+              <h1>الصفحات والمحتوى</h1>
+              <p>إدارة صفحات الموقع والمحتوى الثابت.</p>
+            </div>
+
+          </div>
+
+          <div class="panel-card">
+
+            <div class="section-placeholder">
+              <span>▤</span>
+              <h2>إدارة الصفحات</h2>
+              <p>
+                سيتم تفعيل إدارة FAQ وسياسة الخصوصية وشروط الاستخدام لاحقًا.
+              </p>
+            </div>
+
+          </div>
+
+        </section>
+
+        <!-- SEO -->
+        <section
+          class="dashboard-section"
+          id="section-seo"
+        >
+
+          <div class="page-heading">
+
+            <div>
+              <span class="eyebrow">SEARCH ENGINE OPTIMIZATION</span>
+              <h1>تحسين محركات البحث</h1>
+              <p>إعدادات ظهور الموقع في محركات البحث.</p>
+            </div>
+
+          </div>
+
+          <div class="panel-card">
+
+            <div class="section-placeholder">
+              <span>⌕</span>
+              <h2>إعدادات SEO</h2>
+              <p>سيتم تفعيل إعدادات SEO في المرحلة التالية.</p>
+            </div>
+
+          </div>
+
+        </section>
+
+        <!-- SECURITY -->
+        <section
+          class="dashboard-section"
+          id="section-security"
+        >
+
+          <div class="page-heading">
+
+            <div>
+              <span class="eyebrow">SECURITY CENTER</span>
+              <h1>الأمان والسجلات</h1>
+              <p>متابعة النشاط الأمني وسجلات لوحة التحكم.</p>
+            </div>
+
+          </div>
+
+          <div class="panel-card">
+
+            <div class="section-placeholder">
+              <span>◇</span>
+              <h2>مركز الأمان</h2>
+              <p>
+                سيتم تفعيل سجلات النشاط وإدارة الجلسات في المرحلة التالية.
+              </p>
+            </div>
+
+          </div>
+
+        </section>
+
+        <!-- SETTINGS -->
+        <section
+          class="dashboard-section"
+          id="section-settings"
+        >
+
+          <div class="page-heading">
+
+            <div>
+              <span class="eyebrow">SYSTEM CONFIGURATION</span>
+              <h1>الإعدادات</h1>
+              <p>إعدادات لوحة التحكم والموقع.</p>
+            </div>
+
+          </div>
+
+          <div class="panel-card">
+
+            <div class="section-placeholder">
+              <span>⚙</span>
+              <h2>إعدادات النظام</h2>
+              <p>سيتم تفعيل إعدادات النظام في المرحلة التالية.</p>
+            </div>
+
+          </div>
+
+        </section>
 
       </div>
 
-    </section>
+      <!-- FOOTER -->
+      <footer class="dashboard-footer">
 
-    <!-- SOCIAL -->
-    <section
-      class="dashboard-section"
-      id="section-social"
-    >
+        <span>
+          © <span id="currentYear"></span> M.A.S.H CYVEX
+        </span>
 
-      <div class="page-heading">
+        <span>Admin Control Panel</span>
 
-        <div>
-          <span class="eyebrow">SOCIAL PRESENCE</span>
-          <h1>روابط التواصل</h1>
-          <p>إدارة روابط حسابات التواصل الاجتماعي.</p>
-        </div>
+      </footer>
 
-      </div>
-
-      <div class="panel-card">
-
-        <div class="section-placeholder">
-          <span>◎</span>
-          <h2>إدارة روابط التواصل</h2>
-          <p>سيتم تفعيل إدارة الروابط في المرحلة التالية.</p>
-        </div>
-
-      </div>
-
-    </section>
-
-    <!-- PAGES -->
-    <section
-      class="dashboard-section"
-      id="section-pages"
-    >
-
-      <div class="page-heading">
-
-        <div>
-          <span class="eyebrow">SITE CONTENT</span>
-          <h1>الصفحات والمحتوى</h1>
-          <p>إدارة صفحات الموقع والمحتوى الثابت.</p>
-        </div>
-
-      </div>
-
-      <div class="panel-card">
-
-        <div class="section-placeholder">
-          <span>▤</span>
-          <h2>إدارة الصفحات</h2>
-          <p>
-            سيتم تفعيل إدارة FAQ وسياسة الخصوصية وشروط الاستخدام لاحقًا.
-          </p>
-        </div>
-
-      </div>
-
-    </section>
-
-    <!-- SEO -->
-    <section
-      class="dashboard-section"
-      id="section-seo"
-    >
-
-      <div class="page-heading">
-
-        <div>
-          <span class="eyebrow">SEARCH ENGINE OPTIMIZATION</span>
-          <h1>تحسين محركات البحث</h1>
-          <p>إعدادات ظهور الموقع في محركات البحث.</p>
-        </div>
-
-      </div>
-
-      <div class="panel-card">
-
-        <div class="section-placeholder">
-          <span>⌕</span>
-          <h2>إعدادات SEO</h2>
-          <p>سيتم تفعيل إعدادات SEO في المرحلة التالية.</p>
-        </div>
-
-      </div>
-
-    </section>
-
-    <!-- SECURITY -->
-    <section
-      class="dashboard-section"
-      id="section-security"
-    >
-
-      <div class="page-heading">
-
-        <div>
-          <span class="eyebrow">SECURITY CENTER</span>
-          <h1>الأمان والسجلات</h1>
-          <p>متابعة النشاط الأمني وسجلات لوحة التحكم.</p>
-        </div>
-
-      </div>
-
-      <div class="panel-card">
-
-        <div class="section-placeholder">
-          <span>◇</span>
-          <h2>مركز الأمان</h2>
-          <p>
-            سيتم تفعيل سجلات النشاط وإدارة الجلسات في المرحلة التالية.
-          </p>
-        </div>
-
-      </div>
-
-    </section>
-
-    <!-- SETTINGS -->
-    <section
-      class="dashboard-section"
-      id="section-settings"
-    >
-
-      <div class="page-heading">
-
-        <div>
-          <span class="eyebrow">SYSTEM CONFIGURATION</span>
-          <h1>الإعدادات</h1>
-          <p>إعدادات لوحة التحكم والموقع.</p>
-        </div>
-
-      </div>
-
-      <div class="panel-card">
-
-        <div class="section-placeholder">
-          <span>⚙</span>
-          <h2>إعدادات النظام</h2>
-          <p>سيتم تفعيل إعدادات النظام في المرحلة التالية.</p>
-        </div>
-
-      </div>
-
-    </section>
+    </main>
 
   </div>
 
-  <!-- FOOTER -->
-  <footer class="dashboard-footer">
-    <span>
-      © <span id="currentYear"></span> M.A.S.H CYVEX
-    </span>
-
-    <span>Admin Control Panel</span>
-  </footer>
-
-</main>
-
-  </div>  <!-- GLOBAL TOAST -->  <div
+  <!-- GLOBAL TOAST -->
+  <div
     class="admin-toast"
     id="adminToast"
     role="status"
     aria-live="polite"
-  ></div>  <script src="dashboard.js?v=4" defer></script></body>
+  ></div>
+
+  <!-- DASHBOARD SCRIPT -->
+  <script src="dashboard.js?v=4" defer></script>
+
+</body>
 </html>
