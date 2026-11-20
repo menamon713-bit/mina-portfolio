@@ -21,10 +21,7 @@
     currentMessage: null,
     editingSkillId: null,
     deletingSkillId: null,
-    activeSection: "overview",
-    loadingSkills: false,
-    loadingMessages: false,
-    loadingProfile: false
+    activeSection: "overview"
   };
 
   const elements = {
@@ -32,18 +29,20 @@
     sidebarOverlay: $("#sidebarOverlay"),
     menuToggle: $("#menuToggle"),
     toast: $("#adminToast"),
+
     skillModal: $("#skillModal"),
     deleteSkillModal: $("#deleteSkillModal"),
     skillForm: $("#skillForm"),
     skillTableBody: $("#skillsTableBody"),
+
     messageModal: $("#messageModal"),
     messageModalBody: $("#messageModalBody"),
     messageModalActions: $("#messageModalActions")
   };
 
-  // =========================================
-  // API HELPER
-  // =========================================
+  /* ==============================
+     API
+  ============================== */
 
   async function api(url, options = {}) {
     const config = {
@@ -52,16 +51,11 @@
       cache: "no-store",
       headers: {
         Accept: "application/json",
-        ...(options.body !== undefined
-          ? { "Content-Type": "application/json" }
-          : {}),
+        ...(options.body ? { "Content-Type": "application/json" } : {}),
         ...(options.headers || {})
-      }
+      },
+      ...options
     };
-
-    if (options.body !== undefined) {
-      config.body = JSON.stringify(options.body);
-    }
 
     const response = await fetch(url, config);
 
@@ -73,78 +67,74 @@
       data = {};
     }
 
-    if (
-      (response.status === 401 || response.status === 403) &&
-      url !== API.session
-    ) {
-      showToast(
-        "انتهت الجلسة أو لا تملك صلاحية تنفيذ هذا الإجراء.",
-        "error"
-      );
-    }
-
     if (!response.ok) {
-      throw new Error(
-        data.error ||
+      const message =
         data.message ||
-        `Request failed: ${response.status}`
-      );
+        data.error ||
+        `حدث خطأ (${response.status})`;
+
+      if (
+        response.status === 401 ||
+        response.status === 403
+      ) {
+        if (!url.includes("/session")) {
+          window.location.href = "/admin.html";
+        }
+      }
+
+      throw new Error(message);
     }
 
     return data;
   }
 
-  // =========================================
-  // GENERAL HELPERS
-  // =========================================
+  /* ==============================
+     HELPERS
+  ============================== */
 
   function escapeHTML(value) {
-    return String(value ?? "").replace(/[&<>"']/g, (char) => {
-      const entities = {
-        "&": "&amp;",
-        "<": "&lt;",
-        ">": "&gt;",
-        '"': "&quot;",
-        "'": "&#039;"
-      };
-
-      return entities[char];
-    });
+    return String(value ?? "").replace(/[&<>"']/g, char => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#039;"
+    })[char]);
   }
 
   function showToast(message, type = "success") {
     const toast = elements.toast;
+
     if (!toast) return;
 
     toast.textContent = message;
     toast.dataset.type = type;
-
-    toast.classList.remove("success", "error");
-    toast.classList.add(type);
+    toast.hidden = false;
     toast.classList.add("show");
 
     clearTimeout(showToast.timeout);
 
     showToast.timeout = setTimeout(() => {
       toast.classList.remove("show");
-    }, 3500);
+
+      setTimeout(() => {
+        toast.hidden = true;
+      }, 250);
+    }, 3000);
   }
 
-  function setButtonLoading(button, loading, loadingText = "جاري الحفظ...") {
+  function setButtonLoading(button, loading, text = "جاري الحفظ...") {
     if (!button) return;
 
     if (loading) {
-      if (!button.dataset.originalText) {
-        button.dataset.originalText = button.textContent;
-      }
-
+      button.dataset.originalText = button.innerHTML;
       button.disabled = true;
-      button.textContent = loadingText;
+      button.textContent = text;
     } else {
       button.disabled = false;
 
-      if (button.dataset.originalText !== undefined) {
-        button.textContent = button.dataset.originalText;
+      if (button.dataset.originalText) {
+        button.innerHTML = button.dataset.originalText;
         delete button.dataset.originalText;
       }
     }
@@ -156,168 +146,162 @@
   }
 
   function formatDate(value) {
-    if (!value) return "—";
+    if (!value) return "غير محدد";
 
     const date = new Date(value);
 
     if (Number.isNaN(date.getTime())) {
-      return "—";
+      return String(value);
     }
 
-    return date.toLocaleDateString("ar-EG", {
+    return date.toLocaleString("ar-EG", {
       year: "numeric",
       month: "short",
-      day: "numeric"
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit"
     });
   }
 
-  function setText(selector, value) {
-    const element = $(selector);
-    if (element) element.textContent = value;
+  function getErrorMessage(error) {
+    return error?.message || "حدث خطأ غير متوقع";
   }
 
-  // =========================================
-  // SESSION
-  // =========================================
+  function getArray(data, key) {
+    if (Array.isArray(data)) return data;
+    if (Array.isArray(data?.[key])) return data[key];
+    if (Array.isArray(data?.data)) return data.data;
+    return [];
+  }
 
-  async function checkSession() {
-    try {
-      await api(API.session);
-      return true;
-    } catch (error) {
-      console.error("Session check failed:", error);
-      window.location.replace("/admin.html");
-      return false;
+  /* ==============================
+     SIDEBAR
+  ============================== */
+
+  function openSidebar() {
+    elements.sidebar?.classList.add("open");
+    elements.sidebarOverlay?.classList.add("active");
+  }
+
+  function closeSidebar() {
+    elements.sidebar?.classList.remove("open");
+    elements.sidebarOverlay?.classList.remove("active");
+  }
+
+  function toggleSidebar() {
+    if (elements.sidebar?.classList.contains("open")) {
+      closeSidebar();
+    } else {
+      openSidebar();
     }
   }
 
-  // =========================================
-  // NAVIGATION
-  // =========================================
+  /* ==============================
+     NAVIGATION
+  ============================== */
 
   function activateSection(sectionName) {
-    if (!sectionName) return;
-
     const target = $(`#section-${sectionName}`);
+
     if (!target) return;
 
     state.activeSection = sectionName;
 
-    $$(".dashboard-section").forEach((section) => {
+    $$(".dashboard-section").forEach(section => {
       section.classList.toggle(
         "active",
         section.id === `section-${sectionName}`
       );
     });
 
-    $$(".nav-item").forEach((item) => {
-      const active = item.dataset.section === sectionName;
-
-      item.classList.toggle("active", active);
-
-      if (active) {
-        item.setAttribute("aria-current", "page");
-      } else {
-        item.removeAttribute("aria-current");
-      }
+    $$(".nav-item").forEach(item => {
+      item.classList.toggle(
+        "active",
+        item.dataset.section === sectionName
+      );
     });
 
     closeSidebar();
 
-    if (sectionName === "profile") loadProfile();
-    if (sectionName === "skills") loadSkills();
-    if (sectionName === "messages") loadMessages();
-  }
+    if (sectionName === "profile") {
+      loadProfile();
+    }
 
-  function openSidebar() {
-    elements.sidebar?.classList.add("open");
-    elements.sidebarOverlay?.classList.add("active");
-    elements.sidebarOverlay?.classList.add("show");
-    elements.menuToggle?.setAttribute("aria-expanded", "true");
-  }
+    if (sectionName === "skills") {
+      loadSkills();
+    }
 
-  function closeSidebar() {
-    elements.sidebar?.classList.remove("open");
-    elements.sidebarOverlay?.classList.remove("active");
-    elements.sidebarOverlay?.classList.remove("show");
-    elements.menuToggle?.setAttribute("aria-expanded", "false");
+    if (sectionName === "messages") {
+      loadMessages();
+    }
   }
 
   function initializeNavigation() {
-    $$(".nav-item").forEach((item) => {
+    $$(".nav-item[data-section]").forEach(item => {
       item.addEventListener("click", () => {
         activateSection(item.dataset.section);
       });
     });
 
-    $$("[data-go-section]").forEach((button) => {
+    $$("[data-go-section]").forEach(button => {
       button.addEventListener("click", () => {
         activateSection(button.dataset.goSection);
       });
     });
 
-    elements.menuToggle?.addEventListener("click", openSidebar);
-    elements.sidebarOverlay?.addEventListener("click", closeSidebar);
+    elements.menuToggle?.addEventListener(
+      "click",
+      toggleSidebar
+    );
 
-    document.addEventListener("keydown", (event) => {
-      if (event.key === "Escape") {
-        closeSidebar();
-        closeSkillModal();
-        closeDeleteSkillModal();
-        closeMessageModal();
-      }
-    });
+    elements.sidebarOverlay?.addEventListener(
+      "click",
+      closeSidebar
+    );
   }
 
-  // =========================================
-  // PROFILE
-  // =========================================
+  /* ==============================
+     SESSION
+  ============================== */
+
+  async function checkSession() {
+    try {
+      await api(API.session);
+      return true;
+    } catch {
+      window.location.replace("/admin.html");
+      return false;
+    }
+  }
+
+  /* ==============================
+     PROFILE
+  ============================== */
 
   async function loadProfile() {
-    const form = $("#profileForm");
-    if (!form || state.loadingProfile) return;
-
-    state.loadingProfile = true;
-
-    const status = $("#profileFormStatus");
-
-    if (status) {
-      status.textContent = "جاري تحميل البيانات...";
-    }
-
     try {
       const data = await api(API.profile);
-      const profile = data.profile || data;
+      const profile = data.profile || data.data || data;
 
       const fields = {
         profileFullName: profile.full_name,
         profileJobTitle: profile.job_title,
-        profileShortBio: profile.short_bio,
-        profileAbout: profile.about,
         profileLocation: profile.location,
         profileEmail: profile.email,
-        profileImage: profile.image
+        profileImage: profile.image,
+        profileShortBio: profile.short_bio,
+        profileAbout: profile.about
       };
 
       Object.entries(fields).forEach(([id, value]) => {
-        const input = $(`#${id}`);
+        const element = $(`#${id}`);
 
-        if (input && value !== undefined && value !== null) {
-          input.value = value;
+        if (element && value !== undefined && value !== null) {
+          element.value = value;
         }
       });
-
-      if (status) status.textContent = "";
     } catch (error) {
-      console.error("Profile loading error:", error);
-
-      if (status) {
-        status.textContent = "تعذر تحميل بيانات الملف الشخصي.";
-      }
-
-      showToast("فشل تحميل الملف الشخصي.", "error");
-    } finally {
-      state.loadingProfile = false;
+      showToast(getErrorMessage(error), "error");
     }
   }
 
@@ -330,139 +314,171 @@
 
     if (!form) return;
 
-    const body = {
+    const payload = {
       full_name: $("#profileFullName")?.value.trim() || "",
       job_title: $("#profileJobTitle")?.value.trim() || "",
-      short_bio: $("#profileShortBio")?.value.trim() || "",
-      about: $("#profileAbout")?.value.trim() || "",
       location: $("#profileLocation")?.value.trim() || "",
       email: $("#profileEmail")?.value.trim() || "",
-      image: $("#profileImage")?.value.trim() || ""
+      image: $("#profileImage")?.value.trim() || "",
+      short_bio: $("#profileShortBio")?.value.trim() || "",
+      about: $("#profileAbout")?.value.trim() || ""
     };
 
     setButtonLoading(button, true);
 
-    if (status) status.textContent = "جاري حفظ التغييرات...";
+    if (status) {
+      status.textContent = "";
+      status.dataset.type = "";
+    }
 
     try {
       await api(API.profile, {
         method: "POST",
-        body
+        body: JSON.stringify(payload)
       });
 
       if (status) {
-        status.textContent = "تم حفظ البيانات بنجاح.";
+        status.textContent = "تم حفظ البيانات بنجاح";
+        status.dataset.type = "success";
       }
 
-      showToast("تم تحديث الملف الشخصي بنجاح.");
+      showToast("تم تحديث الملف الشخصي");
     } catch (error) {
-      console.error("Profile save error:", error);
+      if (status) {
+        status.textContent = getErrorMessage(error);
+        status.dataset.type = "error";
+      }
 
-      if (status) status.textContent = error.message;
-
-      showToast(error.message || "فشل حفظ البيانات.", "error");
+      showToast(getErrorMessage(error), "error");
     } finally {
       setButtonLoading(button, false);
     }
   }
 
-  // =========================================
-  // SKILLS
-  // =========================================
+  /* ==============================
+     SKILLS
+  ============================== */
 
-  function updateSkillsStatistics() {
-    const total = state.skills.length;
+  async function loadSkills() {
+    const loading = $("#skillsLoading");
+    const empty = $("#skillsEmpty");
+    const errorBox = $("#skillsError");
+    const tableContainer = $("#skillsTableContainer");
+    const noResults = $("#skillsNoResults");
 
-    const visible = state.skills.filter(
-      (skill) => skill.is_visible === true
-    ).length;
+    setElementVisible(loading, true);
+    setElementVisible(empty, false);
+    setElementVisible(errorBox, false);
+    setElementVisible(tableContainer, false);
+    setElementVisible(noResults, false);
 
-    const hidden = total - visible;
+    try {
+      const data = await api(API.skills);
 
-    setText("#skillsTotalCount", total);
-    setText("#skillsVisibleCount", visible);
-    setText("#skillsHiddenCount", hidden);
-    setText("#statSkills", total);
+      state.skills = getArray(data, "skills");
+
+      renderSkills();
+      updateSkillStats();
+    } catch (error) {
+      setElementVisible(loading, false);
+      setElementVisible(errorBox, true);
+
+      const message = $("#skillsErrorMessage");
+
+      if (message) {
+        message.textContent = getErrorMessage(error);
+      }
+    }
   }
 
-  function getFilteredSkills() {
-    const search = ($("#skillSearch")?.value || "")
-      .trim()
-      .toLowerCase();
+  function updateSkillStats() {
+    const total = state.skills.length;
+    const visible = state.skills.filter(skill =>
+      Boolean(skill.is_visible)
+    ).length;
 
-    const filter = $("#skillVisibilityFilter")?.value || "all";
+    const totalElement = $("#skillsTotalCount");
+    const visibleElement = $("#skillsVisibleCount");
+    const hiddenElement = $("#skillsHiddenCount");
 
-    return state.skills.filter((skill) => {
-      const searchableText = [
-        skill.name_ar,
-        skill.name_en,
-        skill.category,
-        skill.icon
-      ].join(" ").toLowerCase();
-
-      const matchesSearch = searchableText.includes(search);
-      const isVisible = skill.is_visible === true;
-
-      const matchesFilter =
-        filter === "all" ||
-        (filter === "visible" && isVisible) ||
-        (filter === "hidden" && !isVisible);
-
-      return matchesSearch && matchesFilter;
-    });
+    if (totalElement) totalElement.textContent = total;
+    if (visibleElement) visibleElement.textContent = visible;
+    if (hiddenElement) hiddenElement.textContent = total - visible;
   }
 
   function renderSkills() {
+    const tbody = elements.skillTableBody;
     const loading = $("#skillsLoading");
     const empty = $("#skillsEmpty");
-    const error = $("#skillsError");
-    const table = $("#skillsTableContainer");
+    const errorBox = $("#skillsError");
+    const container = $("#skillsTableContainer");
     const noResults = $("#skillsNoResults");
-    const tbody = elements.skillTableBody;
 
     if (!tbody) return;
 
     setElementVisible(loading, false);
-    setElementVisible(error, false);
+    setElementVisible(errorBox, false);
 
-    updateSkillsStatistics();
+    const search = (
+      $("#skillSearch")?.value || ""
+    ).trim().toLowerCase();
 
-    if (!state.skills.length) {
+    const filter = $("#skillVisibilityFilter")?.value || "all";
+
+    const filtered = state.skills.filter(skill => {
+      const name = [
+        skill.name_ar,
+        skill.name_en,
+        skill.category
+      ].join(" ").toLowerCase();
+
+      const matchesSearch = name.includes(search);
+
+      const visible = Boolean(skill.is_visible);
+
+      const matchesFilter =
+        filter === "all" ||
+        (filter === "visible" && visible) ||
+        (filter === "hidden" && !visible);
+
+      return matchesSearch && matchesFilter;
+    });
+
+    tbody.innerHTML = "";
+
+    if (state.skills.length === 0) {
       setElementVisible(empty, true);
-      setElementVisible(table, false);
+      setElementVisible(container, false);
       setElementVisible(noResults, false);
       return;
     }
 
     setElementVisible(empty, false);
 
-    const filteredSkills = getFilteredSkills();
-
-    if (!filteredSkills.length) {
-      setElementVisible(table, false);
+    if (filtered.length === 0) {
+      setElementVisible(container, false);
       setElementVisible(noResults, true);
       return;
     }
 
-    setElementVisible(table, true);
+    setElementVisible(container, true);
     setElementVisible(noResults, false);
 
-    tbody.innerHTML = filteredSkills.map((skill) => {
+    tbody.innerHTML = filtered.map(skill => {
       const id = escapeHTML(skill.id);
       const nameAr = escapeHTML(skill.name_ar);
-      const nameEn = escapeHTML(skill.name_en);
-      const category = escapeHTML(skill.category || "بدون تصنيف");
-      const icon = escapeHTML(skill.icon || "⌘");
-
+      const nameEn = escapeHTML(skill.name_en || "");
+      const icon = escapeHTML(skill.icon || "⚡");
+      const category = escapeHTML(skill.category || "عام");
       const progress = Math.min(
         100,
         Math.max(0, Number(skill.progress) || 0)
       );
 
-      const visible = skill.is_visible === true;
+      const visible = Boolean(skill.is_visible);
 
       return `
-        <tr data-skill-id="${id}">
+        <tr>
           <td>
             <div class="skill-name-cell">
               <span class="skill-icon">${icon}</span>
@@ -484,10 +500,10 @@
             </div>
           </td>
 
-          <td>${escapeHTML(skill.sort_order ?? 0)}</td>
-
           <td>
-            <span class="status-badge ${visible ? "status-visible" : "status-hidden"}">
+            <span class="status-badge ${
+              visible ? "status-visible" : "status-hidden"
+            }">
               ${visible ? "ظاهرة" : "مخفية"}
             </span>
           </td>
@@ -496,23 +512,22 @@
             <div class="table-actions">
               <button
                 type="button"
-                class="table-action edit-skill-button"
-                data-id="${id}"
+                class="table-action"
+                data-skill-edit="${id}"
                 title="تعديل"
               >✎</button>
 
               <button
                 type="button"
-                class="table-action toggle-skill-button"
-                data-id="${id}"
-                data-visible="${visible}"
+                class="table-action"
+                data-skill-toggle="${id}"
                 title="${visible ? "إخفاء" : "إظهار"}"
-              >${visible ? "◉" : "◎"}</button>
+              >${visible ? "◉" : "○"}</button>
 
               <button
                 type="button"
                 class="table-action delete-skill-button"
-                data-id="${id}"
+                data-skill-delete="${id}"
                 title="حذف"
               >×</button>
             </div>
@@ -520,85 +535,61 @@
         </tr>
       `;
     }).join("");
+
+    tbody.querySelectorAll("[data-skill-edit]").forEach(button => {
+      button.addEventListener("click", () => {
+        openSkillModal(button.dataset.skillEdit);
+      });
+    });
+
+    tbody.querySelectorAll("[data-skill-toggle]").forEach(button => {
+      button.addEventListener("click", () => {
+        toggleSkillVisibility(button.dataset.skillToggle);
+      });
+    });
+
+    tbody.querySelectorAll("[data-skill-delete]").forEach(button => {
+      button.addEventListener("click", () => {
+        openDeleteSkillModal(button.dataset.skillDelete);
+      });
+    });
   }
 
-  async function loadSkills() {
-    if (state.loadingSkills) return;
-
-    state.loadingSkills = true;
-
-    const loading = $("#skillsLoading");
-    const errorBox = $("#skillsError");
-    const errorMessage = $("#skillsErrorMessage");
-    const table = $("#skillsTableContainer");
-    const empty = $("#skillsEmpty");
-
-    setElementVisible(loading, true);
-    setElementVisible(errorBox, false);
-    setElementVisible(table, false);
-    setElementVisible(empty, false);
-
-    try {
-      const data = await api(API.skills);
-
-      state.skills = Array.isArray(data.skills)
-        ? data.skills
-        : [];
-
-      renderSkills();
-    } catch (error) {
-      console.error("Skills loading error:", error);
-
-      setElementVisible(loading, false);
-      setElementVisible(errorBox, true);
-
-      if (errorMessage) {
-        errorMessage.textContent =
-          error.message || "حدث خطأ أثناء تحميل المهارات.";
-      }
-    } finally {
-      state.loadingSkills = false;
-    }
-  }
-
-  function openSkillModal(skill = null) {
+  function openSkillModal(skillId = null) {
+    const modal = elements.skillModal;
     const form = elements.skillForm;
-    if (!form) return;
+
+    if (!modal || !form) return;
+
+    state.editingSkillId = skillId;
 
     form.reset();
 
-    state.editingSkillId = skill ? skill.id : null;
+    const skill = skillId
+      ? state.skills.find(item => String(item.id) === String(skillId))
+      : null;
 
-    $("#skillId").value = skill?.id ?? "";
-    $("#skillNameAr").value = skill?.name_ar ?? "";
-    $("#skillNameEn").value = skill?.name_en ?? "";
-    $("#skillIcon").value = skill?.icon ?? "";
-    $("#skillCategory").value = skill?.category ?? "";
-    $("#skillProgress").value = skill?.progress ?? 0;
+    $("#skillId").value = skill?.id || "";
+
+    $("#skillModalTitle").textContent = skill
+      ? "تعديل المهارة"
+      : "إضافة مهارة جديدة";
+
+    $("#skillNameAr").value = skill?.name_ar || "";
+    $("#skillNameEn").value = skill?.name_en || "";
+    $("#skillIcon").value = skill?.icon || "";
+    $("#skillCategory").value = skill?.category || "";
+    $("#skillProgress").value = skill?.progress ?? 50;
     $("#skillSortOrder").value = skill?.sort_order ?? 0;
     $("#skillIsVisible").checked = skill
-      ? skill.is_visible === true
+      ? Boolean(skill.is_visible)
       : true;
 
-    const title = $("#skillModalTitle");
-    const saveButton = $("#saveSkillButton");
     const status = $("#skillFormStatus");
-
-    if (title) {
-      title.textContent = skill
-        ? "تعديل المهارة"
-        : "إضافة مهارة جديدة";
-    }
-
-    if (saveButton) {
-      saveButton.textContent = skill
-        ? "حفظ التعديلات"
-        : "حفظ المهارة";
-    }
 
     if (status) status.textContent = "";
 
-    setElementVisible(elements.skillModal, true);
+    setElementVisible(modal, true);
   }
 
   function closeSkillModal() {
@@ -612,91 +603,54 @@
     const button = $("#saveSkillButton");
     const status = $("#skillFormStatus");
 
-    const nameAr = $("#skillNameAr")?.value.trim() || "";
-    const nameEn = $("#skillNameEn")?.value.trim() || "";
+    const skillId = $("#skillId")?.value;
 
-    if (!nameAr || !nameEn) {
-      if (status) {
-        status.textContent =
-          "يرجى إدخال اسم المهارة بالعربية والإنجليزية.";
-      }
-
-      return;
-    }
-
-    const progress = Number($("#skillProgress")?.value);
-    const sortOrder = Number($("#skillSortOrder")?.value);
-
-    if (
-      !Number.isInteger(progress) ||
-      progress < 0 ||
-      progress > 100
-    ) {
-      if (status) {
-        status.textContent =
-          "مستوى التقدم يجب أن يكون بين 0 و100.";
-      }
-
-      return;
-    }
-
-    if (!Number.isInteger(sortOrder)) {
-      if (status) {
-        status.textContent =
-          "ترتيب الظهور يجب أن يكون رقمًا صحيحًا.";
-      }
-
-      return;
-    }
-
-    const body = {
-      name_ar: nameAr,
-      name_en: nameEn,
+    const payload = {
+      name_ar: $("#skillNameAr")?.value.trim() || "",
+      name_en: $("#skillNameEn")?.value.trim() || "",
       icon: $("#skillIcon")?.value.trim() || "",
-      category: $("#skillCategory")?.value.trim() || "",
-      progress,
-      sort_order: sortOrder,
-      is_visible: $("#skillIsVisible")?.checked === true
+      category: $("#skillCategory")?.value || "",
+      progress: Number($("#skillProgress")?.value || 0),
+      sort_order: Number($("#skillSortOrder")?.value || 0),
+      is_visible: Boolean($("#skillIsVisible")?.checked)
     };
 
-    const editing = state.editingSkillId !== null;
-
-    if (editing) {
-      body.id = state.editingSkillId;
+    if (!payload.name_ar) {
+      if (status) status.textContent = "اسم المهارة بالعربية مطلوب";
+      return;
     }
 
     setButtonLoading(button, true);
 
-    if (status) status.textContent = "جاري حفظ البيانات...";
+    if (status) status.textContent = "";
 
     try {
       await api(API.skills, {
-        method: editing ? "PATCH" : "POST",
-        body
+        method: skillId ? "PATCH" : "POST",
+        body: JSON.stringify(
+          skillId ? { ...payload, id: skillId } : payload
+        )
       });
 
       closeSkillModal();
       await loadSkills();
 
       showToast(
-        editing
-          ? "تم تحديث المهارة بنجاح."
-          : "تمت إضافة المهارة بنجاح."
+        skillId
+          ? "تم تحديث المهارة بنجاح"
+          : "تمت إضافة المهارة بنجاح"
       );
     } catch (error) {
-      console.error("Skill save error:", error);
-
-      if (status) status.textContent = error.message;
-
-      showToast(error.message || "تعذر حفظ المهارة.", "error");
+      if (status) status.textContent = getErrorMessage(error);
+      showToast(getErrorMessage(error), "error");
     } finally {
       setButtonLoading(button, false);
     }
   }
 
-  async function toggleSkillVisibility(id, currentVisibility) {
+  async function toggleSkillVisibility(skillId) {
     const skill = state.skills.find(
-      (item) => String(item.id) === String(id)
+      item => String(item.id) === String(skillId)
     );
 
     if (!skill) return;
@@ -704,34 +658,33 @@
     try {
       await api(API.skills, {
         method: "PATCH",
-        body: {
-          id: skill.id,
-          is_visible: !currentVisibility
-        }
+        body: JSON.stringify({
+          id: skillId,
+          is_visible: !Boolean(skill.is_visible)
+        })
       });
 
       await loadSkills();
-
-      showToast(
-        currentVisibility
-          ? "تم إخفاء المهارة."
-          : "تم إظهار المهارة."
-      );
+      showToast("تم تحديث حالة المهارة");
     } catch (error) {
-      console.error("Skill visibility error:", error);
-
-      showToast(
-        error.message || "تعذر تغيير حالة المهارة.",
-        "error"
-      );
+      showToast(getErrorMessage(error), "error");
     }
   }
 
-  function openDeleteSkillModal(id) {
-    state.deletingSkillId = id;
+  function openDeleteSkillModal(skillId) {
+    const skill = state.skills.find(
+      item => String(item.id) === String(skillId)
+    );
 
-    const input = $("#deleteSkillId");
-    if (input) input.value = id;
+    if (!skill) return;
+
+    state.deletingSkillId = skillId;
+
+    const title = $("#deleteSkillTitle");
+    const idField = $("#deleteSkillId");
+
+    if (title) title.textContent = skill.name_ar;
+    if (idField) idField.value = skillId;
 
     setElementVisible(elements.deleteSkillModal, true);
   }
@@ -741,53 +694,384 @@
     state.deletingSkillId = null;
   }
 
-  async function deleteSkill() {
-    const button = $("#confirmDeleteSkill");
-    const id = state.deletingSkillId;
+  async function confirmDeleteSkill() {
+    const skillId =
+      $("#deleteSkillId")?.value || state.deletingSkillId;
 
-    if (!id) return;
+    const button = $("#confirmDeleteSkill");
+
+    if (!skillId) return;
 
     setButtonLoading(button, true, "جاري الحذف...");
 
     try {
       await api(API.skills, {
         method: "DELETE",
-        body: { id }
+        body: JSON.stringify({ id: skillId })
       });
 
       closeDeleteSkillModal();
       await loadSkills();
 
-      showToast("تم حذف المهارة بنجاح.");
+      showToast("تم حذف المهارة");
     } catch (error) {
-      console.error("Skill delete error:", error);
-
-      showToast(error.message || "تعذر حذف المهارة.", "error");
+      showToast(getErrorMessage(error), "error");
     } finally {
       setButtonLoading(button, false);
     }
   }
 
-  function initializeSkills() {
-    $("#addSkillButton")?.addEventListener("click", () => {
-      openSkillModal();
+  /* ==============================
+     MESSAGES
+  ============================== */
+
+  async function loadMessages() {
+    const tbody = $("#messagesTableBody");
+
+    if (tbody) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="6" class="table-empty">جاري تحميل الرسائل...</td>
+        </tr>
+      `;
+    }
+
+    try {
+      const data = await api(API.messages);
+
+      state.messages = getArray(data, "messages");
+
+      renderMessages();
+      updateDashboardStats();
+    } catch (error) {
+      if (tbody) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="6" class="table-empty">
+              ${escapeHTML(getErrorMessage(error))}
+            </td>
+          </tr>
+        `;
+      }
+
+      showToast(getErrorMessage(error), "error");
+    }
+  }
+
+  function getMessageStatusLabel(status) {
+    const labels = {
+      new: "جديدة",
+      read: "مقروءة",
+      replied: "تم الرد",
+      archived: "مؤرشفة"
+    };
+
+    return labels[status] || status || "غير محددة";
+  }
+
+  function renderMessages() {
+    const tbody = $("#messagesTableBody");
+
+    if (!tbody) return;
+
+    const search = (
+      $("#messageSearch")?.value || ""
+    ).trim().toLowerCase();
+
+    const statusFilter =
+      $("#messageStatusFilter")?.value || "all";
+
+    const filtered = state.messages.filter(message => {
+      const content = [
+        message.name,
+        message.email,
+        message.subject,
+        message.message
+      ].join(" ").toLowerCase();
+
+      const matchesSearch = content.includes(search);
+
+      const matchesStatus =
+        statusFilter === "all" ||
+        message.status === statusFilter;
+
+      return matchesSearch && matchesStatus;
     });
 
-    $("#addFirstSkillButton")?.addEventListener("click", () => {
-      openSkillModal();
+    if (filtered.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="6" class="table-empty">
+            لا توجد رسائل لعرضها
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    tbody.innerHTML = filtered.map(message => {
+      const id = escapeHTML(message.id);
+      const name = escapeHTML(message.name || "بدون اسم");
+      const email = escapeHTML(message.email || "");
+      const subject = escapeHTML(message.subject || "بدون موضوع");
+      const date = escapeHTML(formatDate(message.created_at));
+      const status = escapeHTML(message.status || "new");
+
+      return `
+        <tr>
+          <td>${name}</td>
+          <td>${email}</td>
+          <td>${subject}</td>
+          <td>${date}</td>
+          <td>
+            <span class="status-badge status-${status}">
+              ${escapeHTML(getMessageStatusLabel(status))}
+            </span>
+          </td>
+          <td>
+            <button
+              type="button"
+              class="table-action"
+              data-message-open="${id}"
+              title="عرض الرسالة"
+            >↗</button>
+          </td>
+        </tr>
+      `;
+    }).join("");
+
+    tbody.querySelectorAll("[data-message-open]").forEach(button => {
+      button.addEventListener("click", () => {
+        openMessageModal(button.dataset.messageOpen);
+      });
     });
+  }
 
-    $("#refreshSkillsButton")?.addEventListener("click", loadSkills);
-    $("#retrySkillsButton")?.addEventListener("click", loadSkills);
+  function openMessageModal(messageId) {
+    const message = state.messages.find(
+      item => String(item.id) === String(messageId)
+    );
 
-    $("#skillSearch")?.addEventListener("input", renderSkills);
+    if (!message) return;
+
+    state.currentMessage = message;
+
+    if (elements.messageModalBody) {
+      elements.messageModalBody.innerHTML = `
+        <div class="message-detail">
+          <p><strong>الاسم:</strong> ${escapeHTML(message.name || "—")}</p>
+          <p><strong>البريد:</strong> ${escapeHTML(message.email || "—")}</p>
+          <p><strong>الموضوع:</strong> ${escapeHTML(message.subject || "—")}</p>
+          <p><strong>التاريخ:</strong> ${escapeHTML(formatDate(message.created_at))}</p>
+
+          <div class="message-detail-content">
+            <strong>محتوى الرسالة</strong>
+            <p>${escapeHTML(message.message || "")}</p>
+          </div>
+        </div>
+      `;
+    }
+
+    if (elements.messageModalActions) {
+      elements.messageModalActions.innerHTML = `
+        <button
+          type="button"
+          class="secondary-button"
+          data-message-status="read"
+        >تحديد كمقروءة</button>
+
+        <button
+          type="button"
+          class="primary-button"
+          data-message-status="replied"
+        >تم الرد</button>
+
+        <button
+          type="button"
+          class="secondary-button"
+          data-message-status="archived"
+        >أرشفة</button>
+      `;
+
+      elements.messageModalActions
+        .querySelectorAll("[data-message-status]")
+        .forEach(button => {
+          button.addEventListener("click", () => {
+            updateMessageStatus(
+              message.id,
+              button.dataset.messageStatus
+            );
+          });
+        });
+    }
+
+    setElementVisible(elements.messageModal, true);
+  }
+
+  function closeMessageModal() {
+    setElementVisible(elements.messageModal, false);
+    state.currentMessage = null;
+  }
+
+  async function updateMessageStatus(messageId, status) {
+    try {
+      await api(API.messages, {
+        method: "PATCH",
+        body: JSON.stringify({
+          id: messageId,
+          status
+        })
+      });
+
+      closeMessageModal();
+      await loadMessages();
+
+      showToast("تم تحديث حالة الرسالة");
+    } catch (error) {
+      showToast(getErrorMessage(error), "error");
+    }
+  }
+
+  /* ==============================
+     DASHBOARD STATS
+  ============================== */
+
+  function updateDashboardStats() {
+    const total = state.messages.length;
+
+    const newMessages = state.messages.filter(
+      message => message.status === "new"
+    ).length;
+
+    const totalElement = $("#statTotalMessages");
+    const newElement = $("#statNewMessages");
+
+    if (totalElement) totalElement.textContent = total;
+    if (newElement) newElement.textContent = newMessages;
+
+    const projectsElement = $("#statProjects");
+    const skillsElement = $("#statSkills");
+
+    if (projectsElement && projectsElement.textContent.trim() === "") {
+      projectsElement.textContent = "0";
+    }
+
+    if (skillsElement) {
+      skillsElement.textContent = state.skills.length;
+    }
+
+    renderRecentMessages();
+  }
+
+  function renderRecentMessages() {
+    const container = $("#dashboardMessages");
+
+    if (!container) return;
+
+    const recent = [...state.messages]
+      .sort((a, b) => {
+        return new Date(b.created_at) - new Date(a.created_at);
+      })
+      .slice(0, 5);
+
+    if (recent.length === 0) {
+      container.innerHTML = `
+        <div class="panel-empty">لا توجد رسائل حتى الآن</div>
+      `;
+      return;
+    }
+
+    container.innerHTML = recent.map(message => `
+      <div class="message-detail">
+        <strong>${escapeHTML(message.name || "بدون اسم")}</strong>
+        <p>${escapeHTML(message.subject || message.message || "")}</p>
+        <small>${escapeHTML(formatDate(message.created_at))}</small>
+      </div>
+    `).join("");
+  }
+
+  async function refreshDashboard() {
+    try {
+      await Promise.all([
+        loadMessages(),
+        loadSkills()
+      ]);
+
+      showToast("تم تحديث لوحة التحكم");
+    } catch {
+      showToast("تعذر تحديث بعض البيانات", "error");
+    }
+  }
+
+  /* ==============================
+     LOGOUT
+  ============================== */
+
+  async function logout() {
+    const button = $("#logoutButton");
+
+    setButtonLoading(button, true, "جاري تسجيل الخروج...");
+
+    try {
+      await api(API.logout, {
+        method: "POST"
+      });
+    } catch (error) {
+      console.error("Logout error:", error);
+    } finally {
+      window.location.replace("/admin.html");
+    }
+  }
+
+  /* ==============================
+     EVENT LISTENERS
+  ============================== */
+
+  function initializeEvents() {
+    $("#profileForm")?.addEventListener(
+      "submit",
+      saveProfile
+    );
+
+    $("#reloadProfile")?.addEventListener(
+      "click",
+      loadProfile
+    );
+
+    $("#addSkillButton")?.addEventListener(
+      "click",
+      () => openSkillModal()
+    );
+
+    $("#addFirstSkillButton")?.addEventListener(
+      "click",
+      () => openSkillModal()
+    );
+
+    $("#refreshSkillsButton")?.addEventListener(
+      "click",
+      loadSkills
+    );
+
+    $("#retrySkillsButton")?.addEventListener(
+      "click",
+      loadSkills
+    );
+
+    $("#skillSearch")?.addEventListener(
+      "input",
+      renderSkills
+    );
 
     $("#skillVisibilityFilter")?.addEventListener(
       "change",
       renderSkills
     );
 
-    elements.skillForm?.addEventListener("submit", saveSkill);
+    elements.skillForm?.addEventListener(
+      "submit",
+      saveSkill
+    );
 
     $("#closeSkillModal")?.addEventListener(
       "click",
@@ -811,307 +1095,13 @@
 
     $("#confirmDeleteSkill")?.addEventListener(
       "click",
-      deleteSkill
+      confirmDeleteSkill
     );
 
-    elements.skillTableBody?.addEventListener("click", (event) => {
-      const editButton = event.target.closest(".edit-skill-button");
-      const toggleButton = event.target.closest(".toggle-skill-button");
-      const deleteButton = event.target.closest(".delete-skill-button");
-
-      if (editButton) {
-        const skill = state.skills.find(
-          (item) => String(item.id) === String(editButton.dataset.id)
-        );
-
-        if (skill) openSkillModal(skill);
-      }
-
-      if (toggleButton) {
-        toggleSkillVisibility(
-          toggleButton.dataset.id,
-          toggleButton.dataset.visible === "true"
-        );
-      }
-
-      if (deleteButton) {
-        openDeleteSkillModal(deleteButton.dataset.id);
-      }
-    });
-
-    elements.skillModal?.addEventListener("click", (event) => {
-      if (event.target === elements.skillModal) {
-        closeSkillModal();
-      }
-    });
-
-    elements.deleteSkillModal?.addEventListener("click", (event) => {
-      if (event.target === elements.deleteSkillModal) {
-        closeDeleteSkillModal();
-      }
-    });
-  }
-
-  // =========================================
-  // MESSAGES
-  // =========================================
-
-  const statusLabels = {
-    new: "جديدة",
-    read: "مقروءة",
-    replied: "تم الرد",
-    archived: "مؤرشفة"
-  };
-
-  function getMessageDate(message) {
-    return (
-      message.created_at ||
-      message.createdAt ||
-      message.date ||
-      null
+    $("#messageSearch")?.addEventListener(
+      "input",
+      renderMessages
     );
-  }
-
-  function getFilteredMessages() {
-    const search = ($("#messageSearch")?.value || "")
-      .trim()
-      .toLowerCase();
-
-    const filter = $("#messageStatusFilter")?.value || "all";
-
-    return state.messages.filter((message) => {
-      const searchableText = [
-        message.name,
-        message.email,
-        message.subject,
-        message.message
-      ].join(" ").toLowerCase();
-
-      const matchesSearch = searchableText.includes(search);
-      const status = message.status || "new";
-
-      const matchesStatus =
-        filter === "all" || status === filter;
-
-      return matchesSearch && matchesStatus;
-    });
-  }
-
-  function renderMessages() {
-    const rows = getFilteredMessages();
-
-    const overviewBody = $("#dashboardMessages");
-    const messagesBody = $("#messagesTableBody");
-
-    const renderRow = (message, compact = false) => {
-      const id = escapeHTML(message.id);
-      const name = escapeHTML(message.name || "بدون اسم");
-      const email = escapeHTML(message.email || "—");
-      const subject = escapeHTML(message.subject || "بدون موضوع");
-      const status = message.status || "new";
-      const statusLabel = statusLabels[status] || status;
-      const date = formatDate(getMessageDate(message));
-
-      if (compact) {
-        return `
-          <tr>
-            <td>${name}</td>
-            <td>${email}</td>
-            <td>${subject}</td>
-            <td>
-              <span class="status-badge status-${escapeHTML(status)}">
-                ${escapeHTML(statusLabel)}
-              </span>
-            </td>
-            <td>${date}</td>
-          </tr>
-        `;
-      }
-
-      return `
-        <tr>
-          <td>${name}</td>
-          <td>${email}</td>
-          <td>${subject}</td>
-          <td>
-            <span class="status-badge status-${escapeHTML(status)}">
-              ${escapeHTML(statusLabel)}
-            </span>
-          </td>
-          <td>${date}</td>
-          <td>
-            <button
-              type="button"
-              class="table-action view-message-button"
-              data-id="${id}"
-              title="عرض الرسالة"
-            >◉</button>
-          </td>
-        </tr>
-      `;
-    };
-
-    if (overviewBody) {
-      const latest = [...state.messages]
-        .sort((a, b) => {
-          return (
-            new Date(getMessageDate(b) || 0) -
-            new Date(getMessageDate(a) || 0)
-          );
-        })
-        .slice(0, 5);
-
-      overviewBody.innerHTML = latest.length
-        ? latest.map((message) => renderRow(message, true)).join("")
-        : '<tr><td colspan="5">لا توجد رسائل حاليًا.</td></tr>';
-    }
-
-    if (messagesBody) {
-      messagesBody.innerHTML = rows.length
-        ? rows.map((message) => renderRow(message)).join("")
-        : '<tr><td colspan="6">لا توجد رسائل مطابقة.</td></tr>';
-    }
-
-    updateMessageStatistics();
-  }
-
-  function updateMessageStatistics() {
-    const total = state.messages.length;
-
-    const newMessages = state.messages.filter(
-      (message) => (message.status || "new") === "new"
-    ).length;
-
-    setText("#statTotalMessages", total);
-    setText("#statNewMessages", newMessages);
-  }
-
-  async function loadMessages() {
-    if (state.loadingMessages) return;
-
-    state.loadingMessages = true;
-
-    try {
-      const data = await api(API.messages);
-
-      state.messages = Array.isArray(data.messages)
-        ? data.messages
-        : Array.isArray(data)
-          ? data
-          : [];
-
-      renderMessages();
-    } catch (error) {
-      console.error("Messages loading error:", error);
-
-      const overviewBody = $("#dashboardMessages");
-      const messagesBody = $("#messagesTableBody");
-
-      if (overviewBody) {
-        overviewBody.innerHTML =
-          '<tr><td colspan="5">تعذر تحميل الرسائل.</td></tr>';
-      }
-
-      if (messagesBody) {
-        messagesBody.innerHTML =
-          '<tr><td colspan="6">تعذر تحميل الرسائل.</td></tr>';
-      }
-
-      showToast("تعذر تحميل الرسائل.", "error");
-    } finally {
-      state.loadingMessages = false;
-    }
-  }
-
-  function openMessage(message) {
-    if (!message) return;
-
-    state.currentMessage = message;
-
-    const body = elements.messageModalBody;
-    const actions = elements.messageModalActions;
-
-    if (!body || !actions) return;
-
-    body.innerHTML = `
-      <div class="message-detail">
-        <p><strong>الاسم:</strong> ${escapeHTML(message.name || "—")}</p>
-        <p><strong>البريد:</strong> ${escapeHTML(message.email || "—")}</p>
-        <p><strong>الموضوع:</strong> ${escapeHTML(message.subject || "—")}</p>
-        <p><strong>التاريخ:</strong> ${formatDate(getMessageDate(message))}</p>
-        <div class="message-detail-content">
-          <strong>محتوى الرسالة:</strong>
-          <p>${escapeHTML(message.message || "")}</p>
-        </div>
-      </div>
-    `;
-
-    actions.innerHTML = `
-      <button type="button" class="secondary-button" id="closeMessageAction">
-        إغلاق
-      </button>
-
-      <button type="button" class="secondary-button" data-message-status="read">
-        تحديد كمقروءة
-      </button>
-
-      <button type="button" class="primary-button" data-message-status="replied">
-        تم الرد
-      </button>
-
-      <button type="button" class="secondary-button" data-message-status="archived">
-        أرشفة
-      </button>
-    `;
-
-    setElementVisible(elements.messageModal, true);
-
-    $("#closeMessageAction")?.addEventListener(
-      "click",
-      closeMessageModal
-    );
-
-    $$("[data-message-status]", actions).forEach((button) => {
-      button.addEventListener("click", () => {
-        updateMessageStatus(button.dataset.messageStatus);
-      });
-    });
-  }
-
-  function closeMessageModal() {
-    setElementVisible(elements.messageModal, false);
-    state.currentMessage = null;
-  }
-
-  async function updateMessageStatus(status) {
-    const message = state.currentMessage;
-    if (!message) return;
-
-    try {
-      await api(API.messages, {
-        method: "PATCH",
-        body: {
-          id: message.id,
-          status
-        }
-      });
-
-      closeMessageModal();
-      await loadMessages();
-
-      showToast("تم تحديث حالة الرسالة.");
-    } catch (error) {
-      console.error("Message update error:", error);
-
-      showToast(
-        error.message || "تعذر تحديث الرسالة.",
-        "error"
-      );
-    }
-  }
-
-  function initializeMessages() {
-    $("#messageSearch")?.addEventListener("input", renderMessages);
 
     $("#messageStatusFilter")?.addEventListener(
       "change",
@@ -1121,95 +1111,6 @@
     $("#closeMessageModal")?.addEventListener(
       "click",
       closeMessageModal
-    );
-
-    elements.messageModal?.addEventListener("click", (event) => {
-      if (event.target === elements.messageModal) {
-        closeMessageModal();
-      }
-    });
-
-    $("#messagesTableBody")?.addEventListener("click", (event) => {
-      const button = event.target.closest(".view-message-button");
-      if (!button) return;
-
-      const message = state.messages.find(
-        (item) => String(item.id) === String(button.dataset.id)
-      );
-
-      if (message) openMessage(message);
-    });
-  }
-
-  // =========================================
-  // DASHBOARD STATISTICS
-  // =========================================
-
-  async function updateStatistics() {
-    updateMessageStatistics();
-
-    const projects = $("#statProjects");
-
-    if (projects && projects.textContent.trim() === "") {
-      projects.textContent = "—";
-    }
-
-    if (state.skills.length) {
-      updateSkillsStatistics();
-    }
-  }
-
-  async function refreshDashboard() {
-    await Promise.all([
-      loadMessages(),
-      loadSkills()
-    ]);
-
-    showToast("تم تحديث بيانات لوحة التحكم.");
-  }
-
-  // =========================================
-  // LOGOUT
-  // =========================================
-
-  async function logout() {
-    const button = $("#logoutButton");
-
-    if (button) button.disabled = true;
-
-    try {
-      await api(API.logout, {
-        method: "POST",
-        body: {}
-      });
-    } catch (error) {
-      console.error("Logout request:", error);
-    } finally {
-      window.location.replace("/admin.html");
-    }
-  }
-
-  // =========================================
-  // INITIALIZATION
-  // =========================================
-
-  async function initializeDashboard() {
-    const authenticated = await checkSession();
-
-    if (!authenticated) return;
-
-    initializeNavigation();
-    initializeSkills();
-    initializeMessages();
-
-    $("#profileForm")?.addEventListener(
-      "submit",
-      saveProfile
-    );
-
-    $("#reloadProfile")?.addEventListener(
-      "click",
-      loadProfile
     );
 
     $("#refreshDashboard")?.addEventListener(
@@ -1222,6 +1123,40 @@
       logout
     );
 
+    [
+      elements.skillModal,
+      elements.deleteSkillModal,
+      elements.messageModal
+    ].forEach(modal => {
+      modal?.addEventListener("click", event => {
+        if (event.target !== modal) return;
+
+        setElementVisible(modal, false);
+      });
+    });
+
+    document.addEventListener("keydown", event => {
+      if (event.key !== "Escape") return;
+
+      closeSidebar();
+      closeSkillModal();
+      closeDeleteSkillModal();
+      closeMessageModal();
+    });
+  }
+
+  /* ==============================
+     INITIALIZATION
+  ============================== */
+
+  async function init() {
+    const authenticated = await checkSession();
+
+    if (!authenticated) return;
+
+    initializeNavigation();
+    initializeEvents();
+
     const year = $("#currentYear");
 
     if (year) {
@@ -1230,15 +1165,12 @@
 
     await Promise.all([
       loadMessages(),
-      updateStatistics()
+      loadSkills()
     ]);
 
-    activateSection(state.activeSection);
+    activateSection("overview");
   }
 
-  initializeDashboard().catch((error) => {
-    console.error("Dashboard initialization error:", error);
-    showToast("حدث خطأ أثناء تشغيل لوحة التحكم.", "error");
-  });
+  document.addEventListener("DOMContentLoaded", init);
 
 })();
