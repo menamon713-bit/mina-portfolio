@@ -10,49 +10,69 @@ const {
 } = require("../_lib/admin-auth");
 
 const { getClientKey } = require("../_lib/client-ip");
-const { hit, peek, reset } = require("../_lib/rate-limit");
+const { consume, reset } = require("../_lib/rate-limit");
 
 const scrypt = promisify(crypto.scrypt);
 
 const MAX_ATTEMPTS_PER_IP = 5;
 const IP_WINDOW_SECONDS = 900;
 
-// Failed attempts across ALL addresses (stops botnets / IP rotation).
-// Override with ADMIN_LOGIN_GLOBAL_LIMIT in Vercel env.
 const GLOBAL_WINDOW_SECONDS = 3600;
 const DEFAULT_GLOBAL_LIMIT = 100;
 
 const MAX_PASSWORD_LENGTH = 512;
 
-const GLOBAL_KEY = "mash:admin-login:global-failures";
+const GLOBAL_KEY = "mash:admin-login:global-attempts:v2";
 
 function send(res, status, data) {
   return res.status(status).json(data);
 }
 
 function getGlobalLimit() {
-  const value = Number(process.env.ADMIN_LOGIN_GLOBAL_LIMIT);
+  const value = process.env.ADMIN_LOGIN_GLOBAL_LIMIT;
 
-  return Number.isSafeInteger(value) && value >= 10 && value <= 10000
-    ? value
-    : DEFAULT_GLOBAL_LIMIT;
+  if (value === undefined || value === "") {
+    return DEFAULT_GLOBAL_LIMIT;
+  }
+
+  if (
+    typeof value !== "string" ||
+    !/^\d+$/.test(value)
+  ) {
+    throw new Error("ADMIN_LOGIN_GLOBAL_LIMIT is invalid.");
+  }
+
+  const limit = Number(value);
+
+  if (
+    !Number.isSafeInteger(limit) ||
+    limit < 10 ||
+    limit > 10000
+  ) {
+    throw new Error("ADMIN_LOGIN_GLOBAL_LIMIT is invalid.");
+  }
+
+  return limit;
 }
 
 /* ---------- password verification ---------- */
 
-function safeCompare(a, b) {
-  const first = crypto.createHash("sha256").update(a, "utf8").digest();
-  const second = crypto.createHash("sha256").update(b, "utf8").digest();
+// Format:
+// scrypt$N$r$p$salt_base64url$hash_base64url
 
-  return crypto.timingSafeEqual(first, second);
-}
-
-// Format: scrypt$N$r$p$<salt base64url>$<hash base64url>
-// Generate with: node tools/hash-password.js
 function parseScryptHash(value) {
+  if (typeof value !== "string") {
+    return null;
+  }
+
   const parts = value.split("$");
 
-  if (parts.length !== 6 || parts[0] !== "scrypt") return null;
+  if (
+    parts.length !== 6 ||
+    parts[0] !== "scrypt"
+  ) {
+    return null;
+  }
 
   const N = Number(parts[1]);
   const r = Number(parts[2]);
@@ -67,58 +87,99 @@ function parseScryptHash(value) {
     return null;
   }
 
-  if (!Number.isInteger(r) || r < 8 || r > 16) return null;
-  if (!Number.isInteger(p) || p < 1 || p > 4) return null;
-
-  const salt = Buffer.from(parts[4], "base64url");
-  const hash = Buffer.from(parts[5], "base64url");
-
-  if (salt.length < 16 || hash.length < 32 || hash.length > 128) {
+  if (
+    !Number.isInteger(r) ||
+    r < 8 ||
+    r > 16
+  ) {
     return null;
   }
 
-  return { N, r, p, salt, hash };
+  if (
+    !Number.isInteger(p) ||
+    p < 1 ||
+    p > 4
+  ) {
+    return null;
+  }
+
+  if (
+    !/^[A-Za-z0-9_-]+$/.test(parts[4]) ||
+    !/^[A-Za-z0-9_-]+$/.test(parts[5])
+  ) {
+    return null;
+  }
+
+  const salt = Buffer.from(
+    parts[4],
+    "base64url"
+  );
+
+  const hash = Buffer.from(
+    parts[5],
+    "base64url"
+  );
+
+  if (
+    salt.toString("base64url") !== parts[4] ||
+    hash.toString("base64url") !== parts[5] ||
+    salt.length < 16 ||
+    salt.length > 64 ||
+    hash.length < 32 ||
+    hash.length > 128
+  ) {
+    return null;
+  }
+
+  return {
+    N,
+    r,
+    p,
+    salt,
+    hash
+  };
 }
 
-// Prefers ADMIN_PASSWORD_HASH. Falls back to ADMIN_PASSWORD so nothing
-// breaks until you switch. Misconfiguration throws (fails closed).
 function getPasswordConfig() {
-  const hashEnv = process.env.ADMIN_PASSWORD_HASH;
+  const value = process.env.ADMIN_PASSWORD_HASH;
 
-  if (typeof hashEnv === "string" && hashEnv.trim() !== "") {
-    const parsed = parseScryptHash(hashEnv.trim());
-
-    if (!parsed) {
-      throw new Error("ADMIN_PASSWORD_HASH is invalid.");
-    }
-
-    return { type: "scrypt", ...parsed };
+  if (
+    typeof value !== "string" ||
+    value.trim() === ""
+  ) {
+    throw new Error("ADMIN_PASSWORD_HASH is missing.");
   }
 
-  const plain = process.env.ADMIN_PASSWORD;
+  const parsed = parseScryptHash(value.trim());
 
-  if (typeof plain === "string" && plain.length > 0) {
-    return { type: "plain", plain };
+  if (!parsed) {
+    throw new Error("ADMIN_PASSWORD_HASH is invalid.");
   }
 
-  throw new Error("Admin password is not configured.");
+  return parsed;
 }
 
 async function verifyPassword(input, config) {
-  if (config.type === "plain") {
-    return safeCompare(input, config.plain);
-  }
-
-  const derived = await scrypt(input, config.salt, config.hash.length, {
-    N: config.N,
-    r: config.r,
-    p: config.p,
-    maxmem: 128 * config.N * config.r * 2 + 1024 * 1024
-  });
+  const derived = await scrypt(
+    input,
+    config.salt,
+    config.hash.length,
+    {
+      N: config.N,
+      r: config.r,
+      p: config.p,
+      maxmem:
+        128 * config.N * config.r * 2 +
+        1024 * 1024
+    }
+  );
 
   return (
     derived.length === config.hash.length &&
-    crypto.timingSafeEqual(derived, config.hash)
+    crypto.timingSafeEqual(
+      derived,
+      config.hash
+    )
   );
 }
 
@@ -130,11 +191,15 @@ module.exports = async function handler(req, res) {
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
 
-    return send(res, 405, { error: "Method not allowed." });
+    return send(res, 405, {
+      error: "Method not allowed."
+    });
   }
 
   if (!checkSameOrigin(req)) {
-    return send(res, 403, { error: "Forbidden origin." });
+    return send(res, 403, {
+      error: "Forbidden origin."
+    });
   }
 
   const body = req.body;
@@ -145,64 +210,98 @@ module.exports = async function handler(req, res) {
     Array.isArray(body) ||
     Object.getPrototypeOf(body) !== Object.prototype ||
     Object.keys(body).length !== 1 ||
-    !Object.prototype.hasOwnProperty.call(body, "password") ||
+    !Object.prototype.hasOwnProperty.call(
+      body,
+      "password"
+    ) ||
     typeof body.password !== "string" ||
     body.password.length === 0 ||
     body.password.length > MAX_PASSWORD_LENGTH ||
     Buffer.byteLength(body.password, "utf8") > 2048
   ) {
-    return send(res, 400, { error: "Invalid request." });
+    return send(res, 400, {
+      error: "Invalid request."
+    });
   }
 
   let passwordConfig;
+  let globalLimit;
 
   try {
     passwordConfig = getPasswordConfig();
-  } catch (error) {
-    console.error("Admin auth config error:", error.message);
+    globalLimit = getGlobalLimit();
+  } catch {
+    console.error("[admin-login] Invalid authentication configuration.");
 
     return send(res, 503, {
       error: "Admin authentication is not configured."
     });
   }
 
-  const ipKey = `mash:admin-login:${getClientKey(req)}`;
+  const clientKey = getClientKey(req);
 
-  // Rate limits run BEFORE the password is checked.
+  // Never put unknown IPs into a shared rate-limit bucket.
+  if (!clientKey) {
+    return send(res, 503, {
+      error: "Unable to verify client address."
+    });
+  }
+
+  const ipKey = `mash:admin-login:${clientKey}`;
+
+  // Both limits use atomic Redis operations.
+  // IP limit is checked first to avoid unnecessary global consumption.
   try {
-    const attempts = await hit(ipKey, IP_WINDOW_SECONDS);
+    const ipResult = await consume(
+      ipKey,
+      IP_WINDOW_SECONDS,
+      MAX_ATTEMPTS_PER_IP
+    );
 
-    if (attempts > MAX_ATTEMPTS_PER_IP) {
-      res.setHeader("Retry-After", String(IP_WINDOW_SECONDS));
-
-      return send(res, 429, {
-        error: "Too many login attempts. Try again later."
-      });
-    }
-
-    const globalFailures = await peek(GLOBAL_KEY);
-
-    if (globalFailures >= getGlobalLimit()) {
-      res.setHeader("Retry-After", String(GLOBAL_WINDOW_SECONDS));
+    if (!ipResult.allowed) {
+      res.setHeader(
+        "Retry-After",
+        String(ipResult.retryAfter)
+      );
 
       return send(res, 429, {
         error: "Too many login attempts. Try again later."
       });
     }
-  } catch (error) {
-    console.error("Admin rate limit error:", error.message);
+
+    const globalResult = await consume(
+      GLOBAL_KEY,
+      GLOBAL_WINDOW_SECONDS,
+      globalLimit
+    );
+
+    if (!globalResult.allowed) {
+      res.setHeader(
+        "Retry-After",
+        String(globalResult.retryAfter)
+      );
+
+      return send(res, 429, {
+        error: "Too many login attempts. Try again later."
+      });
+    }
+  } catch {
+    console.error("[admin-login] Rate limit service unavailable.");
 
     return send(res, 503, {
       error: "Login service temporarily unavailable."
     });
   }
 
-  let valid = false;
+  let valid;
 
   try {
-    valid = await verifyPassword(body.password, passwordConfig);
-  } catch (error) {
-    console.error("Admin password check error:", error.message);
+    valid = await verifyPassword(
+      body.password,
+      passwordConfig
+    );
+  } catch {
+    console.error("[admin-login] Password verification failed.");
 
     return send(res, 503, {
       error: "Login service temporarily unavailable."
@@ -210,28 +309,29 @@ module.exports = async function handler(req, res) {
   }
 
   if (!valid) {
-    try {
-      await hit(GLOBAL_KEY, GLOBAL_WINDOW_SECONDS);
-    } catch (error) {
-      console.error("Admin global counter error:", error.message);
-    }
-
-    return send(res, 401, { error: "Incorrect password." });
+    return send(res, 401, {
+      error: "Incorrect password."
+    });
   }
 
-  // Successful login: don't let earlier typos lock the owner out.
+  // Reset the per-IP counter after successful authentication.
+  // The global counter is intentionally not reset.
   try {
     await reset(ipKey);
-  } catch (error) {
-    console.error("Admin counter reset error:", error.message);
+  } catch {
+    console.error("[admin-login] IP counter reset failed.");
   }
 
   try {
-    setSessionCookie(res, createSession());
+    const token = createSession();
 
-    return send(res, 200, { success: true });
-  } catch (error) {
-    console.error("Admin session error:", error.message);
+    setSessionCookie(res, token);
+
+    return send(res, 200, {
+      success: true
+    });
+  } catch {
+    console.error("[admin-login] Session creation failed.");
 
     return send(res, 503, {
       error: "Could not create admin session."
