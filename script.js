@@ -1,16 +1,13 @@
 /* =====================================================
    M.A.S.H CYVEX — Main JavaScript
-   Fixed: Sidebar / Modals / Navigation
+   Navigation / Sidebar / Modals
    Language / Theme / Contact / Animations
 ===================================================== */
 
 (() => {
   "use strict";
 
-  /* =====================================================
-     HELPERS
-  ===================================================== */
-
+  /* HELPERS */
   const $ = (selector, root = document) => root.querySelector(selector);
   const $$ = (selector, root = document) =>
     Array.from(root.querySelectorAll(selector));
@@ -26,7 +23,6 @@
         return fallback;
       }
     },
-
     set(key, value) {
       try {
         localStorage.setItem(key, value);
@@ -36,10 +32,7 @@
     }
   };
 
-  /* =====================================================
-     TRANSLATIONS
-  ===================================================== */
-
+  /* TRANSLATIONS */
   const translations = {
     ar: {
       brandCaption: "DEVELOPER PORTFOLIO",
@@ -51,7 +44,6 @@
       navSkills: "المهارات",
       navProjects: "المشاريع",
       navContact: "تواصل معي",
-      downloadCV: "تحميل السيرة الذاتية",
 
       heroLabel: "مرحباً بك في مساحتي التقنية",
       heroGreeting: "أهلاً، أنا",
@@ -115,7 +107,6 @@
       projectsTitle: "المشاريع",
       projectsSubtitle: "مجموعة من المشاريع والتجارب التي عملت عليها.",
       viewDetails: "عرض التفاصيل",
-      viewGithub: "عرض على GitHub",
       liveDemo: "الموقع المباشر",
 
       projectReportTitle: "تقرير تقييم أمني",
@@ -133,11 +124,18 @@
       contactTitle: "تواصل معي",
       contactSubtitle: "للاستفسارات أو مناقشة مشروع أو تعاون تقني.",
       contactHeadline: "هل لديك فكرة أو مشروع؟",
-      contactText: "يمكنك التواصل معي من خلال إحدى الوسائل التالية.",
+      contactText: "يمكنك إرسال رسالة مباشرة من خلال النموذج.",
 
       formSubmit: "إرسال الرسالة",
-      whatsappLabel: "ابدأ محادثة",
-      phoneTitle: "الهاتف",
+      formSending: "جارٍ إرسال الرسالة...",
+      formSuccess: "تم إرسال رسالتك بنجاح.",
+      formError: "تعذر إرسال الرسالة. حاول مرة أخرى لاحقاً.",
+      formInvalid: "تأكد من إدخال البيانات بشكل صحيح.",
+      formRateLimit: "تم الوصول إلى حد الإرسال. حاول مرة أخرى لاحقاً.",
+      nameLabel: "الاسم",
+      emailLabel: "البريد الإلكتروني",
+      subjectLabel: "الموضوع",
+      messageLabel: "الرسالة",
 
       contactFooterTitle: "شكراً لزيارتك",
       contactFooterText: "أقدّر وقتك واهتمامك باستكشاف أعمالي.",
@@ -158,7 +156,8 @@
       reconModalIntro:
         "مشروع لاستكشاف المعلومات الأولية وتنظيم نتائج الاستطلاع الأمني.",
       reconPurposeTitle: "الهدف",
-      reconPurposeText: "المساعدة في تنظيم عملية الاستطلاع وجمع المعلومات العامة.",
+      reconPurposeText:
+        "المساعدة في تنظيم عملية الاستطلاع وجمع المعلومات العامة.",
       reconUsageTitle: "الاستخدام",
       reconUsageText:
         "يُستخدم فقط على الأنظمة والنطاقات التي يوجد تصريح باختبارها.",
@@ -167,16 +166,7 @@
       closeMenu: "إغلاق القائمة",
       openMenu: "فتح القائمة",
       changeTheme: "تغيير المظهر",
-      switchLanguage: "تغيير اللغة",
-
-      nameLabel: "الاسم",
-      emailLabel: "البريد الإلكتروني",
-      subjectLabel: "الموضوع",
-      messageLabel: "الرسالة",
-
-      whatsappBusiness: "فتح WhatsApp",
-      whatsappNormal: "فتح رابط WhatsApp",
-      cancel: "إلغاء"
+      switchLanguage: "تغيير اللغة"
     },
 
     en: {
@@ -189,7 +179,6 @@
       navSkills: "Skills",
       navProjects: "Projects",
       navContact: "Contact",
-      downloadCV: "Download CV",
 
       heroLabel: "Welcome to my tech space",
       heroGreeting: "Hello, I'm",
@@ -253,7 +242,6 @@
       projectsTitle: "Projects",
       projectsSubtitle: "A collection of projects and experiments I have worked on.",
       viewDetails: "View Details",
-      viewGithub: "View on GitHub",
       liveDemo: "Live Demo",
 
       projectReportTitle: "Security Assessment Report",
@@ -272,11 +260,18 @@
       contactTitle: "Contact Me",
       contactSubtitle: "For inquiries, project discussions, or technical collaboration.",
       contactHeadline: "Have an Idea or a Project?",
-      contactText: "You can contact me through one of the following methods.",
+      contactText: "You can send a message directly through the form.",
 
       formSubmit: "Send Message",
-      whatsappLabel: "Start a conversation",
-      phoneTitle: "Phone",
+      formSending: "Sending message...",
+      formSuccess: "Your message was sent successfully.",
+      formError: "Unable to send your message. Please try again later.",
+      formInvalid: "Please check your information and try again.",
+      formRateLimit: "The sending limit has been reached. Try again later.",
+      nameLabel: "Name",
+      emailLabel: "Email",
+      subjectLabel: "Subject",
+      messageLabel: "Message",
 
       contactFooterTitle: "Thanks for Visiting",
       contactFooterText: "I appreciate your time and interest in exploring my work.",
@@ -307,23 +302,11 @@
       closeMenu: "Close menu",
       openMenu: "Open menu",
       changeTheme: "Change appearance",
-      switchLanguage: "Switch language",
-
-      nameLabel: "Name",
-      emailLabel: "Email",
-      subjectLabel: "Subject",
-      messageLabel: "Message",
-
-      whatsappBusiness: "Open WhatsApp",
-      whatsappNormal: "Open WhatsApp link",
-      cancel: "Cancel"
+      switchLanguage: "Switch language"
     }
   };
 
-  /* =====================================================
-     LANGUAGE
-  ===================================================== */
-
+  /* LANGUAGE */
   const languageToggle = $("#languageToggle");
 
   function translateElement(element, value) {
@@ -377,17 +360,18 @@
       if (label) label.textContent = value;
     });
 
+    const contactText = $(".contact-intro p");
+    if (contactText) contactText.textContent = dictionary.contactText;
+
     if (languageToggle) {
       languageToggle.textContent = lang === "ar" ? "EN" : "عربي";
       languageToggle.setAttribute("aria-label", dictionary.switchLanguage);
       languageToggle.title = dictionary.switchLanguage;
     }
 
-    const themeButton = $("#themeToggle");
-
-    if (themeButton) {
-      themeButton.setAttribute("aria-label", dictionary.changeTheme);
-      themeButton.title = dictionary.changeTheme;
+    if (themeToggle) {
+      themeToggle.setAttribute("aria-label", dictionary.changeTheme);
+      themeToggle.title = dictionary.changeTheme;
     }
 
     updateMenuAccessibility();
@@ -397,15 +381,13 @@
       : "M.A.S.H CYVEX | Web Developer & Cybersecurity Researcher";
 
     const description = $('meta[name="description"]');
-
     if (description) {
       description.content = lang === "ar"
-        ? "M.A.S.H CYVEX — مطور واجهات ويب وباحث في الأمن السيبراني من سوهاج، مصر. استكشف المشاريع والمهارات والأعمال التقنية."
-        : "M.A.S.H CYVEX — Web Developer & Cybersecurity Researcher from Sohag, Egypt. Explore projects, skills, and technical work.";
+        ? "M.A.S.H CYVEX — مطور واجهات ويب وباحث في الأمن السيبراني. استكشف المشاريع والمهارات والأعمال التقنية."
+        : "M.A.S.H CYVEX — Web Developer & Cybersecurity Researcher. Explore projects, skills, and technical work.";
     }
 
     const ogLocale = $('meta[property="og:locale"]');
-
     if (ogLocale) {
       ogLocale.content = lang === "ar" ? "ar_EG" : "en_US";
     }
@@ -417,23 +399,16 @@
     setLanguage(html.lang === "ar" ? "en" : "ar");
   });
 
-  /* =====================================================
-     THEME
-  ===================================================== */
-
+  /* THEME */
   const themeToggle = $("#themeToggle");
 
   function setTheme(theme) {
     const selectedTheme = theme === "light" ? "light" : "dark";
-
     html.dataset.theme = selectedTheme;
 
     if (themeToggle) {
-      themeToggle.textContent =
-        selectedTheme === "dark" ? "☀️" : "🌙";
-
+      themeToggle.textContent = selectedTheme === "dark" ? "☀️" : "🌙";
       const label = translations[html.lang] || translations.ar;
-
       themeToggle.setAttribute("aria-label", label.changeTheme);
       themeToggle.title = label.changeTheme;
     }
@@ -445,10 +420,7 @@
     setTheme(html.dataset.theme === "dark" ? "light" : "dark");
   });
 
-  /* =====================================================
-     SIDEBAR ELEMENTS
-  ===================================================== */
-
+  /* SIDEBAR */
   const menuBtn = $("#menuBtn");
   const sidebar = $("#sidebar");
   const overlay = $("#overlay");
@@ -466,44 +438,29 @@
     );
   }
 
-  /* =====================================================
-     MOBILE SIDEBAR — FIXED
-  ===================================================== */
-
   function openSidebar() {
     body.classList.add("menu-open");
-
-    // Classes required by the original CSS.
     sidebar?.classList.add("open");
     overlay?.classList.add("show");
-
     updateMenuAccessibility();
   }
 
   function closeSidebar() {
     body.classList.remove("menu-open");
-
-    // Remove both original and compatibility classes.
     sidebar?.classList.remove("open");
     overlay?.classList.remove("show");
-
     updateMenuAccessibility();
   }
 
   menuBtn?.addEventListener("click", () => {
-    if (body.classList.contains("menu-open")) {
-      closeSidebar();
-    } else {
-      openSidebar();
-    }
+    body.classList.contains("menu-open")
+      ? closeSidebar()
+      : openSidebar();
   });
 
   overlay?.addEventListener("click", closeSidebar);
 
-  /* =====================================================
-     NAVIGATION
-  ===================================================== */
-
+  /* NAVIGATION */
   const pages = $$(".page");
   const navLinks = $$(".nav-link");
   const pageLinks = $$("[data-page]");
@@ -511,9 +468,7 @@
   function showPage(pageId, updateHash = true) {
     const target = document.getElementById(pageId);
 
-    if (!target || !target.classList.contains("page")) {
-      return;
-    }
+    if (!target || !target.classList.contains("page")) return;
 
     pages.forEach(page => {
       page.classList.toggle("active", page.id === pageId);
@@ -521,7 +476,6 @@
 
     navLinks.forEach(link => {
       const active = link.dataset.page === pageId;
-
       link.classList.toggle("active", active);
 
       if (active) {
@@ -549,7 +503,6 @@
   pageLinks.forEach(link => {
     link.addEventListener("click", event => {
       const pageId = link.dataset.page;
-
       if (!pageId) return;
 
       event.preventDefault();
@@ -561,25 +514,17 @@
     const pageId = window.location.hash.replace("#", "");
     const validPage = pages.some(page => page.id === pageId);
 
-    if (validPage) {
-      showPage(pageId, false);
-    } else if (!pageId) {
-      showPage("home", false);
-    }
+    showPage(validPage ? pageId : "home", false);
   }
 
   window.addEventListener("hashchange", handleHashNavigation);
 
-  /* =====================================================
-     MODALS — FIXED
-  ===================================================== */
-
+  /* MODALS */
   const modals = $$(".modal");
   let previousFocus = null;
 
   function openModal(modalId) {
     const modal = document.getElementById(modalId);
-
     if (!modal || !modal.classList.contains("modal")) return;
 
     previousFocus = document.activeElement;
@@ -589,15 +534,11 @@
       item.setAttribute("aria-hidden", "true");
     });
 
-    // "show" matches the original CSS.
-    // "active" remains for compatibility with the previous patch.
     modal.classList.add("show", "active");
     modal.setAttribute("aria-hidden", "false");
-
     body.classList.add("modal-open");
 
-    const closeButton = $('[data-action="close-modal"]', modal);
-    closeButton?.focus();
+    $('[data-action="close-modal"]', modal)?.focus();
   }
 
   function closeModal(modal) {
@@ -633,35 +574,10 @@
     });
   }
 
-  /* =====================================================
-     CONTACT ACTIONS
-  ===================================================== */
-
-  const PHONE_NUMBER = "201554416094";
-  const EMAIL_ADDRESS = "minadeveloper43@gmail.com";
-
-  function openWhatsApp() {
-    const url = `https://wa.me/${PHONE_NUMBER}`;
-    window.open(url, "_blank", "noopener,noreferrer");
-  }
-
-  function openPhone() {
-    window.location.href = `tel:+${PHONE_NUMBER}`;
-  }
-
-  function openEmail() {
-    window.location.href = `mailto:${EMAIL_ADDRESS}`;
-  }
-
-  /* =====================================================
-     ACTION BUTTONS
-  ===================================================== */
-
+  /* ACTION BUTTONS */
   $$("[data-action]").forEach(element => {
     element.addEventListener("click", () => {
-      const action = element.dataset.action;
-
-      switch (action) {
+      switch (element.dataset.action) {
         case "open-report":
           openModal("reportModal");
           break;
@@ -674,37 +590,19 @@
           closeModal(element.closest(".modal"));
           break;
 
-        case "whatsapp":
-          openWhatsApp();
-          break;
-
-        case "phone":
-          openPhone();
-          break;
-
-        case "email":
-          openEmail();
-          break;
-
         default:
           break;
       }
     });
   });
 
-  // Close modal when clicking its backdrop.
   modals.forEach(modal => {
     modal.addEventListener("click", event => {
-      if (event.target === modal) {
-        closeModal(modal);
-      }
+      if (event.target === modal) closeModal(modal);
     });
   });
 
-  /* =====================================================
-     KEYBOARD ACCESSIBILITY
-  ===================================================== */
-
+  /* KEYBOARD ACCESSIBILITY */
   document.addEventListener("keydown", event => {
     if (event.key === "Escape") {
       closeAllModals();
@@ -712,25 +610,110 @@
     }
   });
 
-  /* =====================================================
-     REVEAL ANIMATIONS
-  ===================================================== */
+  /* CONTACT FORM */
+  const contactForm = $("#contactForm");
+  const contactStatus = $("#contactStatus");
+  const contactSubmit = $("#contactSubmit");
 
+  function setContactStatus(message, type = "") {
+    if (!contactStatus) return;
+
+    contactStatus.textContent = message;
+    contactStatus.className = `form-status ${type}`.trim();
+  }
+
+  contactForm?.addEventListener("submit", async event => {
+    event.preventDefault();
+
+    if (!contactForm.reportValidity()) return;
+
+    const dictionary = translations[html.lang] || translations.ar;
+    const formData = new FormData(contactForm);
+
+    const payload = {
+      name: String(formData.get("name") || "").trim(),
+      email: String(formData.get("email") || "").trim(),
+      subject: String(formData.get("subject") || "").trim(),
+      message: String(formData.get("message") || "").trim(),
+      website: String(formData.get("website") || "").trim()
+    };
+
+    if (
+      payload.name.length < 2 ||
+      payload.name.length > 100 ||
+      payload.email.length > 254 ||
+      payload.message.length < 10 ||
+      payload.message.length > 5000
+    ) {
+      setContactStatus(dictionary.formInvalid, "error");
+      return;
+    }
+
+    if (contactSubmit) {
+      contactSubmit.disabled = true;
+      contactSubmit.setAttribute("aria-busy", "true");
+      const buttonText = $("[data-i18n='formSubmit']", contactSubmit);
+      if (buttonText) buttonText.textContent = dictionary.formSending;
+    }
+
+    setContactStatus("");
+
+    try {
+      const response = await fetch("/api/contact", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json"
+        },
+        body: JSON.stringify(payload)
+      });
+
+      let result = {};
+      try {
+        result = await response.json();
+      } catch {
+        result = {};
+      }
+
+      if (!response.ok || result.success !== true) {
+        if (response.status === 429) {
+          throw new Error("RATE_LIMIT");
+        }
+        throw new Error("REQUEST_FAILED");
+      }
+
+      setContactStatus(dictionary.formSuccess, "success");
+      contactForm.reset();
+    } catch (error) {
+      setContactStatus(
+        error.message === "RATE_LIMIT"
+          ? dictionary.formRateLimit
+          : dictionary.formError,
+        "error"
+      );
+    } finally {
+      if (contactSubmit) {
+        contactSubmit.disabled = false;
+        contactSubmit.removeAttribute("aria-busy");
+
+        const buttonText = $("[data-i18n='formSubmit']", contactSubmit);
+        if (buttonText) buttonText.textContent = dictionary.formSubmit;
+      }
+    }
+  });
+
+  /* REVEAL ANIMATIONS */
   let revealObserver = null;
 
   function refreshReveal() {
     const elements = $$(".reveal");
 
     if (!("IntersectionObserver" in window)) {
-      elements.forEach(element => {
-        element.classList.add("visible");
-      });
+      elements.forEach(element => element.classList.add("visible"));
       return;
     }
 
-    if (revealObserver) {
-      revealObserver.disconnect();
-    }
+    revealObserver?.disconnect();
 
     revealObserver = new IntersectionObserver(
       (entries, observer) => {
@@ -754,20 +737,14 @@
     });
   }
 
-  /* =====================================================
-     SKILLS ANIMATION
-  ===================================================== */
-
+  /* SKILLS ANIMATION */
   const animatedSkills = new WeakSet();
 
   function animateSkills(container = document) {
-    const skills = $$(".skill-progress", container);
-
-    skills.forEach(skill => {
+    $$(".skill-progress", container).forEach(skill => {
       if (animatedSkills.has(skill)) return;
 
       const progress = Number(skill.dataset.progress);
-
       if (!Number.isFinite(progress)) return;
 
       const safeProgress = Math.min(100, Math.max(0, progress));
@@ -784,10 +761,7 @@
     });
   }
 
-  /* =====================================================
-     PROFILE IMAGE FALLBACK
-  ===================================================== */
-
+  /* PROFILE IMAGE FALLBACK */
   const profileImage = $(".profile-image");
   const profileFallback = $(".profile-fallback");
 
@@ -804,10 +778,7 @@
     }
   }
 
-  /* =====================================================
-     INITIALIZATION
-  ===================================================== */
-
+  /* INITIALIZATION */
   function initialize() {
     const savedLanguage = safeStorage.get("mash-language", "ar");
     const savedTheme = safeStorage.get(
@@ -825,16 +796,6 @@
 
     refreshReveal();
     animateSkills(document);
-
-    if (
-      profileImage &&
-      profileFallback &&
-      profileImage.complete &&
-      profileImage.naturalWidth === 0
-    ) {
-      profileImage.style.display = "none";
-      profileFallback.style.display = "flex";
-    }
   }
 
   if (document.readyState === "loading") {
@@ -844,5 +805,4 @@
   } else {
     initialize();
   }
-
 })();
