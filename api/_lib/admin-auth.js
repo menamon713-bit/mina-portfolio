@@ -3,9 +3,12 @@
 const crypto = require("crypto");
 
 const COOKIE_NAME = "mash_admin_session";
-const SESSION_SECONDS = 8 * 60 * 60;
+const SESSION_SECONDS = 2 * 60 * 60; // 2 hours (was 8)
+const CLOCK_SKEW_MS = 60 * 1000;
 const MAX_TOKEN_LENGTH = 2048;
 const MAX_COOKIE_HEADER_LENGTH = 16384;
+
+/* ---------- config ---------- */
 
 function getSecret() {
   const secret = process.env.ADMIN_SESSION_SECRET;
@@ -14,13 +17,28 @@ function getSecret() {
     typeof secret !== "string" ||
     Buffer.byteLength(secret, "utf8") < 32
   ) {
-    throw new Error(
-      "ADMIN_SESSION_SECRET is missing or too short."
-    );
+    throw new Error("ADMIN_SESSION_SECRET is missing or too short.");
   }
 
   return secret;
 }
+
+// Optional. Change ADMIN_SESSION_VERSION in Vercel env to instantly
+// invalidate ALL existing sessions (stolen cookie, suspected leak, etc).
+function getVersion() {
+  const v = process.env.ADMIN_SESSION_VERSION;
+
+  if (v === undefined || v === "") return "1";
+
+  if (typeof v !== "string" || !/^[A-Za-z0-9_-]{1,32}$/.test(v)) {
+    // Fail closed: a bad value must not silently disable revocation.
+    throw new Error("ADMIN_SESSION_VERSION is invalid.");
+  }
+
+  return v;
+}
+
+/* ---------- signing ---------- */
 
 function sign(value) {
   return crypto
@@ -30,8 +48,12 @@ function sign(value) {
 }
 
 function createSession() {
+  const now = Date.now();
+
   const payload = {
-    exp: Date.now() + SESSION_SECONDS * 1000,
+    iat: now,
+    exp: now + SESSION_SECONDS * 1000,
+    v: getVersion(),
     nonce: crypto.randomBytes(32).toString("hex")
   };
 
@@ -93,9 +115,15 @@ function verifySession(token) {
       return false;
     }
 
+    const now = Date.now();
+
     return (
+      Number.isSafeInteger(data.iat) &&
       Number.isSafeInteger(data.exp) &&
-      data.exp > Date.now() &&
+      data.exp > now &&
+      data.iat <= now + CLOCK_SKEW_MS &&
+      data.exp - data.iat <= SESSION_SECONDS * 1000 &&
+      data.v === getVersion() &&
       typeof data.nonce === "string" &&
       /^[a-f0-9]{64}$/.test(data.nonce)
     );
@@ -103,6 +131,8 @@ function verifySession(token) {
     return false;
   }
 }
+
+/* ---------- cookies / headers ---------- */
 
 function getCookie(req) {
   const header = req?.headers?.cookie;
@@ -137,6 +167,20 @@ function getCookie(req) {
   return session;
 }
 
+function appendSetCookie(res, cookie) {
+  const existing = res.getHeader("Set-Cookie");
+
+  if (!existing) {
+    res.setHeader("Set-Cookie", cookie);
+  } else {
+    res.setHeader("Set-Cookie", [].concat(existing, cookie));
+  }
+}
+
+function setNoStore(res) {
+  res.setHeader("Cache-Control", "no-store");
+}
+
 function setSessionCookie(res, token) {
   if (
     typeof token !== "string" ||
@@ -146,32 +190,43 @@ function setSessionCookie(res, token) {
     throw new Error("Invalid session token.");
   }
 
-  res.setHeader(
-    "Set-Cookie",
+  setNoStore(res);
+
+  appendSetCookie(
+    res,
     `${COOKIE_NAME}=${token}; HttpOnly; Secure; SameSite=Strict; Path=/api/admin; Max-Age=${SESSION_SECONDS}`
   );
 }
 
 function clearSessionCookie(res) {
-  res.setHeader(
-    "Set-Cookie",
+  setNoStore(res);
+
+  appendSetCookie(
+    res,
     `${COOKIE_NAME}=; HttpOnly; Secure; SameSite=Strict; Path=/api/admin; Max-Age=0`
   );
 }
 
+/* ---------- guards ---------- */
+
 function requireAdmin(req, res) {
+  // Never let any admin response be cached.
+  setNoStore(res);
+
   const token = getCookie(req);
 
   let authenticated = false;
 
   try {
     authenticated = verifySession(token);
-  } catch {
+  } catch (err) {
+    // Misconfiguration (missing secret / bad version) fails closed,
+    // but is visible in server logs instead of looking like a normal 401.
+    console.error("[admin-auth]", err.message);
     authenticated = false;
   }
 
   if (!authenticated) {
-    res.setHeader("Cache-Control", "no-store");
     clearSessionCookie(res);
 
     res.status(401).json({
@@ -184,35 +239,57 @@ function requireAdmin(req, res) {
   return true;
 }
 
+// Use on every state-changing request (POST/PUT/PATCH/DELETE), including login.
+// Optional: set ADMIN_ALLOWED_ORIGIN (e.g. https://mina-portfolio-pied.vercel.app)
+// to pin the exact origin instead of trusting the Host header.
 function checkSameOrigin(req) {
   const origin = req?.headers?.origin;
   const host = req?.headers?.host;
+  const fetchSite = req?.headers?.["sec-fetch-site"];
 
+  // Browsers send this on fetch/XHR; anything not same-origin is rejected.
   if (
-    typeof origin !== "string" ||
-    origin.length > 2048 ||
-    typeof host !== "string" ||
-    !host ||
-    host.length > 255 ||
-    host.includes(",") ||
-    /\s/.test(host)
+    fetchSite !== undefined &&
+    (typeof fetchSite !== "string" || fetchSite !== "same-origin")
   ) {
+    return false;
+  }
+
+  if (typeof origin !== "string" || origin.length > 2048) {
     return false;
   }
 
   try {
     const originURL = new URL(origin);
-    const requestURL = new URL(`https://${host}`);
 
-    return (
-      originURL.protocol === "https:" &&
-      originURL.origin === requestURL.origin &&
-      originURL.username === "" &&
-      originURL.password === "" &&
-      originURL.pathname === "/" &&
-      originURL.search === "" &&
-      originURL.hash === ""
-    );
+    if (
+      originURL.protocol !== "https:" ||
+      originURL.username !== "" ||
+      originURL.password !== "" ||
+      originURL.pathname !== "/" ||
+      originURL.search !== "" ||
+      originURL.hash !== ""
+    ) {
+      return false;
+    }
+
+    const pinned = process.env.ADMIN_ALLOWED_ORIGIN;
+
+    if (typeof pinned === "string" && pinned !== "") {
+      return originURL.origin === new URL(pinned).origin;
+    }
+
+    if (
+      typeof host !== "string" ||
+      !host ||
+      host.length > 255 ||
+      host.includes(",") ||
+      /\s/.test(host)
+    ) {
+      return false;
+    }
+
+    return originURL.origin === new URL(`https://${host}`).origin;
   } catch {
     return false;
   }
