@@ -30,6 +30,32 @@ function isPlainObject(value) {
   );
 }
 
+function validImageUrl(value) {
+  if (value === "") return true;
+
+  if (
+    value.startsWith("/") &&
+    !value.startsWith("//") &&
+    !value.includes("\\") &&
+    !/[\u0000-\u0020]/.test(value)
+  ) {
+    return true;
+  }
+
+  try {
+    const url = new URL(value);
+
+    return (
+      url.protocol === "https:" &&
+      url.hostname.length > 0 &&
+      !url.username &&
+      !url.password
+    );
+  } catch {
+    return false;
+  }
+}
+
 function validateProfile(body) {
   if (!isPlainObject(body)) {
     return "Invalid request body.";
@@ -68,6 +94,10 @@ function validateProfile(body) {
     return "Invalid email address.";
   }
 
+  if (!validImageUrl(body.image.trim())) {
+    return "Invalid profile image URL.";
+  }
+
   return null;
 }
 
@@ -79,7 +109,7 @@ module.exports = async function handler(req, res) {
     return sendError(res, 405, "Method not allowed.");
   }
 
-  if (!requireAdmin(req, res)) {
+  if (!(await requireAdmin(req, res))) {
     return;
   }
 
@@ -174,9 +204,8 @@ module.exports = async function handler(req, res) {
       message: "Profile updated successfully.",
       profile: rows[0]
     });
-
-  } catch (error) {
-    console.error("Admin profile API error:", error);
+  } catch {
+    console.error("[admin-profile] Database operation failed.");
 
     return sendError(
       res,
