@@ -1,7 +1,7 @@
 "use strict";
 
 const crypto = require("crypto");
-const net = require("net");
+const { promisify } = require("util");
 
 const {
   createSession,
@@ -9,143 +9,120 @@ const {
   checkSameOrigin
 } = require("../_lib/admin-auth");
 
-const MAX_ATTEMPTS = 5;
-const WINDOW_SECONDS = 900;
-const REDIS_TIMEOUT_MS = 5000;
+const { getClientKey } = require("../_lib/client-ip");
+const { hit, peek, reset } = require("../_lib/rate-limit");
+
+const scrypt = promisify(crypto.scrypt);
+
+const MAX_ATTEMPTS_PER_IP = 5;
+const IP_WINDOW_SECONDS = 900;
+
+// Failed attempts across ALL addresses (stops botnets / IP rotation).
+// Override with ADMIN_LOGIN_GLOBAL_LIMIT in Vercel env.
+const GLOBAL_WINDOW_SECONDS = 3600;
+const DEFAULT_GLOBAL_LIMIT = 100;
+
 const MAX_PASSWORD_LENGTH = 512;
+
+const GLOBAL_KEY = "mash:admin-login:global-failures";
 
 function send(res, status, data) {
   return res.status(status).json(data);
 }
 
-function safeCompare(a, b) {
-  const first = crypto
-    .createHash("sha256")
-    .update(a, "utf8")
-    .digest();
+function getGlobalLimit() {
+  const value = Number(process.env.ADMIN_LOGIN_GLOBAL_LIMIT);
 
-  const second = crypto
-    .createHash("sha256")
-    .update(b, "utf8")
-    .digest();
+  return Number.isSafeInteger(value) && value >= 10 && value <= 10000
+    ? value
+    : DEFAULT_GLOBAL_LIMIT;
+}
+
+/* ---------- password verification ---------- */
+
+function safeCompare(a, b) {
+  const first = crypto.createHash("sha256").update(a, "utf8").digest();
+  const second = crypto.createHash("sha256").update(b, "utf8").digest();
 
   return crypto.timingSafeEqual(first, second);
 }
 
-function getIP(req) {
-  const value = req.headers["x-forwarded-for"];
+// Format: scrypt$N$r$p$<salt base64url>$<hash base64url>
+// Generate with: node tools/hash-password.js
+function parseScryptHash(value) {
+  const parts = value.split("$");
 
-  if (typeof value !== "string" || value.length > 1024) {
-    return "unknown";
+  if (parts.length !== 6 || parts[0] !== "scrypt") return null;
+
+  const N = Number(parts[1]);
+  const r = Number(parts[2]);
+  const p = Number(parts[3]);
+
+  if (
+    !Number.isInteger(N) ||
+    N < 2 ** 14 ||
+    N > 2 ** 16 ||
+    (N & (N - 1)) !== 0
+  ) {
+    return null;
   }
 
-  const ip = value.split(",")[0].trim();
+  if (!Number.isInteger(r) || r < 8 || r > 16) return null;
+  if (!Number.isInteger(p) || p < 1 || p > 4) return null;
 
-  if (!ip || net.isIP(ip) === 0) {
-    return "unknown";
+  const salt = Buffer.from(parts[4], "base64url");
+  const hash = Buffer.from(parts[5], "base64url");
+
+  if (salt.length < 16 || hash.length < 32 || hash.length > 128) {
+    return null;
   }
 
-  return ip;
+  return { N, r, p, salt, hash };
 }
 
-async function checkLoginLimit(ip) {
-  const url = process.env.KV_REST_API_URL;
-  const token = process.env.KV_REST_API_TOKEN;
+// Prefers ADMIN_PASSWORD_HASH. Falls back to ADMIN_PASSWORD so nothing
+// breaks until you switch. Misconfiguration throws (fails closed).
+function getPasswordConfig() {
+  const hashEnv = process.env.ADMIN_PASSWORD_HASH;
 
-  if (
-    typeof url !== "string" ||
-    typeof token !== "string" ||
-    !url ||
-    !token
-  ) {
-    throw new Error("RATE_LIMIT_CONFIG_MISSING");
+  if (typeof hashEnv === "string" && hashEnv.trim() !== "") {
+    const parsed = parseScryptHash(hashEnv.trim());
+
+    if (!parsed) {
+      throw new Error("ADMIN_PASSWORD_HASH is invalid.");
+    }
+
+    return { type: "scrypt", ...parsed };
   }
 
-  let redisURL;
+  const plain = process.env.ADMIN_PASSWORD;
 
-  try {
-    redisURL = new URL(url);
-  } catch {
-    throw new Error("RATE_LIMIT_CONFIG_INVALID");
+  if (typeof plain === "string" && plain.length > 0) {
+    return { type: "plain", plain };
   }
 
-  if (
-    redisURL.protocol !== "https:" ||
-    redisURL.username ||
-    redisURL.password
-  ) {
-    throw new Error("RATE_LIMIT_CONFIG_INVALID");
+  throw new Error("Admin password is not configured.");
+}
+
+async function verifyPassword(input, config) {
+  if (config.type === "plain") {
+    return safeCompare(input, config.plain);
   }
 
-  const key = `mash:admin-login:${ip}`;
+  const derived = await scrypt(input, config.salt, config.hash.length, {
+    N: config.N,
+    r: config.r,
+    p: config.p,
+    maxmem: 128 * config.N * config.r * 2 + 1024 * 1024
+  });
 
-  const script = `
-    local count = redis.call("INCR", KEYS[1])
-    if count == 1 then
-      redis.call("EXPIRE", KEYS[1], ARGV[1])
-    end
-    return count
-  `;
-
-  const controller = new AbortController();
-  const timeout = setTimeout(
-    () => controller.abort(),
-    REDIS_TIMEOUT_MS
+  return (
+    derived.length === config.hash.length &&
+    crypto.timingSafeEqual(derived, config.hash)
   );
-
-  try {
-    const response = await fetch(redisURL.toString(), {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify([
-        "EVAL",
-        script,
-        "1",
-        key,
-        String(WINDOW_SECONDS)
-      ]),
-      signal: controller.signal
-    });
-
-    if (!response.ok) {
-      throw new Error("RATE_LIMIT_SERVICE_ERROR");
-    }
-
-    const result = await response.json();
-
-    if (
-      !result ||
-      typeof result !== "object" ||
-      result.error
-    ) {
-      throw new Error("RATE_LIMIT_INVALID_RESPONSE");
-    }
-
-    const count = Number(result.result);
-
-    if (
-      !Number.isSafeInteger(count) ||
-      count < 1
-    ) {
-      throw new Error("RATE_LIMIT_INVALID_RESPONSE");
-    }
-
-    return count <= MAX_ATTEMPTS;
-
-  } catch (error) {
-    if (error.name === "AbortError") {
-      throw new Error("RATE_LIMIT_TIMEOUT");
-    }
-
-    throw error;
-
-  } finally {
-    clearTimeout(timeout);
-  }
 }
+
+/* ---------- handler ---------- */
 
 module.exports = async function handler(req, res) {
   res.setHeader("Cache-Control", "no-store");
@@ -153,15 +130,11 @@ module.exports = async function handler(req, res) {
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
 
-    return send(res, 405, {
-      error: "Method not allowed."
-    });
+    return send(res, 405, { error: "Method not allowed." });
   }
 
   if (!checkSameOrigin(req)) {
-    return send(res, 403, {
-      error: "Forbidden origin."
-    });
+    return send(res, 403, { error: "Forbidden origin." });
   }
 
   const body = req.body;
@@ -178,63 +151,87 @@ module.exports = async function handler(req, res) {
     body.password.length > MAX_PASSWORD_LENGTH ||
     Buffer.byteLength(body.password, "utf8") > 2048
   ) {
-    return send(res, 400, {
-      error: "Invalid request."
-    });
+    return send(res, 400, { error: "Invalid request." });
   }
 
-  const adminPassword = process.env.ADMIN_PASSWORD;
+  let passwordConfig;
 
-  if (
-    typeof adminPassword !== "string" ||
-    adminPassword.length === 0
-  ) {
+  try {
+    passwordConfig = getPasswordConfig();
+  } catch (error) {
+    console.error("Admin auth config error:", error.message);
+
     return send(res, 503, {
       error: "Admin authentication is not configured."
     });
   }
 
-  try {
-    const ip = getIP(req);
-    const allowed = await checkLoginLimit(ip);
+  const ipKey = `mash:admin-login:${getClientKey(req)}`;
 
-    if (!allowed) {
+  // Rate limits run BEFORE the password is checked.
+  try {
+    const attempts = await hit(ipKey, IP_WINDOW_SECONDS);
+
+    if (attempts > MAX_ATTEMPTS_PER_IP) {
+      res.setHeader("Retry-After", String(IP_WINDOW_SECONDS));
+
       return send(res, 429, {
         error: "Too many login attempts. Try again later."
       });
     }
 
+    const globalFailures = await peek(GLOBAL_KEY);
+
+    if (globalFailures >= getGlobalLimit()) {
+      res.setHeader("Retry-After", String(GLOBAL_WINDOW_SECONDS));
+
+      return send(res, 429, {
+        error: "Too many login attempts. Try again later."
+      });
+    }
   } catch (error) {
-    console.error(
-      "Admin rate limit error:",
-      error.message
-    );
+    console.error("Admin rate limit error:", error.message);
 
     return send(res, 503, {
       error: "Login service temporarily unavailable."
     });
   }
 
-  if (!safeCompare(body.password, adminPassword)) {
-    return send(res, 401, {
-      error: "Incorrect password."
+  let valid = false;
+
+  try {
+    valid = await verifyPassword(body.password, passwordConfig);
+  } catch (error) {
+    console.error("Admin password check error:", error.message);
+
+    return send(res, 503, {
+      error: "Login service temporarily unavailable."
     });
   }
 
+  if (!valid) {
+    try {
+      await hit(GLOBAL_KEY, GLOBAL_WINDOW_SECONDS);
+    } catch (error) {
+      console.error("Admin global counter error:", error.message);
+    }
+
+    return send(res, 401, { error: "Incorrect password." });
+  }
+
+  // Successful login: don't let earlier typos lock the owner out.
   try {
-    const session = createSession();
-
-    setSessionCookie(res, session);
-
-    return send(res, 200, {
-      success: true
-    });
-
+    await reset(ipKey);
   } catch (error) {
-    console.error(
-      "Admin session error:",
-      error.message
-    );
+    console.error("Admin counter reset error:", error.message);
+  }
+
+  try {
+    setSessionCookie(res, createSession());
+
+    return send(res, 200, { success: true });
+  } catch (error) {
+    console.error("Admin session error:", error.message);
 
     return send(res, 503, {
       error: "Could not create admin session."
