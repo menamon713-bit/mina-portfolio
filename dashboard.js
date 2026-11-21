@@ -37,7 +37,8 @@
     deletingSkillId: null,
     activeSection: "overview",
     loadingMessages: false,
-    loadingSkills: false
+    loadingSkills: false,
+    redirectingToLogin: false
   };
 
 
@@ -45,40 +46,64 @@
   // 4. MESSAGE STATUS CONFIGURATION
   // ==========================================
 
-  const STATUS_LABELS = {
+  const STATUS_LABELS = Object.freeze({
     new: "جديدة",
     read: "مقروءة",
     replied: "تم الرد",
     archived: "مؤرشفة"
-  };
+  });
 
-  const STATUS_CLASSES = {
+  const STATUS_CLASSES = Object.freeze({
     new: "status-new",
     read: "status-read",
     replied: "status-replied",
     archived: "status-archived"
-  };
+  });
 
 
   // ==========================================
   // 5. API & GENERAL HELPERS
   // ==========================================
 
+  function redirectToLogin() {
+    if (state.redirectingToLogin) return;
+
+    state.redirectingToLogin = true;
+
+    window.location.replace("/admin.html");
+  }
+
+
   async function api(url, options = {}) {
-    const headers = {
-      Accept: "application/json",
-      ...(options.body ? {
-        "Content-Type": "application/json"
-      } : {}),
-      ...options.headers
+    const requestHeaders = {
+      Accept: "application/json"
     };
 
-    const response = await fetch(url, {
-      credentials: "same-origin",
-      cache: "no-store",
-      ...options,
-      headers
-    });
+    if (options.body !== undefined) {
+      requestHeaders["Content-Type"] = "application/json";
+    }
+
+    if (options.headers) {
+      Object.assign(requestHeaders, options.headers);
+    }
+
+    let response;
+
+    try {
+      response = await fetch(url, {
+        ...options,
+
+        // Security settings cannot be overridden by callers.
+        credentials: "same-origin",
+        cache: "no-store",
+
+        headers: requestHeaders
+      });
+    } catch {
+      throw new Error(
+        "تعذر الاتصال بالسيرفر. تحقق من اتصال الإنترنت."
+      );
+    }
 
     let data = {};
 
@@ -88,12 +113,24 @@
       data = {};
     }
 
-    if (response.status === 401 || response.status === 403) {
+    // 401 means the session is missing or invalid.
+    if (response.status === 401) {
       if (!url.includes("/logout")) {
-        window.location.replace("/admin.html");
+        redirectToLogin();
       }
 
-      throw new Error("انتهت الجلسة أو ليس لديك صلاحية.");
+      throw new Error(
+        "انتهت الجلسة أو لم يتم تسجيل الدخول."
+      );
+    }
+
+    // 403 is not necessarily an expired session.
+    // It may mean the server rejected the request origin.
+    if (response.status === 403) {
+      throw new Error(
+        data.error ||
+        "تم رفض الطلب بسبب عدم امتلاك الصلاحية."
+      );
     }
 
     if (!response.ok) {
@@ -106,6 +143,7 @@
 
     return data;
   }
+
 
   function escapeHTML(value) {
     return String(value ?? "").replace(
@@ -120,13 +158,18 @@
     );
   }
 
+
   function showToast(message, type = "success") {
     const toast = $("#adminToast");
 
     if (!toast) return;
 
-    toast.textContent = message;
-    toast.className = `admin-toast show ${type}`;
+    toast.textContent = String(message ?? "");
+
+    toast.className = `admin-toast show ${
+      type === "error" ? "error" : "success"
+    }`;
+
     toast.hidden = false;
 
     window.clearTimeout(showToast.timer);
@@ -137,7 +180,12 @@
     }, 3500);
   }
 
-  function setButtonLoading(button, loading, text = "جاري الحفظ...") {
+
+  function setButtonLoading(
+    button,
+    loading,
+    text = "جاري الحفظ..."
+  ) {
     if (!button) return;
 
     if (loading) {
@@ -150,17 +198,20 @@
     } else {
       button.disabled = false;
 
-      if (button.dataset.originalText) {
+      if (button.dataset.originalText !== undefined) {
         button.textContent = button.dataset.originalText;
         delete button.dataset.originalText;
       }
     }
   }
 
+
   function setVisible(element, visible) {
     if (!element) return;
+
     element.hidden = !visible;
   }
+
 
   function formatDate(value) {
     if (!value) return "—";
@@ -177,13 +228,16 @@
     }).format(date);
   }
 
+
   function getArray(value) {
     return Array.isArray(value) ? value : [];
   }
 
+
   function getStatusLabel(status) {
     return STATUS_LABELS[status] || "غير معروف";
   }
+
 
   function getStatusClass(status) {
     return STATUS_CLASSES[status] || "";
@@ -250,15 +304,18 @@
     closeSidebar();
   }
 
+
   function openSidebar() {
     $("#sidebar")?.classList.add("active");
     $("#sidebarOverlay")?.classList.add("active");
   }
 
+
   function closeSidebar() {
     $("#sidebar")?.classList.remove("active");
     $("#sidebarOverlay")?.classList.remove("active");
   }
+
 
   function initializeNavigation() {
     $$(".nav-item[data-section]").forEach((button) => {
@@ -273,8 +330,15 @@
       });
     });
 
-    $("#menuToggle")?.addEventListener("click", openSidebar);
-    $("#sidebarOverlay")?.addEventListener("click", closeSidebar);
+    $("#menuToggle")?.addEventListener(
+      "click",
+      openSidebar
+    );
+
+    $("#sidebarOverlay")?.addEventListener(
+      "click",
+      closeSidebar
+    );
 
     document.addEventListener("keydown", (event) => {
       if (event.key === "Escape") {
@@ -296,7 +360,7 @@
       const data = await api(API.session);
 
       if (data.authenticated !== true) {
-        window.location.replace("/admin.html");
+        redirectToLogin();
         return false;
       }
 
@@ -306,19 +370,27 @@
     }
   }
 
+
   async function logout() {
     const button = $("#logoutButton");
 
-    setButtonLoading(button, true, "جاري الخروج...");
+    if (button?.disabled) return;
+
+    setButtonLoading(
+      button,
+      true,
+      "جاري الخروج..."
+    );
 
     try {
       await api(API.logout, {
         method: "POST"
       });
 
-      window.location.replace("/admin.html");
+      redirectToLogin();
     } catch (error) {
       showToast(error.message, "error");
+
       setButtonLoading(button, false);
     }
   }
@@ -348,6 +420,7 @@
     }
   }
 
+
   async function loadProfile() {
     const status = $("#profileFormStatus");
 
@@ -359,7 +432,9 @@
       const data = await api(API.profile);
 
       if (!data.profile) {
-        throw new Error("لم يتم العثور على بيانات الملف الشخصي.");
+        throw new Error(
+          "لم يتم العثور على بيانات الملف الشخصي."
+        );
       }
 
       fillProfileForm(data.profile);
@@ -372,9 +447,12 @@
         status.textContent = error.message;
       }
 
-      showToast(error.message, "error");
+      if (!state.redirectingToLogin) {
+        showToast(error.message, "error");
+      }
     }
   }
+
 
   async function saveProfile(event) {
     event.preventDefault();
@@ -383,7 +461,7 @@
     const button = $("#saveProfile");
     const status = $("#profileFormStatus");
 
-    if (!form) return;
+    if (!form || button?.disabled) return;
 
     const payload = {
       full_name: $("#profileFullName")?.value.trim() || "",
@@ -397,7 +475,9 @@
 
     setButtonLoading(button, true);
 
-    if (status) status.textContent = "جاري الحفظ...";
+    if (status) {
+      status.textContent = "جاري الحفظ...";
+    }
 
     try {
       const data = await api(API.profile, {
@@ -419,7 +499,9 @@
         status.textContent = error.message;
       }
 
-      showToast(error.message, "error");
+      if (!state.redirectingToLogin) {
+        showToast(error.message, "error");
+      }
     } finally {
       setButtonLoading(button, false);
     }
@@ -429,8 +511,6 @@
   // ==========================================
   // 10. SKILLS MANAGEMENT
   // ==========================================
-
-  // Skill Statistics
 
   function updateSkillStats() {
     const total = state.skills.length;
@@ -446,16 +526,25 @@
     const hiddenElement = $("#skillsHiddenCount");
     const dashboardElement = $("#statSkills");
 
-    if (totalElement) totalElement.textContent = String(total);
-    if (visibleElement) visibleElement.textContent = String(visible);
-    if (hiddenElement) hiddenElement.textContent = String(hidden);
-    if (dashboardElement) dashboardElement.textContent = String(total);
+    if (totalElement) {
+      totalElement.textContent = String(total);
+    }
+
+    if (visibleElement) {
+      visibleElement.textContent = String(visible);
+    }
+
+    if (hiddenElement) {
+      hiddenElement.textContent = String(hidden);
+    }
+
+    if (dashboardElement) {
+      dashboardElement.textContent = String(total);
+    }
 
     updateDashboardStats();
   }
 
-
-  // Render Skills
 
   function renderSkills() {
     const tbody = $("#skillsTableBody");
@@ -466,7 +555,8 @@
       .trim()
       .toLowerCase();
 
-    const filter = $("#skillVisibilityFilter")?.value || "all";
+    const filter =
+      $("#skillVisibilityFilter")?.value || "all";
 
     const filtered = state.skills.filter((skill) => {
       const searchable = [
@@ -487,23 +577,37 @@
 
     setVisible($("#skillsLoading"), false);
     setVisible($("#skillsError"), false);
-    setVisible($("#skillsEmpty"), state.skills.length === 0);
+
+    setVisible(
+      $("#skillsEmpty"),
+      state.skills.length === 0
+    );
+
     setVisible(
       $("#skillsTableContainer"),
       state.skills.length > 0 && filtered.length > 0
     );
+
     setVisible(
       $("#skillsNoResults"),
       state.skills.length > 0 && filtered.length === 0
     );
 
     if (filtered.length === 0) {
-      tbody.innerHTML = "";
+      tbody.replaceChildren();
       return;
     }
 
     tbody.innerHTML = filtered.map((skill) => {
       const visible = skill.is_visible === true;
+
+      const progress = Math.max(
+        0,
+        Math.min(
+          100,
+          Number(skill.progress) || 0
+        )
+      );
 
       return `
         <tr data-skill-id="${escapeHTML(skill.id)}">
@@ -512,6 +616,7 @@
               <span class="skill-icon">
                 ${escapeHTML(skill.icon || "◇")}
               </span>
+
               <div>
                 <strong>${escapeHTML(skill.name_ar)}</strong>
                 <small>${escapeHTML(skill.name_en)}</small>
@@ -524,8 +629,9 @@
           <td>
             <div class="skill-progress">
               <span>${escapeHTML(skill.progress ?? 0)}%</span>
+
               <div class="progress-track">
-                <span data-progress="${Math.max(0, Math.min(100, Number(skill.progress) || 0))}"></span>
+                <span data-progress="${progress}"></span>
               </div>
             </div>
           </td>
@@ -533,7 +639,9 @@
           <td>${escapeHTML(skill.sort_order ?? 0)}</td>
 
           <td>
-            <span class="status-badge ${visible ? "status-visible" : "status-hidden"}">
+            <span class="status-badge ${
+              visible ? "status-visible" : "status-hidden"
+            }">
               ${visible ? "ظاهر" : "مخفي"}
             </span>
           </td>
@@ -566,9 +674,10 @@
       `;
     }).join("");
 
-    // CSP-safe: set widths through the CSSOM instead of an inline style attribute.
+    // Progress is numeric and clamped between 0 and 100.
     $$("[data-progress]", tbody).forEach((element) => {
-      element.style.width = `${element.dataset.progress}%`;
+      element.style.width =
+        `${element.dataset.progress}%`;
     });
 
     $$("[data-skill-edit]", tbody).forEach((button) => {
@@ -579,7 +688,10 @@
 
     $$("[data-skill-toggle]", tbody).forEach((button) => {
       button.addEventListener("click", () => {
-        toggleSkillVisibility(button.dataset.skillToggle, button);
+        toggleSkillVisibility(
+          button.dataset.skillToggle,
+          button
+        );
       });
     });
 
@@ -591,10 +703,10 @@
   }
 
 
-  // Load Skills
-
   async function loadSkills() {
-    if (state.loadingSkills) return;
+    if (state.loadingSkills || state.redirectingToLogin) {
+      return;
+    }
 
     state.loadingSkills = true;
 
@@ -605,12 +717,16 @@
     try {
       const data = await api(API.skills);
 
-      state.skills = getArray(data.skills || data.data);
+      state.skills = getArray(
+        data.skills || data.data
+      );
 
       state.skills.sort((a, b) => {
         return (
-          Number(a.sort_order || 0) - Number(b.sort_order || 0) ||
-          Number(a.id || 0) - Number(b.id || 0)
+          Number(a.sort_order || 0) -
+          Number(b.sort_order || 0) ||
+          Number(a.id || 0) -
+          Number(b.id || 0)
         );
       });
 
@@ -632,7 +748,9 @@
   }
 
 
-  // Skill Modal
+  // ==========================================
+  // SKILL MODAL
+  // ==========================================
 
   function openSkillModal(skill = null) {
     const modal = $("#skillModal");
@@ -651,6 +769,7 @@
     $("#skillCategory").value = skill?.category ?? "";
     $("#skillProgress").value = skill?.progress ?? 0;
     $("#skillSortOrder").value = skill?.sort_order ?? 0;
+
     $("#skillIsVisible").checked = skill
       ? skill.is_visible === true
       : true;
@@ -665,11 +784,14 @@
 
     const status = $("#skillFormStatus");
 
-    if (status) status.textContent = "";
+    if (status) {
+      status.textContent = "";
+    }
 
     setVisible(modal, true);
     modal.classList.add("active");
   }
+
 
   function closeSkillModal() {
     const modal = $("#skillModal");
@@ -678,8 +800,10 @@
 
     modal.classList.remove("active");
     setVisible(modal, false);
+
     state.editingSkillId = null;
   }
+
 
   function editSkill(id) {
     const skill = state.skills.find(
@@ -695,13 +819,17 @@
   }
 
 
-  // Save Skill
+  // ==========================================
+  // SAVE SKILL
+  // ==========================================
 
   async function saveSkill(event) {
     event.preventDefault();
 
     const button = $("#saveSkillButton");
     const status = $("#skillFormStatus");
+
+    if (button?.disabled) return;
 
     const id = $("#skillId")?.value;
 
@@ -720,7 +848,11 @@
       payload.progress < 0 ||
       payload.progress > 100
     ) {
-      if (status) status.textContent = "قيمة التقدم يجب أن تكون بين 0 و100.";
+      if (status) {
+        status.textContent =
+          "قيمة التقدم يجب أن تكون بين 0 و100.";
+      }
+
       return;
     }
 
@@ -728,25 +860,34 @@
       !Number.isSafeInteger(payload.sort_order) ||
       payload.sort_order < 0
     ) {
-      if (status) status.textContent = "قيمة الترتيب غير صحيحة.";
+      if (status) {
+        status.textContent = "قيمة الترتيب غير صحيحة.";
+      }
+
       return;
     }
 
     setButtonLoading(button, true);
 
-    if (status) status.textContent = "جاري الحفظ...";
+    if (status) {
+      status.textContent = "جاري الحفظ...";
+    }
 
     try {
       const editing = Boolean(id);
 
       await api(API.skills, {
         method: editing ? "PATCH" : "POST",
+
         body: JSON.stringify(
-          editing ? { ...payload, id } : payload
+          editing
+            ? { ...payload, id }
+            : payload
         )
       });
 
       closeSkillModal();
+
       await loadSkills();
 
       showToast(
@@ -755,28 +896,38 @@
           : "تمت إضافة المهارة بنجاح."
       );
     } catch (error) {
-      if (status) status.textContent = error.message;
-      showToast(error.message, "error");
+      if (status) {
+        status.textContent = error.message;
+      }
+
+      if (!state.redirectingToLogin) {
+        showToast(error.message, "error");
+      }
     } finally {
       setButtonLoading(button, false);
     }
   }
 
 
-  // Toggle Skill Visibility
+  // ==========================================
+  // TOGGLE SKILL VISIBILITY
+  // ==========================================
 
   async function toggleSkillVisibility(id, button) {
     const skill = state.skills.find(
       (item) => String(item.id) === String(id)
     );
 
-    if (!skill) return;
+    if (!skill || button?.disabled) return;
 
-    if (button) button.disabled = true;
+    if (button) {
+      button.disabled = true;
+    }
 
     try {
       await api(API.skills, {
         method: "PATCH",
+
         body: JSON.stringify({
           id: skill.id,
           is_visible: !skill.is_visible
@@ -787,14 +938,20 @@
 
       showToast("تم تحديث حالة ظهور المهارة.");
     } catch (error) {
-      showToast(error.message, "error");
+      if (!state.redirectingToLogin) {
+        showToast(error.message, "error");
+      }
     } finally {
-      if (button) button.disabled = false;
+      if (button) {
+        button.disabled = false;
+      }
     }
   }
 
 
-  // Delete Skill
+  // ==========================================
+  // DELETE SKILL
+  // ==========================================
 
   function openDeleteSkillModal(id) {
     const skill = state.skills.find(
@@ -808,7 +965,10 @@
     const title = $("#deleteSkillTitle");
 
     if (title) {
-      title.textContent = skill.name_ar || skill.name_en || "هذه المهارة";
+      title.textContent =
+        skill.name_ar ||
+        skill.name_en ||
+        "هذه المهارة";
     }
 
     const hiddenId = $("#deleteSkillId");
@@ -823,6 +983,7 @@
     modal?.classList.add("active");
   }
 
+
   function closeDeleteSkillModal() {
     const modal = $("#deleteSkillModal");
 
@@ -830,30 +991,42 @@
 
     modal.classList.remove("active");
     setVisible(modal, false);
+
     state.deletingSkillId = null;
   }
+
 
   async function confirmDeleteSkill() {
     if (!state.deletingSkillId) return;
 
     const button = $("#confirmDeleteSkill");
 
-    setButtonLoading(button, true, "جاري الحذف...");
+    if (button?.disabled) return;
+
+    setButtonLoading(
+      button,
+      true,
+      "جاري الحذف..."
+    );
 
     try {
       await api(API.skills, {
         method: "DELETE",
+
         body: JSON.stringify({
           id: state.deletingSkillId
         })
       });
 
       closeDeleteSkillModal();
+
       await loadSkills();
 
       showToast("تم حذف المهارة.");
     } catch (error) {
-      showToast(error.message, "error");
+      if (!state.redirectingToLogin) {
+        showToast(error.message, "error");
+      }
     } finally {
       setButtonLoading(button, false);
     }
@@ -863,8 +1036,6 @@
   // ==========================================
   // 11. MESSAGES MANAGEMENT
   // ==========================================
-
-  // Recent Messages
 
   function renderRecentMessages() {
     const tbody = $("#dashboardMessages");
@@ -879,6 +1050,7 @@
           <td colspan="5">لا توجد رسائل حتى الآن.</td>
         </tr>
       `;
+
       return;
     }
 
@@ -887,18 +1059,18 @@
         <td>${escapeHTML(message.name)}</td>
         <td>${escapeHTML(message.email)}</td>
         <td>${escapeHTML(message.subject || "بدون موضوع")}</td>
+
         <td>
           <span class="status-badge ${getStatusClass(message.status)}">
             ${escapeHTML(getStatusLabel(message.status))}
           </span>
         </td>
+
         <td>${escapeHTML(formatDate(message.created_at))}</td>
       </tr>
     `).join("");
   }
 
-
-  // Render Messages
 
   function renderMessages() {
     const tbody = $("#messagesTableBody");
@@ -909,7 +1081,8 @@
       .trim()
       .toLowerCase();
 
-    const filter = $("#messageStatusFilter")?.value || "all";
+    const filter =
+      $("#messageStatusFilter")?.value || "all";
 
     const filtered = state.messages.filter((message) => {
       const searchable = [
@@ -922,7 +1095,8 @@
       const matchesSearch = searchable.includes(search);
 
       const matchesStatus =
-        filter === "all" || message.status === filter;
+        filter === "all" ||
+        message.status === filter;
 
       return matchesSearch && matchesStatus;
     });
@@ -935,6 +1109,7 @@
           </td>
         </tr>
       `;
+
       return;
     }
 
@@ -943,12 +1118,15 @@
         <td>${escapeHTML(message.name)}</td>
         <td>${escapeHTML(message.email)}</td>
         <td>${escapeHTML(message.subject || "بدون موضوع")}</td>
+
         <td>
           <span class="status-badge ${getStatusClass(message.status)}">
             ${escapeHTML(getStatusLabel(message.status))}
           </span>
         </td>
+
         <td>${escapeHTML(formatDate(message.created_at))}</td>
+
         <td>
           <button
             type="button"
@@ -967,10 +1145,10 @@
   }
 
 
-  // Load Messages
-
   async function loadMessages() {
-    if (state.loadingMessages) return;
+    if (state.loadingMessages || state.redirectingToLogin) {
+      return;
+    }
 
     state.loadingMessages = true;
 
@@ -986,23 +1164,30 @@
       const tbody = $("#messagesTableBody");
 
       if (tbody) {
-        tbody.innerHTML = `
-          <tr>
-            <td colspan="6">
-              ${escapeHTML(error.message)}
-            </td>
-          </tr>
-        `;
+        tbody.textContent = "";
+
+        const row = document.createElement("tr");
+        const cell = document.createElement("td");
+
+        cell.colSpan = 6;
+        cell.textContent = error.message;
+
+        row.appendChild(cell);
+        tbody.appendChild(row);
       }
 
-      showToast(error.message, "error");
+      if (!state.redirectingToLogin) {
+        showToast(error.message, "error");
+      }
     } finally {
       state.loadingMessages = false;
     }
   }
 
 
-  // Message Details Modal
+  // ==========================================
+  // MESSAGE DETAILS MODAL
+  // ==========================================
 
   function openMessage(id) {
     const message = state.messages.find(
@@ -1052,13 +1237,26 @@
 
     if (actions) {
       actions.innerHTML = `
-        <label for="messageStatusSelect">حالة الرسالة</label>
+        <label for="messageStatusSelect">
+          حالة الرسالة
+        </label>
 
         <select id="messageStatusSelect">
-          <option value="new" ${message.status === "new" ? "selected" : ""}>جديدة</option>
-          <option value="read" ${message.status === "read" ? "selected" : ""}>مقروءة</option>
-          <option value="replied" ${message.status === "replied" ? "selected" : ""}>تم الرد</option>
-          <option value="archived" ${message.status === "archived" ? "selected" : ""}>مؤرشفة</option>
+          <option value="new" ${
+            message.status === "new" ? "selected" : ""
+          }>جديدة</option>
+
+          <option value="read" ${
+            message.status === "read" ? "selected" : ""
+          }>مقروءة</option>
+
+          <option value="replied" ${
+            message.status === "replied" ? "selected" : ""
+          }>تم الرد</option>
+
+          <option value="archived" ${
+            message.status === "archived" ? "selected" : ""
+          }>مؤرشفة</option>
         </select>
 
         <button type="button" id="saveMessageStatus">
@@ -1078,6 +1276,7 @@
     modal?.classList.add("active");
   }
 
+
   function closeMessageModal() {
     const modal = $("#messageModal");
 
@@ -1085,18 +1284,23 @@
 
     modal.classList.remove("active");
     setVisible(modal, false);
+
     state.currentMessage = null;
   }
 
 
-  // Update Message Status
+  // ==========================================
+  // UPDATE MESSAGE STATUS
+  // ==========================================
 
   async function updateMessageStatus() {
     const message = state.currentMessage;
     const select = $("#messageStatusSelect");
     const button = $("#saveMessageStatus");
 
-    if (!message || !select) return;
+    if (!message || !select || button?.disabled) {
+      return;
+    }
 
     const status = select.value;
 
@@ -1110,6 +1314,7 @@
     try {
       await api(API.messages, {
         method: "PATCH",
+
         body: JSON.stringify({
           id: message.id,
           status
@@ -1122,7 +1327,9 @@
 
       showToast("تم تحديث حالة الرسالة.");
     } catch (error) {
-      showToast(error.message, "error");
+      if (!state.redirectingToLogin) {
+        showToast(error.message, "error");
+      }
     } finally {
       setButtonLoading(button, false);
     }
@@ -1134,7 +1341,10 @@
   // ==========================================
 
   function initializeEvents() {
-    $("#logoutButton")?.addEventListener("click", logout);
+    $("#logoutButton")?.addEventListener(
+      "click",
+      logout
+    );
 
     $("#profileForm")?.addEventListener(
       "submit",
@@ -1146,13 +1356,15 @@
       loadProfile
     );
 
-    $("#addSkillButton")?.addEventListener("click", () => {
-      openSkillModal();
-    });
+    $("#addSkillButton")?.addEventListener(
+      "click",
+      () => openSkillModal()
+    );
 
-    $("#addFirstSkillButton")?.addEventListener("click", () => {
-      openSkillModal();
-    });
+    $("#addFirstSkillButton")?.addEventListener(
+      "click",
+      () => openSkillModal()
+    );
 
     $("#skillForm")?.addEventListener(
       "submit",
@@ -1251,6 +1463,8 @@
   // ==========================================
 
   async function refreshDashboard() {
+    if (state.redirectingToLogin) return;
+
     await Promise.all([
       loadMessages(),
       loadSkills()
@@ -1263,14 +1477,19 @@
   // ==========================================
 
   async function init() {
+    // Never initialize dashboard features before authentication.
     const authenticated = await checkSession();
 
-    if (!authenticated) return;
+    if (!authenticated || state.redirectingToLogin) {
+      return;
+    }
 
     const year = $("#currentYear");
 
     if (year) {
-      year.textContent = String(new Date().getFullYear());
+      year.textContent = String(
+        new Date().getFullYear()
+      );
     }
 
     initializeNavigation();
@@ -1291,4 +1510,5 @@
   // ==========================================
 
   init();
+
 })();
