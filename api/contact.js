@@ -6,6 +6,10 @@ const { checkSameOrigin } = require("./_lib/admin-auth");
 const { getClientKey } = require("./_lib/client-ip");
 const { consume } = require("./_lib/rate-limit");
 
+/* =====================================================
+   CONFIGURATION
+===================================================== */
+
 const MAX_REQUESTS_PER_IP = 5;
 const IP_WINDOW_SECONDS = 600;
 
@@ -34,9 +38,17 @@ const SINGLE_LINE_BAD = /[\u0000-\u001F\u007F\u2028\u2029]/;
 const MESSAGE_BAD = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+/* =====================================================
+   RESPONSE
+===================================================== */
+
 function send(res, status, payload) {
   return res.status(status).json(payload);
 }
+
+/* =====================================================
+   GLOBAL RATE LIMIT
+===================================================== */
 
 function getGlobalLimit() {
   const raw = process.env.CONTACT_GLOBAL_LIMIT;
@@ -51,13 +63,23 @@ function getGlobalLimit() {
 
   const value = Number(raw);
 
-  return Number.isSafeInteger(value) && value >= 10 && value <= 10000
+  return Number.isSafeInteger(value) &&
+    value >= 10 &&
+    value <= 10000
     ? value
     : DEFAULT_GLOBAL_LIMIT;
 }
 
+/* =====================================================
+   BODY VALIDATION
+===================================================== */
+
 function validateBody(body) {
-  if (!body || typeof body !== "object" || Array.isArray(body)) {
+  if (
+    !body ||
+    typeof body !== "object" ||
+    Array.isArray(body)
+  ) {
     return "Invalid request body.";
   }
 
@@ -67,12 +89,23 @@ function validateBody(body) {
     }
   }
 
-  if (body.website !== undefined && typeof body.website !== "string") {
+  if (
+    body.website !== undefined &&
+    typeof body.website !== "string"
+  ) {
     return "Invalid submission.";
   }
 
-  for (const field of ["name", "email", "subject", "message"]) {
-    if (body[field] !== undefined && typeof body[field] !== "string") {
+  for (const field of [
+    "name",
+    "email",
+    "subject",
+    "message"
+  ]) {
+    if (
+      body[field] !== undefined &&
+      typeof body[field] !== "string"
+    ) {
       return "Invalid field type.";
     }
   }
@@ -86,11 +119,22 @@ function validateBody(body) {
     return "Name, email and message are required.";
   }
 
-  if (name.length > MAX_LENGTHS.name) return "Name is too long.";
-  if (email.length > MAX_LENGTHS.email) return "Email is too long.";
-  if (subject.length > MAX_LENGTHS.subject) return "Subject is too long.";
+  if (name.length > MAX_LENGTHS.name) {
+    return "Name is too long.";
+  }
 
-  if (message.length < 10 || message.length > MAX_LENGTHS.message) {
+  if (email.length > MAX_LENGTHS.email) {
+    return "Email is too long.";
+  }
+
+  if (subject.length > MAX_LENGTHS.subject) {
+    return "Subject is too long.";
+  }
+
+  if (
+    message.length < 10 ||
+    message.length > MAX_LENGTHS.message
+  ) {
     return "Message length is invalid.";
   }
 
@@ -110,37 +154,26 @@ function validateBody(body) {
   return null;
 }
 
-module.exports = async function handler(req, res) {
-  res.setHeader("Cache-Control", "no-store");
-  res.setHeader("X-Content-Type-Options", "nosniff");
+/* =====================================================
+   REQUEST BODY SIZE
+===================================================== */
 
-  if (req.method !== "POST") {
-    res.setHeader("Allow", "POST");
-    return send(res, 405, { error: "Method not allowed." });
-  }
-
-  if (!checkSameOrigin(req)) {
-    return send(res, 403, { error: "Forbidden origin." });
-  }
-
-  const contentType = req.headers["content-type"] || "";
-  const mimeType = contentType.split(";")[0].trim().toLowerCase();
-
-  if (mimeType !== "application/json") {
-    return send(res, 415, {
-      error: "Content-Type must be application/json."
-    });
-  }
-
+function validateBodySize(req) {
   const rawLength = req.headers["content-length"];
 
   if (rawLength !== undefined) {
     if (!/^\d+$/.test(String(rawLength))) {
-      return send(res, 400, { error: "Invalid Content-Length." });
+      return {
+        status: 400,
+        error: "Invalid Content-Length."
+      };
     }
 
     if (Number(rawLength) > MAX_BODY_BYTES) {
-      return send(res, 413, { error: "Request body is too large." });
+      return {
+        status: 413,
+        error: "Request body is too large."
+      };
     }
   }
 
@@ -149,29 +182,99 @@ module.exports = async function handler(req, res) {
   try {
     serializedBody = JSON.stringify(req.body);
   } catch {
-    return send(res, 400, { error: "Invalid request body." });
+    return {
+      status: 400,
+      error: "Invalid request body."
+    };
   }
 
   if (
     !serializedBody ||
     Buffer.byteLength(serializedBody, "utf8") > MAX_BODY_BYTES
   ) {
-    return send(res, 413, { error: "Request body is too large." });
+    return {
+      status: 413,
+      error: "Request body is too large."
+    };
   }
+
+  return null;
+}
+
+/* =====================================================
+   HANDLER
+===================================================== */
+
+module.exports = async function handler(req, res) {
+  res.setHeader("Cache-Control", "no-store");
+  res.setHeader("X-Content-Type-Options", "nosniff");
+
+  /* METHOD */
+
+  if (req.method !== "POST") {
+    res.setHeader("Allow", "POST");
+
+    return send(res, 405, {
+      error: "Method not allowed."
+    });
+  }
+
+  /* SAME ORIGIN */
+
+  if (!checkSameOrigin(req)) {
+    return send(res, 403, {
+      error: "Forbidden origin."
+    });
+  }
+
+  /* CONTENT TYPE */
+
+  const contentType = req.headers["content-type"] || "";
+  const mimeType = contentType
+    .split(";")[0]
+    .trim()
+    .toLowerCase();
+
+  if (mimeType !== "application/json") {
+    return send(res, 415, {
+      error: "Content-Type must be application/json."
+    });
+  }
+
+  /* BODY SIZE */
+
+  const sizeError = validateBodySize(req);
+
+  if (sizeError) {
+    return send(res, sizeError.status, {
+      error: sizeError.error
+    });
+  }
+
+  /* DATABASE CONFIGURATION */
 
   const databaseUrl = process.env.DATABASE_URL;
 
-  if (typeof databaseUrl !== "string" || !databaseUrl) {
+  if (
+    typeof databaseUrl !== "string" ||
+    !databaseUrl.trim()
+  ) {
     return send(res, 503, {
       error: "Contact service is temporarily unavailable."
     });
   }
 
+  /* CLIENT IP */
+
   const clientIP = getClientKey(req);
 
   if (!clientIP) {
-    return send(res, 400, { error: "Invalid client address." });
+    return send(res, 400, {
+      error: "Invalid client address."
+    });
   }
+
+  /* IP RATE LIMIT */
 
   try {
     const ipResult = await consume(
@@ -181,26 +284,34 @@ module.exports = async function handler(req, res) {
     );
 
     if (!ipResult.allowed) {
-      res.setHeader("Retry-After", String(ipResult.retryAfter));
+      res.setHeader(
+        "Retry-After",
+        String(ipResult.retryAfter)
+      );
 
       return send(res, 429, {
         error: "Too many requests. Please try again later."
       });
     }
   } catch (error) {
-    console.error("Contact IP rate limit failed:", error.message);
+    console.error(
+      "Contact IP rate limit failed:",
+      error.message
+    );
 
     return send(res, 503, {
       error: "Contact service is temporarily unavailable."
     });
   }
 
+  /* HONEYPOT */
+
   const body = req.body;
 
-  // Honeypot: do not consume the global message quota.
   if (
     body &&
     typeof body === "object" &&
+    !Array.isArray(body) &&
     typeof body.website === "string" &&
     body.website.trim() !== ""
   ) {
@@ -210,18 +321,28 @@ module.exports = async function handler(req, res) {
     });
   }
 
+  /* INPUT VALIDATION */
+
   const validationError = validateBody(body);
 
   if (validationError) {
-    return send(res, 400, { error: validationError });
+    return send(res, 400, {
+      error: validationError
+    });
   }
+
+  /* NORMALIZE INPUT */
 
   const name = body.name.trim();
   const email = body.email.trim();
   const subject = (body.subject || "").trim();
-  const message = body.message.trim().replace(/\r\n?/g, "\n");
 
-  // Only valid submissions consume the global quota.
+  const message = body.message
+    .trim()
+    .replace(/\r\n?/g, "\n");
+
+  /* GLOBAL RATE LIMIT */
+
   try {
     const globalResult = await consume(
       GLOBAL_KEY,
@@ -230,19 +351,27 @@ module.exports = async function handler(req, res) {
     );
 
     if (!globalResult.allowed) {
-      res.setHeader("Retry-After", String(globalResult.retryAfter));
+      res.setHeader(
+        "Retry-After",
+        String(globalResult.retryAfter)
+      );
 
       return send(res, 429, {
         error: "Too many requests. Please try again later."
       });
     }
   } catch (error) {
-    console.error("Contact global rate limit failed:", error.message);
+    console.error(
+      "Contact global rate limit failed:",
+      error.message
+    );
 
     return send(res, 503, {
       error: "Contact service is temporarily unavailable."
     });
   }
+
+  /* DATABASE INSERT */
 
   try {
     const sql = neon(databaseUrl);
@@ -259,7 +388,10 @@ module.exports = async function handler(req, res) {
       message: "Message received successfully."
     });
   } catch (error) {
-    console.error("Contact database operation failed:", error.message);
+    console.error(
+      "Contact database operation failed:",
+      error.message
+    );
 
     return send(res, 500, {
       error: "Could not save your message."
