@@ -4,6 +4,8 @@ const crypto = require("crypto");
 
 const COOKIE_NAME = "mash_admin_session";
 const SESSION_SECONDS = 8 * 60 * 60;
+const MAX_TOKEN_LENGTH = 2048;
+const MAX_COOKIE_HEADER_LENGTH = 16384;
 
 function getSecret() {
   const secret = process.env.ADMIN_SESSION_SECRET;
@@ -43,7 +45,8 @@ function createSession() {
 function verifySession(token) {
   if (
     typeof token !== "string" ||
-    token.length > 2048
+    token.length === 0 ||
+    token.length > MAX_TOKEN_LENGTH
   ) {
     return false;
   }
@@ -64,8 +67,8 @@ function verifySession(token) {
   }
 
   try {
-    const expected = Buffer.from(sign(payload));
-    const received = Buffer.from(signature);
+    const expected = Buffer.from(sign(payload), "ascii");
+    const received = Buffer.from(signature, "ascii");
 
     if (
       expected.length !== received.length ||
@@ -74,13 +77,23 @@ function verifySession(token) {
       return false;
     }
 
-    const data = JSON.parse(
-      Buffer.from(payload, "base64url").toString("utf8")
-    );
+    const decoded = Buffer.from(payload, "base64url");
+
+    if (decoded.toString("base64url") !== payload) {
+      return false;
+    }
+
+    const data = JSON.parse(decoded.toString("utf8"));
+
+    if (
+      data === null ||
+      typeof data !== "object" ||
+      Array.isArray(data)
+    ) {
+      return false;
+    }
 
     return (
-      data !== null &&
-      typeof data === "object" &&
       Number.isSafeInteger(data.exp) &&
       data.exp > Date.now() &&
       typeof data.nonce === "string" &&
@@ -92,11 +105,16 @@ function verifySession(token) {
 }
 
 function getCookie(req) {
-  const header = req.headers.cookie || "";
+  const header = req?.headers?.cookie;
 
-  if (typeof header !== "string") {
+  if (
+    typeof header !== "string" ||
+    header.length > MAX_COOKIE_HEADER_LENGTH
+  ) {
     return null;
   }
+
+  let session = null;
 
   for (const item of header.split(";")) {
     const index = item.indexOf("=");
@@ -106,15 +124,28 @@ function getCookie(req) {
     const name = item.slice(0, index).trim();
     const value = item.slice(index + 1).trim();
 
-    if (name === COOKIE_NAME) {
-      return value;
+    if (name !== COOKIE_NAME) continue;
+
+    // Reject duplicate session cookies.
+    if (session !== null) {
+      return null;
     }
+
+    session = value;
   }
 
-  return null;
+  return session;
 }
 
 function setSessionCookie(res, token) {
+  if (
+    typeof token !== "string" ||
+    token.length > MAX_TOKEN_LENGTH ||
+    !verifySession(token)
+  ) {
+    throw new Error("Invalid session token.");
+  }
+
   res.setHeader(
     "Set-Cookie",
     `${COOKIE_NAME}=${token}; HttpOnly; Secure; SameSite=Strict; Path=/api/admin; Max-Age=${SESSION_SECONDS}`
@@ -131,11 +162,17 @@ function clearSessionCookie(res) {
 function requireAdmin(req, res) {
   const token = getCookie(req);
 
-  if (!verifySession(token)) {
-    res.setHeader(
-      "Set-Cookie",
-      `${COOKIE_NAME}=; HttpOnly; Secure; SameSite=Strict; Path=/api/admin; Max-Age=0`
-    );
+  let authenticated = false;
+
+  try {
+    authenticated = verifySession(token);
+  } catch {
+    authenticated = false;
+  }
+
+  if (!authenticated) {
+    res.setHeader("Cache-Control", "no-store");
+    clearSessionCookie(res);
 
     res.status(401).json({
       error: "Unauthorized."
@@ -148,49 +185,28 @@ function requireAdmin(req, res) {
 }
 
 function checkSameOrigin(req) {
-  const origin = req.headers.origin;
+  const origin = req?.headers?.origin;
+  const host = req?.headers?.host;
 
   if (
     typeof origin !== "string" ||
-    origin.length > 2048
-  ) {
-    return false;
-  }
-
-  const forwardedHost =
-    req.headers["x-forwarded-host"];
-
-  const host =
-    typeof forwardedHost === "string"
-      ? forwardedHost.split(",")[0].trim()
-      : req.headers.host;
-
-  if (
+    origin.length > 2048 ||
     typeof host !== "string" ||
     !host ||
-    host.includes(",")
+    host.length > 255 ||
+    host.includes(",") ||
+    /\s/.test(host)
   ) {
-    return false;
-  }
-
-  const forwardedProto =
-    req.headers["x-forwarded-proto"];
-
-  const protocol =
-    typeof forwardedProto === "string"
-      ? forwardedProto.split(",")[0].trim()
-      : "https";
-
-  if (!["https", "http"].includes(protocol)) {
     return false;
   }
 
   try {
     const originURL = new URL(origin);
+    const requestURL = new URL(`https://${host}`);
 
     return (
-      originURL.protocol === `${protocol}:` &&
-      originURL.host.toLowerCase() === host.toLowerCase() &&
+      originURL.protocol === "https:" &&
+      originURL.origin === requestURL.origin &&
       originURL.username === "" &&
       originURL.password === "" &&
       originURL.pathname === "/" &&
