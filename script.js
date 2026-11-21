@@ -8,6 +8,7 @@
   "use strict";
 
   /* HELPERS */
+
   const $ = (selector, root = document) =>
     root.querySelector(selector);
 
@@ -36,6 +37,7 @@
   };
 
   /* TRANSLATIONS */
+
   const translations = {
     ar: {
       brandCaption: "DEVELOPER PORTFOLIO",
@@ -116,7 +118,8 @@
       github: "مستودع GitHub",
       noProjects: "لا توجد مشاريع منشورة حالياً.",
       projectsLoading: "جارٍ تحميل المشاريع...",
-      projectsError: "تعذر تحميل المشاريع حالياً. حاول تحديث الصفحة.",
+      projectsError: "تعذر تحميل المشاريع حالياً.",
+      retry: "إعادة المحاولة",
 
       contactKicker: "لنتواصل",
       contactTitle: "تواصل معي",
@@ -239,7 +242,9 @@
       github: "GitHub Repository",
       noProjects: "There are no published projects yet.",
       projectsLoading: "Loading projects...",
-      projectsError: "Unable to load projects. Please refresh the page.",
+      projectsError:
+        "Unable to load projects. Please try again.",
+      retry: "Retry",
 
       contactKicker: "Get in Touch",
       contactTitle: "Contact Me",
@@ -278,10 +283,13 @@
   };
 
   /* PROJECTS STATE */
+
   const projectsGrid = $("#projectsGrid");
   const projectsStatus = $("#projectsStatus");
+
   let projectsData = [];
   let projectsLoaded = false;
+  let projectsLoading = false;
 
   function currentDictionary() {
     return translations[html.lang] || translations.ar;
@@ -296,7 +304,10 @@
   function makeElement(tag, className, text) {
     const element = document.createElement(tag);
 
-    if (className) element.className = className;
+    if (className) {
+      element.className = className;
+    }
+
     if (text !== undefined && text !== null) {
       element.textContent = String(text);
     }
@@ -305,12 +316,17 @@
   }
 
   function safeHttpUrl(value) {
-    if (typeof value !== "string" || !value.trim()) return "";
+    if (typeof value !== "string" || !value.trim()) {
+      return "";
+    }
 
     try {
       const url = new URL(value, window.location.origin);
 
-      if (url.protocol !== "https:" && url.protocol !== "http:") {
+      if (
+        url.protocol !== "https:" &&
+        url.protocol !== "http:"
+      ) {
         return "";
       }
 
@@ -321,19 +337,24 @@
   }
 
   function safeImageUrl(value) {
-    if (typeof value !== "string" || !value.trim()) return "";
+    if (typeof value !== "string" || !value.trim()) {
+      return "";
+    }
 
     try {
       const url = new URL(value, window.location.origin);
 
       if (
-        url.origin !== window.location.origin &&
-        url.protocol !== "https:"
+        url.protocol !== "https:" &&
+        url.protocol !== "http:"
       ) {
         return "";
       }
 
-      if (url.protocol !== "https:" && url.protocol !== "http:") {
+      if (
+        url.origin !== window.location.origin &&
+        url.protocol !== "https:"
+      ) {
         return "";
       }
 
@@ -351,46 +372,73 @@
       const image = document.createElement("img");
 
       image.src = imageUrl;
-      image.alt = currentProjectText(project, "title_ar", "title_en");
+      image.alt = currentProjectText(
+        project,
+        "title_ar",
+        "title_en"
+      );
       image.loading = "lazy";
       image.onerror = () => wrapper.remove();
 
       wrapper.appendChild(image);
+
       return wrapper;
     }
 
-    const visualClass = typeof project.visual_style === "string" &&
+    const visualClass =
+      typeof project.visual_style === "string" &&
       /^[a-z0-9_-]{1,60}$/i.test(project.visual_style)
-      ? project.visual_style
-      : "project-visual-default";
+        ? project.visual_style
+        : "project-visual-default";
 
-    const visual = makeElement("div", `project-visual ${visualClass}`);
-    const icon = makeElement("span", "project-visual-icon", "⌘");
+    const visual = makeElement(
+      "div",
+      `project-visual ${visualClass}`
+    );
+
+    const icon = makeElement(
+      "span",
+      "project-visual-icon",
+      "⌘"
+    );
+
     icon.setAttribute("aria-hidden", "true");
 
     const category = makeElement(
       "span",
       "project-category",
-      currentProjectText(project, "category_ar", "category_en")
+      currentProjectText(
+        project,
+        "category_ar",
+        "category_en"
+      )
     );
 
     visual.append(icon, category);
+
     return visual;
   }
 
   function makeProjectActions(project) {
     const actions = makeElement("div", "project-actions");
+
     const liveUrl = safeHttpUrl(project.live_url);
     const githubUrl = safeHttpUrl(project.github_url);
     const dictionary = currentDictionary();
 
     if (liveUrl) {
       const link = makeElement("a", "project-link");
+
       link.href = liveUrl;
       link.target = "_blank";
       link.rel = "noopener noreferrer";
 
-      const label = makeElement("span", "", dictionary.liveDemo);
+      const label = makeElement(
+        "span",
+        "",
+        dictionary.liveDemo
+      );
+
       const arrow = makeElement("span", "", "↗");
       arrow.setAttribute("aria-hidden", "true");
 
@@ -400,11 +448,17 @@
 
     if (githubUrl) {
       const link = makeElement("a", "project-link");
+
       link.href = githubUrl;
       link.target = "_blank";
       link.rel = "noopener noreferrer";
 
-      const label = makeElement("span", "", dictionary.github);
+      const label = makeElement(
+        "span",
+        "",
+        dictionary.github
+      );
+
       const arrow = makeElement("span", "", "↗");
       arrow.setAttribute("aria-hidden", "true");
 
@@ -423,41 +477,50 @@
     const details = $("#projectModalDetails");
     const actions = $("#projectModalActions");
 
-    if (!modal || !title || !category || !intro || !details || !actions) {
+    if (
+      !modal ||
+      !title ||
+      !category ||
+      !intro ||
+      !details ||
+      !actions
+    ) {
       return;
     }
 
     const ar = html.lang === "ar";
-    const projectTitle = currentProjectText(
+
+    title.textContent = currentProjectText(
       project,
       "title_ar",
       "title_en"
     );
 
-    const projectDescription = currentProjectText(
-      project,
-      "description_ar",
-      "description_en"
-    );
-
-    const projectCategory = currentProjectText(
+    category.textContent = currentProjectText(
       project,
       "category_ar",
       "category_en"
     );
 
-    title.textContent = projectTitle;
-    category.textContent = projectCategory;
-    intro.textContent = projectDescription;
+    intro.textContent = currentProjectText(
+      project,
+      "description_ar",
+      "description_en"
+    );
+
     details.replaceChildren();
     actions.replaceChildren();
 
-    const rawDetails = ar ? project.details_ar : project.details_en;
-    const detailObject = rawDetails &&
+    const rawDetails = ar
+      ? project.details_ar
+      : project.details_en;
+
+    const detailObject =
+      rawDetails &&
       typeof rawDetails === "object" &&
       !Array.isArray(rawDetails)
-      ? rawDetails
-      : {};
+        ? rawDetails
+        : {};
 
     Object.entries(detailObject).forEach(([key, value]) => {
       if (key === "intro") return;
@@ -465,9 +528,20 @@
       let heading = "";
       let description = "";
 
-      if (value && typeof value === "object" && !Array.isArray(value)) {
-        heading = typeof value.title === "string" ? value.title : "";
-        description = typeof value.text === "string" ? value.text : "";
+      if (
+        value &&
+        typeof value === "object" &&
+        !Array.isArray(value)
+      ) {
+        heading =
+          typeof value.title === "string"
+            ? value.title
+            : "";
+
+        description =
+          typeof value.text === "string"
+            ? value.text
+            : "";
       } else if (typeof value === "string") {
         description = value;
       }
@@ -477,20 +551,53 @@
       const item = makeElement("div", "modal-detail");
 
       if (heading) {
-        item.appendChild(makeElement("strong", "", heading));
+        item.appendChild(
+          makeElement("strong", "", heading)
+        );
       }
 
       if (description) {
-        item.appendChild(makeElement("p", "", description));
+        item.appendChild(
+          makeElement("p", "", description)
+        );
       }
 
       details.appendChild(item);
     });
 
     const projectActions = makeProjectActions(project);
-    actions.replaceChildren(...projectActions.childNodes);
+
+    actions.replaceChildren(
+      ...projectActions.childNodes
+    );
 
     openModal("projectModal");
+  }
+
+  function showProjectsStatus(message, allowRetry = false) {
+    if (!projectsGrid) return;
+
+    const status = makeElement(
+      "p",
+      "projects-status",
+      message
+    );
+
+    if (allowRetry) {
+      const button = makeElement(
+        "button",
+        "project-link projects-retry",
+        currentDictionary().retry
+      );
+
+      button.type = "button";
+      button.dataset.projectsRetry = "true";
+
+      status.appendChild(document.createTextNode(" "));
+      status.appendChild(button);
+    }
+
+    projectsGrid.replaceChildren(status);
   }
 
   function renderProjects() {
@@ -499,30 +606,47 @@
     projectsGrid.replaceChildren();
 
     if (!projectsData.length) {
-      const empty = makeElement(
-        "p",
-        "projects-status",
-        currentDictionary().noProjects
+      projectsGrid.appendChild(
+        makeElement(
+          "p",
+          "projects-status",
+          currentDictionary().noProjects
+        )
       );
-      projectsGrid.appendChild(empty);
+
       return;
     }
 
     projectsData.forEach(project => {
-      const card = makeElement("article", "project-card reveal");
+      const card = makeElement(
+        "article",
+        "project-card reveal"
+      );
+
       const visual = makeProjectVisual(project);
-      const content = makeElement("div", "project-content");
+      const content = makeElement(
+        "div",
+        "project-content"
+      );
 
       const title = makeElement(
         "h2",
         "",
-        currentProjectText(project, "title_ar", "title_en")
+        currentProjectText(
+          project,
+          "title_ar",
+          "title_en"
+        )
       );
 
       const description = makeElement(
         "p",
         "",
-        currentProjectText(project, "description_ar", "description_en")
+        currentProjectText(
+          project,
+          "description_ar",
+          "description_en"
+        )
       );
 
       const categoryText = currentProjectText(
@@ -532,14 +656,23 @@
       );
 
       if (categoryText) {
-        const tags = makeElement("div", "project-tags");
-        tags.appendChild(makeElement("span", "", categoryText));
+        const tags = makeElement(
+          "div",
+          "project-tags"
+        );
+
+        tags.appendChild(
+          makeElement("span", "", categoryText)
+        );
+
         content.appendChild(tags);
       }
 
       content.append(title, description);
 
-      const detailsType = String(project.details_type || "").toLowerCase();
+      const detailsType = String(
+        project.details_type || ""
+      ).toLowerCase();
 
       if (detailsType === "modal") {
         const button = makeElement(
@@ -554,8 +687,8 @@
 
         const arrow = makeElement("span", "", "↗");
         arrow.setAttribute("aria-hidden", "true");
-        button.appendChild(arrow);
 
+        button.appendChild(arrow);
         content.appendChild(button);
       } else {
         const actions = makeProjectActions(project);
@@ -572,27 +705,44 @@
     refreshReveal();
   }
 
-  async function loadProjects() {
-    if (!projectsGrid || projectsLoaded) return;
+  async function loadProjects(forceRetry = false) {
+    if (!projectsGrid || projectsLoading) return;
 
-    const dictionary = currentDictionary();
-
-    if (projectsStatus) {
-      projectsStatus.textContent = dictionary.projectsLoading;
+    if (projectsLoaded && !forceRetry) {
+      renderProjects();
+      return;
     }
 
+    projectsLoading = true;
+
+    showProjectsStatus(
+      currentDictionary().projectsLoading
+    );
+
     try {
-      const response = await fetch("/api/health?resource=projects", {
-        method: "GET",
-        headers: {
-          "Accept": "application/json"
-        },
-        cache: "no-store",
-        credentials: "same-origin"
-      });
+      const response = await fetch(
+        "/api/health?resource=projects",
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json"
+          },
+          cache: "no-store",
+          credentials: "same-origin"
+        }
+      );
 
       if (!response.ok) {
-        throw new Error(`Projects request failed: ${response.status}`);
+        throw new Error(
+          `Projects request failed: ${response.status}`
+        );
+      }
+
+      const contentType =
+        response.headers.get("content-type") || "";
+
+      if (!contentType.includes("application/json")) {
+        throw new Error("Invalid response content type.");
       }
 
       const result = await response.json();
@@ -608,26 +758,31 @@
       projectsData = result.projects.filter(project =>
         project &&
         typeof project === "object" &&
+        !Array.isArray(project) &&
         project.is_visible !== false
       );
 
       projectsLoaded = true;
+
       renderProjects();
 
     } catch (error) {
       console.error("Projects loading error:", error);
 
-      projectsGrid.replaceChildren(
-        makeElement(
-          "p",
-          "projects-status",
-          currentDictionary().projectsError
-        )
+      projectsLoaded = false;
+
+      showProjectsStatus(
+        currentDictionary().projectsError,
+        true
       );
+
+    } finally {
+      projectsLoading = false;
     }
   }
 
   /* LANGUAGE */
+
   const languageToggle = $("#languageToggle");
   const themeToggle = $("#themeToggle");
 
@@ -636,41 +791,60 @@
 
     const walker = document.createTreeWalker(
       element,
-      NodeFilter.SHOW_TEXT,
-      {
-        acceptNode(node) {
-          return node.nodeValue.trim()
-            ? NodeFilter.FILTER_ACCEPT
-            : NodeFilter.FILTER_REJECT;
-        }
-      }
+      NodeFilter.SHOW_TEXT
     );
 
-    const textNode = walker.nextNode();
+    let firstTextNode = null;
+    let node;
 
-    if (textNode) {
-      textNode.nodeValue = value;
-    } else {
+    while ((node = walker.nextNode())) {
+      if (!node.nodeValue.trim()) continue;
+
+      if (!firstTextNode) {
+        firstTextNode = node;
+      } else {
+        node.nodeValue = "";
+      }
+    }
+
+    if (firstTextNode) {
+      firstTextNode.nodeValue = value;
+    } else if (!element.children.length) {
       element.textContent = value;
+    } else {
+      element.insertBefore(
+        document.createTextNode(value),
+        element.firstChild
+      );
     }
   }
 
   function updateMenuAccessibility() {
     const menuBtn = $("#menuBtn");
+
     if (!menuBtn) return;
 
     const isOpen = body.classList.contains("menu-open");
     const dictionary = currentDictionary();
 
-    menuBtn.setAttribute("aria-expanded", String(isOpen));
+    menuBtn.setAttribute(
+      "aria-expanded",
+      String(isOpen)
+    );
+
     menuBtn.setAttribute(
       "aria-label",
-      isOpen ? dictionary.closeMenu : dictionary.openMenu
+      isOpen
+        ? dictionary.closeMenu
+        : dictionary.openMenu
     );
   }
 
   function setLanguage(language) {
-    const lang = translations[language] ? language : "ar";
+    const lang = translations[language]
+      ? language
+      : "ar";
+
     const dictionary = translations[lang];
 
     html.lang = lang;
@@ -679,7 +853,12 @@
     $$("[data-i18n]").forEach(element => {
       const key = element.dataset.i18n;
 
-      if (Object.prototype.hasOwnProperty.call(dictionary, key)) {
+      if (
+        Object.prototype.hasOwnProperty.call(
+          dictionary,
+          key
+        )
+      ) {
         translateElement(element, dictionary[key]);
       }
     });
@@ -693,21 +872,34 @@
 
     Object.entries(formLabels).forEach(([id, value]) => {
       const label = $(`label[for="${id}"]`);
-      if (label) label.textContent = value;
+
+      if (label) {
+        label.textContent = value;
+      }
     });
 
     const contactText = $(".contact-intro p");
+
     if (contactText) {
       contactText.textContent = dictionary.contactText;
     }
 
     if (languageToggle) {
-      languageToggle.textContent = lang === "ar" ? "EN" : "عربي";
+      languageToggle.textContent =
+        lang === "ar" ? "EN" : "عربي";
+
       languageToggle.setAttribute(
         "aria-label",
         dictionary.switchLanguage
       );
-      languageToggle.title = dictionary.switchLanguage;
+
+      languageToggle.title =
+        dictionary.switchLanguage;
+
+      languageToggle.setAttribute(
+        "aria-pressed",
+        String(lang === "en")
+      );
     }
 
     if (themeToggle) {
@@ -715,6 +907,7 @@
         "aria-label",
         dictionary.changeTheme
       );
+
       themeToggle.title = dictionary.changeTheme;
     }
 
@@ -724,7 +917,9 @@
       ? "M.A.S.H CYVEX | مطور ويب وباحث أمن سيبراني"
       : "M.A.S.H CYVEX | Web Developer & Cybersecurity Researcher";
 
-    const description = $('meta[name="description"]');
+    const description = $(
+      'meta[name="description"]'
+    );
 
     if (description) {
       description.content = lang === "ar"
@@ -732,26 +927,45 @@
         : "M.A.S.H CYVEX — Web Developer & Cybersecurity Researcher. Explore projects, skills, and technical work.";
     }
 
-    const ogLocale = $('meta[property="og:locale"]');
+    const ogLocale = $(
+      'meta[property="og:locale"]'
+    );
 
     if (ogLocale) {
-      ogLocale.content = lang === "ar" ? "ar_EG" : "en_US";
+      ogLocale.content =
+        lang === "ar" ? "ar_EG" : "en_US";
     }
 
     safeStorage.set("mash-language", lang);
 
     if (projectsLoaded) {
       renderProjects();
+    } else if (projectsLoading) {
+      showProjectsStatus(
+        dictionary.projectsLoading
+      );
+    } else if (
+      projectsGrid &&
+      projectsGrid.querySelector("[data-projects-retry]")
+    ) {
+      showProjectsStatus(
+        dictionary.projectsError,
+        true
+      );
     }
   }
 
   languageToggle?.addEventListener("click", () => {
-    setLanguage(html.lang === "ar" ? "en" : "ar");
+    setLanguage(
+      html.lang === "ar" ? "en" : "ar"
+    );
   });
 
   /* THEME */
+
   function setTheme(theme) {
-    const selectedTheme = theme === "light" ? "light" : "dark";
+    const selectedTheme =
+      theme === "light" ? "light" : "dark";
 
     html.dataset.theme = selectedTheme;
 
@@ -767,31 +981,45 @@
       );
 
       themeToggle.title = dictionary.changeTheme;
+
+      themeToggle.setAttribute(
+        "aria-pressed",
+        String(selectedTheme === "light")
+      );
     }
 
     safeStorage.set("mash-theme", selectedTheme);
   }
 
   themeToggle?.addEventListener("click", () => {
-    setTheme(html.dataset.theme === "dark" ? "light" : "dark");
+    setTheme(
+      html.dataset.theme === "dark"
+        ? "light"
+        : "dark"
+    );
   });
 
   /* SIDEBAR */
+
   const menuBtn = $("#menuBtn");
   const sidebar = $("#sidebar");
   const overlay = $("#overlay");
 
   function openSidebar() {
     body.classList.add("menu-open");
+
     sidebar?.classList.add("open");
     overlay?.classList.add("show");
+
     updateMenuAccessibility();
   }
 
   function closeSidebar() {
     body.classList.remove("menu-open");
+
     sidebar?.classList.remove("open");
     overlay?.classList.remove("show");
+
     updateMenuAccessibility();
   }
 
@@ -804,6 +1032,7 @@
   overlay?.addEventListener("click", closeSidebar);
 
   /* NAVIGATION */
+
   const pages = $$(".page");
   const navLinks = $$(".nav-link");
   const pageLinks = $$("[data-page]");
@@ -811,10 +1040,18 @@
   function showPage(pageId, updateHash = true) {
     const target = document.getElementById(pageId);
 
-    if (!target || !target.classList.contains("page")) return;
+    if (
+      !target ||
+      !target.classList.contains("page")
+    ) {
+      return;
+    }
 
     pages.forEach(page => {
-      page.classList.toggle("active", page.id === pageId);
+      page.classList.toggle(
+        "active",
+        page.id === pageId
+      );
     });
 
     navLinks.forEach(link => {
@@ -830,7 +1067,15 @@
     });
 
     if (updateHash) {
-      history.replaceState(null, "", `#${pageId}`);
+      const nextUrl = `#${encodeURIComponent(pageId)}`;
+
+      if (window.location.hash !== nextUrl) {
+        history.pushState(
+          { page: pageId },
+          "",
+          nextUrl
+        );
+      }
     }
 
     closeSidebar();
@@ -851,6 +1096,7 @@
   pageLinks.forEach(link => {
     link.addEventListener("click", event => {
       const pageId = link.dataset.page;
+
       if (!pageId) return;
 
       event.preventDefault();
@@ -859,25 +1105,70 @@
   });
 
   function handleHashNavigation() {
-    const pageId = window.location.hash.slice(1);
-    const validPage = pages.some(page => page.id === pageId);
+    let pageId = "";
 
-    showPage(validPage ? pageId : "home", false);
+    try {
+      pageId = decodeURIComponent(
+        window.location.hash.slice(1)
+      );
+    } catch {
+      pageId = "";
+    }
+
+    const validPage = pages.some(
+      page => page.id === pageId
+    );
+
+    showPage(
+      validPage ? pageId : "home",
+      false
+    );
   }
 
-  window.addEventListener("hashchange", handleHashNavigation);
+  window.addEventListener(
+    "hashchange",
+    handleHashNavigation
+  );
+
+  window.addEventListener(
+    "popstate",
+    handleHashNavigation
+  );
 
   /* MODALS */
+
   let previousFocus = null;
 
   function getModals() {
     return $$(".modal");
   }
 
+  function getFocusableElements(container) {
+    return $$(
+      [
+        "a[href]",
+        "button:not([disabled])",
+        "input:not([disabled])",
+        "textarea:not([disabled])",
+        "select:not([disabled])",
+        '[tabindex]:not([tabindex="-1"])'
+      ].join(","),
+      container
+    ).filter(element =>
+      element.offsetParent !== null &&
+      !element.hasAttribute("hidden")
+    );
+  }
+
   function openModal(modalId) {
     const modal = document.getElementById(modalId);
 
-    if (!modal || !modal.classList.contains("modal")) return;
+    if (
+      !modal ||
+      !modal.classList.contains("modal")
+    ) {
+      return;
+    }
 
     previousFocus = document.activeElement;
 
@@ -888,9 +1179,18 @@
 
     modal.classList.add("show", "active");
     modal.setAttribute("aria-hidden", "false");
+
     body.classList.add("modal-open");
 
-    $('[data-action="close-modal"]', modal)?.focus();
+    const closeButton = $(
+      '[data-action="close-modal"]',
+      modal
+    );
+
+    const firstFocusable =
+      getFocusableElements(modal)[0];
+
+    (closeButton || firstFocusable || modal).focus();
   }
 
   function closeModal(modal) {
@@ -909,7 +1209,8 @@
 
       if (
         previousFocus &&
-        typeof previousFocus.focus === "function"
+        typeof previousFocus.focus === "function" &&
+        previousFocus.isConnected
       ) {
         previousFocus.focus();
       }
@@ -930,24 +1231,43 @@
   }
 
   /* ACTIONS — EVENT DELEGATION */
+
   document.addEventListener("click", event => {
-    const closeButton = event.target.closest('[data-action="close-modal"]');
+    const target = event.target;
+
+    if (!(target instanceof Element)) return;
+
+    const retryButton = target.closest(
+      "[data-projects-retry]"
+    );
+
+    if (retryButton) {
+      loadProjects(true);
+      return;
+    }
+
+    const closeButton = target.closest(
+      '[data-action="close-modal"]'
+    );
 
     if (closeButton) {
       closeModal(closeButton.closest(".modal"));
       return;
     }
 
-    const projectButton = event.target.closest(
+    const projectButton = target.closest(
       '[data-project-action="details"]'
     );
 
     if (projectButton) {
       const project = projectsData.find(item =>
-        String(item.id) === projectButton.dataset.projectId
+        String(item.id) ===
+        projectButton.dataset.projectId
       );
 
-      if (project) openProjectDetails(project);
+      if (project) {
+        openProjectDetails(project);
+      }
     }
   });
 
@@ -960,49 +1280,63 @@
   });
 
   /* KEYBOARD ACCESSIBILITY */
+
   document.addEventListener("keydown", event => {
     if (event.key === "Escape") {
       closeAllModals();
       closeSidebar();
+      return;
     }
 
     if (
-      event.key === "Tab" &&
-      body.classList.contains("modal-open")
+      event.key !== "Tab" ||
+      !body.classList.contains("modal-open")
     ) {
-      const activeModal = getModals().find(modal =>
-        modal.classList.contains("active")
-      );
+      return;
+    }
 
-      if (!activeModal) return;
+    const activeModal = getModals().find(modal =>
+      modal.classList.contains("active")
+    );
 
-      const focusable = $$(
-        'button:not([disabled]), a[href], input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])',
-        activeModal
-      ).filter(element => element.offsetParent !== null);
+    if (!activeModal) return;
 
-      if (!focusable.length) return;
+    const focusable =
+      getFocusableElements(activeModal);
 
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
+    if (!focusable.length) {
+      event.preventDefault();
+      activeModal.focus();
+      return;
+    }
 
-      if (event.shiftKey && document.activeElement === first) {
-        event.preventDefault();
-        last.focus();
-      } else if (
-        !event.shiftKey &&
-        document.activeElement === last
-      ) {
-        event.preventDefault();
-        first.focus();
-      }
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+
+    if (
+      event.shiftKey &&
+      document.activeElement === first
+    ) {
+      event.preventDefault();
+      last.focus();
+
+    } else if (
+      !event.shiftKey &&
+      document.activeElement === last
+    ) {
+      event.preventDefault();
+      first.focus();
     }
   });
 
   /* WHATSAPP APP SELECTION */
+
   const whatsappFloat = $("#whatsappFloat");
   const whatsappModal = $("#whatsappModal");
-  const whatsappAppButtons = $$("[data-whatsapp-app]");
+
+  const whatsappAppButtons = $$(
+    "[data-whatsapp-app]"
+  );
 
   whatsappFloat?.addEventListener("click", () => {
     openModal("whatsappModal");
@@ -1012,7 +1346,12 @@
     button.addEventListener("click", () => {
       const app = button.dataset.whatsappApp;
 
-      if (app !== "business" && app !== "messenger") return;
+      if (
+        app !== "business" &&
+        app !== "messenger"
+      ) {
+        return;
+      }
 
       button.disabled = true;
       button.setAttribute("aria-busy", "true");
@@ -1026,6 +1365,7 @@
   });
 
   /* REVEAL ANIMATIONS */
+
   let revealObserver = null;
 
   function refreshReveal() {
@@ -1064,17 +1404,23 @@
   }
 
   /* SKILLS ANIMATION */
+
   const animatedSkills = new WeakSet();
 
   function animateSkills(container = document) {
     $$(".skill-progress", container).forEach(skill => {
       if (animatedSkills.has(skill)) return;
 
-      const progress = Number(skill.dataset.progress);
+      const progress = Number(
+        skill.dataset.progress
+      );
 
       if (!Number.isFinite(progress)) return;
 
-      const safeProgress = Math.min(100, Math.max(0, progress));
+      const safeProgress = Math.min(
+        100,
+        Math.max(0, progress)
+      );
 
       skill.style.width = "0%";
 
@@ -1089,6 +1435,7 @@
   }
 
   /* PROFILE IMAGE FALLBACK */
+
   const profileImage = $(".profile-image");
   const profileFallback = $(".profile-fallback");
 
@@ -1098,16 +1445,26 @@
       profileFallback.style.display = "flex";
     };
 
-    profileImage.addEventListener("error", showFallback);
+    profileImage.addEventListener(
+      "error",
+      showFallback
+    );
 
-    if (profileImage.complete && profileImage.naturalWidth === 0) {
+    if (
+      profileImage.complete &&
+      profileImage.naturalWidth === 0
+    ) {
       showFallback();
     }
   }
 
   /* INITIALIZATION */
+
   function initialize() {
-    const savedLanguage = safeStorage.get("mash-language", "ar");
+    const savedLanguage = safeStorage.get(
+      "mash-language",
+      "ar"
+    );
 
     const savedTheme = safeStorage.get(
       "mash-theme",
@@ -1117,13 +1474,23 @@
     setTheme(savedTheme);
     setLanguage(savedLanguage);
 
-    const initialPage = window.location.hash.slice(1);
+    const initialPage = (() => {
+      try {
+        return decodeURIComponent(
+          window.location.hash.slice(1)
+        );
+      } catch {
+        return "";
+      }
+    })();
 
-    const pageExists = pages.some(page =>
-      page.id === initialPage
+    const pageExists = pages.some(
+      page => page.id === initialPage
     );
 
-    const selectedPage = pageExists ? initialPage : "home";
+    const selectedPage = pageExists
+      ? initialPage
+      : "home";
 
     showPage(selectedPage, false);
 
@@ -1136,10 +1503,13 @@
   }
 
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", initialize, {
-      once: true
-    });
+    document.addEventListener(
+      "DOMContentLoaded",
+      initialize,
+      { once: true }
+    );
   } else {
     initialize();
   }
+
 })();
