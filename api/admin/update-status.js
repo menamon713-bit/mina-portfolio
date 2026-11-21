@@ -48,7 +48,7 @@ module.exports = async function handler(req, res) {
     });
   }
 
-  if (!requireAdmin(req, res)) return;
+  if (!(await requireAdmin(req, res))) return;
 
   if (!checkSameOrigin(req)) {
     return res.status(403).json({
