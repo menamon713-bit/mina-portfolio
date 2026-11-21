@@ -1,6 +1,7 @@
 "use strict";
 
 const crypto = require("crypto");
+const { hit, peek } = require("./rate-limit");
 
 const COOKIE_NAME = "mash_admin_session";
 const SESSION_SECONDS = 2 * 60 * 60;
@@ -24,9 +25,7 @@ function getSecret() {
 function getVersion() {
   const version = process.env.ADMIN_SESSION_VERSION;
 
-  if (version === undefined || version === "") {
-    return "1";
-  }
+  if (version === undefined || version === "") return "1";
 
   if (
     typeof version !== "string" ||
@@ -72,10 +71,7 @@ function verifySession(token) {
   }
 
   const parts = token.split(".");
-
-  if (parts.length !== 2) {
-    return false;
-  }
+  if (parts.length !== 2) return false;
 
   const [payload, signature] = parts;
 
@@ -87,15 +83,8 @@ function verifySession(token) {
   }
 
   try {
-    const expected = Buffer.from(
-      sign(payload),
-      "ascii"
-    );
-
-    const received = Buffer.from(
-      signature,
-      "ascii"
-    );
+    const expected = Buffer.from(sign(payload), "ascii");
+    const received = Buffer.from(signature, "ascii");
 
     if (
       expected.length !== received.length ||
@@ -104,20 +93,13 @@ function verifySession(token) {
       return false;
     }
 
-    const decoded = Buffer.from(
-      payload,
-      "base64url"
-    );
+    const decoded = Buffer.from(payload, "base64url");
 
-    if (
-      decoded.toString("base64url") !== payload
-    ) {
+    if (decoded.toString("base64url") !== payload) {
       return false;
     }
 
-    const data = JSON.parse(
-      decoded.toString("utf8")
-    );
+    const data = JSON.parse(decoded.toString("utf8"));
 
     if (
       data === null ||
@@ -160,22 +142,38 @@ function getCookie(req) {
 
   for (const item of header.split(";")) {
     const index = item.indexOf("=");
-
     if (index === -1) continue;
 
     const name = item.slice(0, index).trim();
     const value = item.slice(index + 1).trim();
 
     if (name !== COOKIE_NAME) continue;
-
-    if (session !== null) {
-      return null;
-    }
+    if (session !== null) return null;
 
     session = value;
   }
 
   return session;
+}
+
+function getRevocationKey(token) {
+  const digest = crypto
+    .createHash("sha256")
+    .update(token)
+    .digest("hex");
+
+  return `mash:revoked-session:${digest}`;
+}
+
+async function revokeSession(token) {
+  if (!verifySession(token)) return false;
+
+  await hit(
+    getRevocationKey(token),
+    SESSION_SECONDS
+  );
+
+  return true;
 }
 
 function appendSetCookie(res, cookie) {
@@ -184,10 +182,7 @@ function appendSetCookie(res, cookie) {
   if (!existing) {
     res.setHeader("Set-Cookie", cookie);
   } else {
-    res.setHeader(
-      "Set-Cookie",
-      [].concat(existing, cookie)
-    );
+    res.setHeader("Set-Cookie", [].concat(existing, cookie));
   }
 }
 
@@ -221,18 +216,12 @@ function clearSessionCookie(res) {
   );
 }
 
-function requireAdmin(req, res) {
+async function requireAdmin(req, res) {
   setNoStore(res);
 
-  let authenticated = false;
+  const token = getCookie(req);
 
-  try {
-    authenticated = verifySession(getCookie(req));
-  } catch {
-    console.error("[admin-auth] Authentication configuration error.");
-  }
-
-  if (!authenticated) {
+  if (!verifySession(token)) {
     clearSessionCookie(res);
 
     res.status(401).json({
@@ -242,7 +231,29 @@ function requireAdmin(req, res) {
     return false;
   }
 
-  return true;
+  try {
+    const revoked = await peek(getRevocationKey(token));
+
+    if (revoked > 0) {
+      clearSessionCookie(res);
+
+      res.status(401).json({
+        error: "Unauthorized."
+      });
+
+      return false;
+    }
+
+    return true;
+  } catch {
+    console.error("[admin-auth] Session verification service unavailable.");
+
+    res.status(503).json({
+      error: "Authentication service temporarily unavailable."
+    });
+
+    return false;
+  }
 }
 
 function getAllowedOrigin() {
@@ -316,6 +327,9 @@ function checkSameOrigin(req) {
 
 module.exports = {
   createSession,
+  verifySession,
+  getCookie,
+  revokeSession,
   setSessionCookie,
   clearSessionCookie,
   requireAdmin,
