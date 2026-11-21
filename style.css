@@ -1,6 +1,6 @@
 /* =========================================
-   M.A.S.H CYVEX — Complete Stylesheet
-   Compatible with current index.html
+   M.A.S.H CYVEX — Complete Updated Stylesheet
+   CV Download Button Updated
 ========================================= */
 
 :root {
@@ -468,26 +468,48 @@ html[lang="en"] .project-category {
 .sidebar-bottom {
   margin-top: auto;
   padding-top: 25px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
+/* CV DOWNLOAD BUTTON */
+
 .cv-btn {
+  width: 44px;
+  height: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 9px;
-  padding: 12px;
+  padding: 0;
   color: #fff;
   background: var(--primary);
   border: 1px solid var(--primary);
-  border-radius: 12px;
-  font-size: .84rem;
+  border-radius: 50%;
+  font-size: 1.15rem;
   font-weight: 700;
-  transition: .2s ease;
+  box-shadow: 0 7px 22px rgba(255, 48, 75, .2);
+  transition: transform .2s ease, background .2s ease, box-shadow .2s ease;
+}
+
+.cv-btn span:last-child {
+  display: none;
 }
 
 .cv-btn:hover {
+  color: #fff;
   background: var(--primary-hover);
-  transform: translateY(-2px);
+  transform: translateY(-3px);
+  box-shadow: 0 10px 28px rgba(255, 48, 75, .32);
+}
+
+.cv-btn:active {
+  transform: scale(.95);
+}
+
+.cv-btn:focus-visible {
+  outline: 3px solid var(--primary);
+  outline-offset: 4px;
 }
 
 .sidebar-social {
