@@ -1,4 +1,14 @@
+
 User-agent: *
 Allow: /
+
+# Block WordPress paths (not used by this website)
+Disallow: /wp-admin/
+Disallow: /wp-login.php
+Disallow: /xmlrpc.php
+
+# Block private or internal paths
+Disallow: /api/
+Disallow: /admin/
 
 Sitemap: https://mina-portfolio-red.vercel.app/sitemap.xml
