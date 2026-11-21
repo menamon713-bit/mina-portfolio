@@ -525,10 +525,7 @@
             <div class="skill-progress">
               <span>${escapeHTML(skill.progress ?? 0)}%</span>
               <div class="progress-track">
-                <span style="width:${Math.max(
-                  0,
-                  Math.min(100, Number(skill.progress) || 0)
-                )}%"></span>
+                <span data-progress="${Math.max(0, Math.min(100, Number(skill.progress) || 0))}"></span>
               </div>
             </div>
           </td>
@@ -568,6 +565,11 @@
         </tr>
       `;
     }).join("");
+
+    // CSP-safe: set widths through the CSSOM instead of an inline style attribute.
+    $$("[data-progress]", tbody).forEach((element) => {
+      element.style.width = `${element.dataset.progress}%`;
+    });
 
     $$("[data-skill-edit]", tbody).forEach((button) => {
       button.addEventListener("click", () => {
