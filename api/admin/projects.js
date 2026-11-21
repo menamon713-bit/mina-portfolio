@@ -1,12 +1,11 @@
 "use strict";
 
 const { neon } = require("@neondatabase/serverless");
+
 const {
   requireAdmin,
   checkSameOrigin
 } = require("../_lib/admin-auth");
-
-const sql = neon(process.env.DATABASE_URL);
 
 const STRING_FIELDS = {
   title_ar: 200,
@@ -23,65 +22,137 @@ const STRING_FIELDS = {
 
 const JSON_FIELDS = ["details_ar", "details_en"];
 
+const ALLOWED_FIELDS = [
+  ...Object.keys(STRING_FIELDS),
+  ...JSON_FIELDS,
+  "details_type",
+  "is_visible",
+  "sort_order"
+];
+
+const CREATE_REQUIRED = [
+  "title_ar",
+  "title_en",
+  "details_ar",
+  "details_en"
+];
+
 function sendError(res, status, message) {
   return res.status(status).json({ error: message });
 }
 
-function validId(value) {
+function isPlainObject(value) {
   return (
-    (typeof value === "string" || typeof value === "number") &&
-    /^\d+$/.test(String(value)) &&
-    Number(value) > 0
+    value !== null &&
+    typeof value === "object" &&
+    !Array.isArray(value) &&
+    Object.getPrototypeOf(value) === Object.prototype
   );
 }
 
-function validateBody(body, partial = false) {
-  if (!body || typeof body !== "object" || Array.isArray(body)) {
+function validId(value) {
+  if (typeof value !== "string" && typeof value !== "number") {
+    return false;
+  }
+
+  const text = String(value);
+
+  return (
+    /^[1-9]\d*$/.test(text) &&
+    Number.isSafeInteger(Number(text))
+  );
+}
+
+function validHttpsUrl(value) {
+  if (value === "") return true;
+
+  try {
+    const url = new URL(value);
+
+    return (
+      url.protocol === "https:" &&
+      !url.username &&
+      !url.password
+    );
+  } catch {
+    return false;
+  }
+}
+
+function validImageUrl(value) {
+  if (value === "") return true;
+
+  if (
+    value.startsWith("/") &&
+    !value.startsWith("//") &&
+    !value.includes("\\") &&
+    !/[\u0000-\u0020]/.test(value)
+  ) {
+    return true;
+  }
+
+  return validHttpsUrl(value);
+}
+
+function isSafeJsonObject(value) {
+  if (!isPlainObject(value)) return false;
+
+  try {
+    const serialized = JSON.stringify(value);
+
+    if (
+      typeof serialized !== "string" ||
+      Buffer.byteLength(serialized, "utf8") > 50000
+    ) {
+      return false;
+    }
+
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function validateBody(body, options = {}) {
+  const { partial = false, allowId = false } = options;
+
+  if (!isPlainObject(body)) {
     return "Invalid request body.";
   }
 
-  for (const [field, max] of Object.entries(STRING_FIELDS)) {
-    if (!Object.hasOwn(body, field)) {
-      if (
-        !partial &&
-        ["title_ar", "title_en"].includes(field)
-      ) {
+  const allowed = allowId
+    ? [...ALLOWED_FIELDS, "id"]
+    : ALLOWED_FIELDS;
+
+  for (const field of Object.keys(body)) {
+    if (!allowed.includes(field)) {
+      return `Unknown field: ${field}`;
+    }
+  }
+
+  if (!partial) {
+    for (const field of CREATE_REQUIRED) {
+      if (!Object.hasOwn(body, field)) {
         return `Missing field: ${field}`;
       }
-      continue;
     }
+  }
+
+  for (const [field, maxLength] of Object.entries(STRING_FIELDS)) {
+    if (!Object.hasOwn(body, field)) continue;
 
     if (
       typeof body[field] !== "string" ||
-      body[field].length > max
+      body[field].length > maxLength
     ) {
       return `Invalid field: ${field}`;
     }
   }
 
   for (const field of JSON_FIELDS) {
-    if (!Object.hasOwn(body, field)) {
-      if (!partial) {
-        return `Missing field: ${field}`;
-      }
-      continue;
-    }
+    if (!Object.hasOwn(body, field)) continue;
 
-    const value = body[field];
-
-    if (
-      !value ||
-      typeof value !== "object" ||
-      Array.isArray(value)
-    ) {
-      return `Invalid field: ${field}`;
-    }
-
-    try {
-      if (JSON.stringify(value).length > 50000) {
-        return `${field} is too large.`;
-      }
-    } catch (_) {
+    if (!isSafeJsonObject(body[field])) {
       return `Invalid field: ${field}`;
     }
   }
@@ -102,9 +173,33 @@ function validateBody(body, partial = false) {
 
   if (
     Object.hasOwn(body, "sort_order") &&
-    !Number.isInteger(body.sort_order)
+    (
+      !Number.isSafeInteger(body.sort_order) ||
+      body.sort_order < 0
+    )
   ) {
     return "Invalid sort_order.";
+  }
+
+  if (
+    Object.hasOwn(body, "live_url") &&
+    !validHttpsUrl(body.live_url)
+  ) {
+    return "Invalid live_url.";
+  }
+
+  if (
+    Object.hasOwn(body, "github_url") &&
+    !validHttpsUrl(body.github_url)
+  ) {
+    return "Invalid github_url.";
+  }
+
+  if (
+    Object.hasOwn(body, "image_url") &&
+    !validImageUrl(body.image_url)
+  ) {
+    return "Invalid image_url.";
   }
 
   return null;
@@ -112,6 +207,7 @@ function validateBody(body, partial = false) {
 
 module.exports = async function handler(req, res) {
   res.setHeader("Cache-Control", "no-store");
+  res.setHeader("X-Content-Type-Options", "nosniff");
 
   const methods = ["GET", "POST", "PATCH", "DELETE"];
 
@@ -126,8 +222,15 @@ module.exports = async function handler(req, res) {
     return sendError(res, 403, "Invalid request origin.");
   }
 
+  const databaseUrl = process.env.DATABASE_URL;
+
+  if (!databaseUrl) {
+    return sendError(res, 503, "Database is unavailable.");
+  }
+
   try {
-    // GET: List projects with tags
+    const sql = neon(databaseUrl);
+
     if (req.method === "GET") {
       const rows = await sql`
         SELECT
@@ -157,7 +260,6 @@ module.exports = async function handler(req, res) {
       });
     }
 
-    // POST: Create project
     if (req.method === "POST") {
       const body = req.body;
       const error = validateBody(body);
@@ -208,34 +310,33 @@ module.exports = async function handler(req, res) {
       });
     }
 
-    // PATCH: Update project
     if (req.method === "PATCH") {
       const body = req.body;
 
-      if (!validId(body?.id)) {
+      if (!isPlainObject(body) || !validId(body.id)) {
         return sendError(res, 400, "Invalid project ID.");
       }
 
-      const error = validateBody(body, true);
+      const error = validateBody(body, {
+        partial: true,
+        allowId: true
+      });
+
       if (error) return sendError(res, 400, error);
 
-      const allowedFields = [
-        ...Object.keys(STRING_FIELDS),
-        ...JSON_FIELDS,
-        "details_type",
-        "is_visible",
-        "sort_order"
-      ];
+      const hasUpdates = ALLOWED_FIELDS.some(
+        (field) => Object.hasOwn(body, field)
+      );
 
-      if (!allowedFields.some((field) => Object.hasOwn(body, field))) {
+      if (!hasUpdates) {
         return sendError(res, 400, "No fields to update.");
       }
 
       const rows = await sql`
         UPDATE site_projects
         SET
-          title_ar = COALESCE(${body.title_ar?.trim() ?? null}, title_ar),
-          title_en = COALESCE(${body.title_en?.trim() ?? null}, title_en),
+          title_ar = COALESCE(${body.title_ar === undefined ? null : body.title_ar.trim()}, title_ar),
+          title_en = COALESCE(${body.title_en === undefined ? null : body.title_en.trim()}, title_en),
           description_ar = COALESCE(${body.description_ar ?? null}, description_ar),
           description_en = COALESCE(${body.description_en ?? null}, description_en),
           category_ar = COALESCE(${body.category_ar ?? null}, category_ar),
@@ -264,17 +365,20 @@ module.exports = async function handler(req, res) {
       });
     }
 
-    // DELETE: Delete project
     if (req.method === "DELETE") {
-      const id = req.body?.id;
+      const body = req.body;
 
-      if (!validId(id)) {
+      if (
+        !isPlainObject(body) ||
+        !validId(body.id) ||
+        Object.keys(body).length !== 1
+      ) {
         return sendError(res, 400, "Invalid project ID.");
       }
 
       const rows = await sql`
         DELETE FROM site_projects
-        WHERE id = ${Number(id)}
+        WHERE id = ${Number(body.id)}
         RETURNING id
       `;
 
@@ -287,9 +391,8 @@ module.exports = async function handler(req, res) {
         id: rows[0].id
       });
     }
-
-  } catch (error) {
-    console.error("Admin projects API error:", error);
+  } catch {
+    console.error("[admin-projects] Database operation failed.");
 
     return sendError(
       res,
