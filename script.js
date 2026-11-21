@@ -1,7 +1,7 @@
 /* =====================================================
    M.A.S.H CYVEX — Main JavaScript
    Navigation / Sidebar / Modals
-   Language / Theme / Contact / Animations
+   Language / Theme / Contact / WhatsApp / Animations
 ===================================================== */
 
 (() => {
@@ -700,6 +700,33 @@
         if (buttonText) buttonText.textContent = dictionary.formSubmit;
       }
     }
+  });
+
+  /* WHATSAPP APP SELECTION */
+  const whatsappFloat = $("#whatsappFloat");
+  const whatsappModal = $("#whatsappModal");
+  const whatsappAppButtons = Array.from(
+    document.querySelectorAll("[data-whatsapp-app]")
+  );
+
+  whatsappFloat?.addEventListener("click", () => {
+    openModal("whatsappModal");
+  });
+
+  whatsappAppButtons.forEach(button => {
+    button.addEventListener("click", () => {
+      const app = button.dataset.whatsappApp;
+
+      if (app !== "business" && app !== "messenger") return;
+
+      button.disabled = true;
+      button.setAttribute("aria-busy", "true");
+      closeModal(whatsappModal);
+
+      window.location.assign(
+        `/api/health?app=${encodeURIComponent(app)}`
+      );
+    });
   });
 
   /* REVEAL ANIMATIONS */
