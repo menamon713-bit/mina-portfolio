@@ -112,7 +112,7 @@ module.exports = async function handler(req, res) {
     return sendError(res, 405, "Method not allowed.");
   }
 
-  if (!requireAdmin(req, res)) return;
+  if (!(await requireAdmin(req, res))) return;
 
   if (req.method !== "GET" && !checkSameOrigin(req)) {
     return sendError(res, 403, "Invalid request origin.");
