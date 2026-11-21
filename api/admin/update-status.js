@@ -1,6 +1,7 @@
 "use strict";
 
 const { neon } = require("@neondatabase/serverless");
+
 const {
   requireAdmin,
   checkSameOrigin
@@ -13,15 +14,41 @@ const ALLOWED_STATUSES = [
   "archived"
 ];
 
+function isPlainObject(value) {
+  return (
+    value !== null &&
+    typeof value === "object" &&
+    !Array.isArray(value) &&
+    Object.getPrototypeOf(value) === Object.prototype
+  );
+}
+
+function validId(value) {
+  if (typeof value !== "string" && typeof value !== "number") {
+    return false;
+  }
+
+  const text = String(value);
+
+  return (
+    /^[1-9]\d*$/.test(text) &&
+    Number.isSafeInteger(Number(text))
+  );
+}
+
 module.exports = async function handler(req, res) {
   res.setHeader("Cache-Control", "no-store");
+  res.setHeader("X-Content-Type-Options", "nosniff");
 
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
+
     return res.status(405).json({
       error: "Method not allowed."
     });
   }
+
+  if (!requireAdmin(req, res)) return;
 
   if (!checkSameOrigin(req)) {
     return res.status(403).json({
@@ -29,27 +56,16 @@ module.exports = async function handler(req, res) {
     });
   }
 
-  if (!requireAdmin(req, res)) return;
-
   const body = req.body;
 
   if (
-    !body ||
-    typeof body !== "object" ||
-    Array.isArray(body)
-  ) {
-    return res.status(400).json({
-      error: "Invalid request."
-    });
-  }
-
-  const id = Number(body.id);
-  const status = body.status;
-
-  if (
-    !Number.isSafeInteger(id) ||
-    id < 1 ||
-    !ALLOWED_STATUSES.includes(status)
+    !isPlainObject(body) ||
+    Object.keys(body).length !== 2 ||
+    !Object.hasOwn(body, "id") ||
+    !Object.hasOwn(body, "status") ||
+    !validId(body.id) ||
+    typeof body.status !== "string" ||
+    !ALLOWED_STATUSES.includes(body.status)
   ) {
     return res.status(400).json({
       error: "Invalid message ID or status."
@@ -69,8 +85,8 @@ module.exports = async function handler(req, res) {
 
     const result = await sql`
       UPDATE contact_messages
-      SET status = ${status}
-      WHERE id = ${id}
+      SET status = ${body.status}
+      WHERE id = ${Number(body.id)}
       RETURNING id, status
     `;
 
@@ -84,9 +100,8 @@ module.exports = async function handler(req, res) {
       success: true,
       message: result[0]
     });
-
-  } catch (error) {
-    console.error("Admin status update error:", error.message);
+  } catch {
+    console.error("[admin-status] Database update failed.");
 
     return res.status(500).json({
       error: "Could not update message status."
