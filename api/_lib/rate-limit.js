@@ -1,16 +1,68 @@
 "use strict";
 
 const TIMEOUT_MS = 3000;
+const MAX_KEY_LENGTH = 200;
 
-// Atomic counter. Also repairs a key that somehow lost its TTL,
-// so a counter can never get stuck forever.
+// Atomic increment with automatic TTL repair.
 const HIT_SCRIPT = `
   local count = redis.call("INCR", KEYS[1])
-  if count == 1 or redis.call("TTL", KEYS[1]) < 0 then
+  local ttl = redis.call("TTL", KEYS[1])
+
+  if count == 1 or ttl < 0 then
     redis.call("EXPIRE", KEYS[1], ARGV[1])
   end
+
   return count
 `;
+
+// Atomically checks the limit and reserves one attempt.
+// This prevents concurrent requests from bypassing the limit.
+const CONSUME_SCRIPT = `
+  local current = tonumber(redis.call("GET", KEYS[1]) or "0")
+  local ttl = redis.call("TTL", KEYS[1])
+  local limit = tonumber(ARGV[2])
+  local window = tonumber(ARGV[1])
+
+  if current >= limit then
+    if ttl < 0 then
+      redis.call("EXPIRE", KEYS[1], window)
+      ttl = window
+    end
+
+    return {0, current, ttl}
+  end
+
+  local count = redis.call("INCR", KEYS[1])
+  ttl = redis.call("TTL", KEYS[1])
+
+  if count == 1 or ttl < 0 then
+    redis.call("EXPIRE", KEYS[1], window)
+    ttl = window
+  end
+
+  return {1, count, ttl}
+`;
+
+function validateKey(key) {
+  if (
+    typeof key !== "string" ||
+    key.length < 1 ||
+    key.length > MAX_KEY_LENGTH ||
+    !/^[A-Za-z0-9:_./-]+$/.test(key)
+  ) {
+    throw new Error("RATE_LIMIT_INVALID_KEY");
+  }
+}
+
+function validateWindow(windowSeconds) {
+  if (
+    !Number.isSafeInteger(windowSeconds) ||
+    windowSeconds < 1 ||
+    windowSeconds > 86400
+  ) {
+    throw new Error("RATE_LIMIT_INVALID_WINDOW");
+  }
+}
 
 function getConfig() {
   const url = process.env.KV_REST_API_URL;
@@ -36,19 +88,26 @@ function getConfig() {
   if (
     parsed.protocol !== "https:" ||
     parsed.username ||
-    parsed.password
+    parsed.password ||
+    !parsed.hostname
   ) {
     throw new Error("RATE_LIMIT_CONFIG_INVALID");
   }
 
-  return { url: parsed.toString(), token };
+  return {
+    url: parsed.toString(),
+    token
+  };
 }
 
 async function command(args) {
   const { url, token } = getConfig();
 
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+  const timer = setTimeout(
+    () => controller.abort(),
+    TIMEOUT_MS
+  );
 
   try {
     const response = await fetch(url, {
@@ -67,7 +126,13 @@ async function command(args) {
 
     const data = await response.json();
 
-    if (!data || typeof data !== "object" || data.error) {
+    if (
+      !data ||
+      typeof data !== "object" ||
+      Array.isArray(data) ||
+      data.error ||
+      !Object.prototype.hasOwnProperty.call(data, "result")
+    ) {
       throw new Error("RATE_LIMIT_INVALID_RESPONSE");
     }
 
@@ -83,8 +148,10 @@ async function command(args) {
   }
 }
 
-// Count one event for `key` inside a window. Returns the new count.
 async function hit(key, windowSeconds) {
+  validateKey(key);
+  validateWindow(windowSeconds);
+
   const result = await command([
     "EVAL",
     HIT_SCRIPT,
@@ -102,11 +169,68 @@ async function hit(key, windowSeconds) {
   return count;
 }
 
-// Read the current count without changing it.
-async function peek(key) {
-  const result = await command(["GET", key]);
+// Returns:
+// { allowed: boolean, count: number, retryAfter: number }
+async function consume(key, windowSeconds, limit) {
+  validateKey(key);
+  validateWindow(windowSeconds);
 
-  if (result === null || result === undefined) return 0;
+  if (
+    !Number.isSafeInteger(limit) ||
+    limit < 1 ||
+    limit > 100000
+  ) {
+    throw new Error("RATE_LIMIT_INVALID_LIMIT");
+  }
+
+  const result = await command([
+    "EVAL",
+    CONSUME_SCRIPT,
+    "1",
+    key,
+    String(windowSeconds),
+    String(limit)
+  ]);
+
+  if (
+    !Array.isArray(result) ||
+    result.length !== 3
+  ) {
+    throw new Error("RATE_LIMIT_INVALID_RESPONSE");
+  }
+
+  const allowed = Number(result[0]);
+  const count = Number(result[1]);
+  const ttl = Number(result[2]);
+
+  if (
+    (allowed !== 0 && allowed !== 1) ||
+    !Number.isSafeInteger(count) ||
+    count < 0 ||
+    !Number.isSafeInteger(ttl) ||
+    ttl < -2
+  ) {
+    throw new Error("RATE_LIMIT_INVALID_RESPONSE");
+  }
+
+  return {
+    allowed: allowed === 1,
+    count,
+    retryAfter: Math.max(1, ttl)
+  };
+}
+
+async function peek(key) {
+  validateKey(key);
+
+  const result = await command([
+    "GET",
+    key
+  ]);
+
+  if (result === null || result === undefined) {
+    return 0;
+  }
 
   const count = Number(result);
 
@@ -118,7 +242,17 @@ async function peek(key) {
 }
 
 async function reset(key) {
-  await command(["DEL", key]);
+  validateKey(key);
+
+  await command([
+    "DEL",
+    key
+  ]);
 }
 
-module.exports = { hit, peek, reset };
+module.exports = {
+  hit,
+  consume,
+  peek,
+  reset
+};
