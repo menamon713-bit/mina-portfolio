@@ -58,9 +58,9 @@ module.exports = async function handler(req, res) {
     );
   }
 
-  if (!requireAdmin(req, res)) {
+  if (!(await requireAdmin(req, res))) {
     return;
-  }
+  } 
 
   if (
     req.method === "PATCH" &&
