@@ -3,12 +3,10 @@
 const crypto = require("crypto");
 
 const COOKIE_NAME = "mash_admin_session";
-const SESSION_SECONDS = 2 * 60 * 60; // 2 hours (was 8)
+const SESSION_SECONDS = 2 * 60 * 60;
 const CLOCK_SKEW_MS = 60 * 1000;
 const MAX_TOKEN_LENGTH = 2048;
 const MAX_COOKIE_HEADER_LENGTH = 16384;
-
-/* ---------- config ---------- */
 
 function getSecret() {
   const secret = process.env.ADMIN_SESSION_SECRET;
@@ -23,22 +21,22 @@ function getSecret() {
   return secret;
 }
 
-// Optional. Change ADMIN_SESSION_VERSION in Vercel env to instantly
-// invalidate ALL existing sessions (stolen cookie, suspected leak, etc).
 function getVersion() {
-  const v = process.env.ADMIN_SESSION_VERSION;
+  const version = process.env.ADMIN_SESSION_VERSION;
 
-  if (v === undefined || v === "") return "1";
+  if (version === undefined || version === "") {
+    return "1";
+  }
 
-  if (typeof v !== "string" || !/^[A-Za-z0-9_-]{1,32}$/.test(v)) {
-    // Fail closed: a bad value must not silently disable revocation.
+  if (
+    typeof version !== "string" ||
+    !/^[A-Za-z0-9_-]{1,32}$/.test(version)
+  ) {
     throw new Error("ADMIN_SESSION_VERSION is invalid.");
   }
 
-  return v;
+  return version;
 }
-
-/* ---------- signing ---------- */
 
 function sign(value) {
   return crypto
@@ -89,8 +87,15 @@ function verifySession(token) {
   }
 
   try {
-    const expected = Buffer.from(sign(payload), "ascii");
-    const received = Buffer.from(signature, "ascii");
+    const expected = Buffer.from(
+      sign(payload),
+      "ascii"
+    );
+
+    const received = Buffer.from(
+      signature,
+      "ascii"
+    );
 
     if (
       expected.length !== received.length ||
@@ -99,13 +104,20 @@ function verifySession(token) {
       return false;
     }
 
-    const decoded = Buffer.from(payload, "base64url");
+    const decoded = Buffer.from(
+      payload,
+      "base64url"
+    );
 
-    if (decoded.toString("base64url") !== payload) {
+    if (
+      decoded.toString("base64url") !== payload
+    ) {
       return false;
     }
 
-    const data = JSON.parse(decoded.toString("utf8"));
+    const data = JSON.parse(
+      decoded.toString("utf8")
+    );
 
     if (
       data === null ||
@@ -120,6 +132,8 @@ function verifySession(token) {
     return (
       Number.isSafeInteger(data.iat) &&
       Number.isSafeInteger(data.exp) &&
+      data.iat >= 0 &&
+      data.exp > data.iat &&
       data.exp > now &&
       data.iat <= now + CLOCK_SKEW_MS &&
       data.exp - data.iat <= SESSION_SECONDS * 1000 &&
@@ -131,8 +145,6 @@ function verifySession(token) {
     return false;
   }
 }
-
-/* ---------- cookies / headers ---------- */
 
 function getCookie(req) {
   const header = req?.headers?.cookie;
@@ -156,7 +168,6 @@ function getCookie(req) {
 
     if (name !== COOKIE_NAME) continue;
 
-    // Reject duplicate session cookies.
     if (session !== null) {
       return null;
     }
@@ -173,7 +184,10 @@ function appendSetCookie(res, cookie) {
   if (!existing) {
     res.setHeader("Set-Cookie", cookie);
   } else {
-    res.setHeader("Set-Cookie", [].concat(existing, cookie));
+    res.setHeader(
+      "Set-Cookie",
+      [].concat(existing, cookie)
+    );
   }
 }
 
@@ -207,23 +221,15 @@ function clearSessionCookie(res) {
   );
 }
 
-/* ---------- guards ---------- */
-
 function requireAdmin(req, res) {
-  // Never let any admin response be cached.
   setNoStore(res);
-
-  const token = getCookie(req);
 
   let authenticated = false;
 
   try {
-    authenticated = verifySession(token);
-  } catch (err) {
-    // Misconfiguration (missing secret / bad version) fails closed,
-    // but is visible in server logs instead of looking like a normal 401.
-    console.error("[admin-auth]", err.message);
-    authenticated = false;
+    authenticated = verifySession(getCookie(req));
+  } catch {
+    console.error("[admin-auth] Authentication configuration error.");
   }
 
   if (!authenticated) {
@@ -239,57 +245,70 @@ function requireAdmin(req, res) {
   return true;
 }
 
-// Use on every state-changing request (POST/PUT/PATCH/DELETE), including login.
-// Optional: set ADMIN_ALLOWED_ORIGIN (e.g. https://mina-portfolio-pied.vercel.app)
-// to pin the exact origin instead of trusting the Host header.
+function getAllowedOrigin() {
+  const value = process.env.ADMIN_ALLOWED_ORIGIN;
+
+  if (
+    typeof value !== "string" ||
+    value.length === 0 ||
+    value.length > 2048
+  ) {
+    throw new Error("ADMIN_ALLOWED_ORIGIN is missing.");
+  }
+
+  const url = new URL(value);
+
+  if (
+    url.protocol !== "https:" ||
+    url.username !== "" ||
+    url.password !== "" ||
+    url.pathname !== "/" ||
+    url.search !== "" ||
+    url.hash !== ""
+  ) {
+    throw new Error("ADMIN_ALLOWED_ORIGIN is invalid.");
+  }
+
+  return url.origin;
+}
+
 function checkSameOrigin(req) {
   const origin = req?.headers?.origin;
-  const host = req?.headers?.host;
   const fetchSite = req?.headers?.["sec-fetch-site"];
 
-  // Browsers send this on fetch/XHR; anything not same-origin is rejected.
   if (
     fetchSite !== undefined &&
-    (typeof fetchSite !== "string" || fetchSite !== "same-origin")
+    (
+      typeof fetchSite !== "string" ||
+      fetchSite !== "same-origin"
+    )
   ) {
     return false;
   }
 
-  if (typeof origin !== "string" || origin.length > 2048) {
+  if (
+    typeof origin !== "string" ||
+    origin.length === 0 ||
+    origin.length > 2048
+  ) {
     return false;
   }
 
   try {
-    const originURL = new URL(origin);
+    const requestOrigin = new URL(origin);
 
     if (
-      originURL.protocol !== "https:" ||
-      originURL.username !== "" ||
-      originURL.password !== "" ||
-      originURL.pathname !== "/" ||
-      originURL.search !== "" ||
-      originURL.hash !== ""
+      requestOrigin.protocol !== "https:" ||
+      requestOrigin.username !== "" ||
+      requestOrigin.password !== "" ||
+      requestOrigin.pathname !== "/" ||
+      requestOrigin.search !== "" ||
+      requestOrigin.hash !== ""
     ) {
       return false;
     }
 
-    const pinned = process.env.ADMIN_ALLOWED_ORIGIN;
-
-    if (typeof pinned === "string" && pinned !== "") {
-      return originURL.origin === new URL(pinned).origin;
-    }
-
-    if (
-      typeof host !== "string" ||
-      !host ||
-      host.length > 255 ||
-      host.includes(",") ||
-      /\s/.test(host)
-    ) {
-      return false;
-    }
-
-    return originURL.origin === new URL(`https://${host}`).origin;
+    return requestOrigin.origin === getAllowedOrigin();
   } catch {
     return false;
   }
