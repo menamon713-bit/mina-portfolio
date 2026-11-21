@@ -15,6 +15,8 @@
     message: 5000
   };
 
+  const REQUEST_TIMEOUT = 15000;
+
   const messages = {
     ar: {
       nameRequired: "اكتب اسمك.",
@@ -29,6 +31,7 @@
       success: "تم إرسال رسالتك بنجاح.",
       tooMany: "تم إرسال طلبات كثيرة. انتظر قليلًا ثم حاول مرة أخرى.",
       unavailable: "خدمة الإرسال غير متاحة مؤقتًا. حاول لاحقًا.",
+      timeout: "استغرق الاتصال وقتًا طويلًا. حاول مرة أخرى.",
       connection: "تعذر الاتصال بالخادم. تحقق من الإنترنت وحاول مرة أخرى.",
       failed: "تعذر إرسال الرسالة. حاول مرة أخرى.",
       submit: "إرسال الرسالة"
@@ -47,6 +50,7 @@
       success: "Your message was sent successfully.",
       tooMany: "Too many requests. Please wait and try again.",
       unavailable: "The sending service is temporarily unavailable. Try again later.",
+      timeout: "The request timed out. Please try again.",
       connection: "Could not connect to the server. Check your internet connection.",
       failed: "Could not send your message. Please try again.",
       submit: "Send Message"
@@ -54,6 +58,7 @@
   };
 
   let isSubmitting = false;
+  let originalButtonText = submitButton.textContent.trim();
 
   function getLanguage() {
     return html.lang === "en" ? "en" : "ar";
@@ -73,7 +78,6 @@
     );
 
     status.classList.add(type);
-
     status.setAttribute("role", "status");
     status.setAttribute("aria-live", "polite");
   }
@@ -87,13 +91,17 @@
   }
 
   function validateForm(data) {
-    if (!data.name) return t("nameRequired");
+    if (!data.name) {
+      return t("nameRequired");
+    }
 
     if (data.name.length > MAX_LENGTHS.name) {
       return t("nameLong");
     }
 
-    if (!data.email) return t("emailRequired");
+    if (!data.email) {
+      return t("emailRequired");
+    }
 
     if (
       data.email.length > MAX_LENGTHS.email ||
@@ -106,7 +114,7 @@
       return t("subjectLong");
     }
 
-    if (!data.message || data.message.length < 10) {
+    if (data.message.length < 10) {
       return t("messageShort");
     }
 
@@ -124,14 +132,55 @@
     submitButton.setAttribute("aria-busy", String(value));
 
     if (value) {
-      submitButton.dataset.originalText =
-        submitButton.textContent;
-
       submitButton.textContent = t("sending");
     } else {
-      submitButton.textContent = t("submit");
+      submitButton.textContent = originalButtonText || t("submit");
+    }
+  }
 
-      delete submitButton.dataset.originalText;
+  async function sendMessage(data) {
+    const controller = new AbortController();
+
+    const timeoutId = setTimeout(function () {
+      controller.abort();
+    }, REQUEST_TIMEOUT);
+
+    try {
+      const response = await fetch("/api/contact", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json"
+        },
+        body: JSON.stringify(data),
+        credentials: "same-origin",
+        cache: "no-store",
+        signal: controller.signal
+      });
+
+      let result = {};
+
+      try {
+        result = await response.json();
+      } catch (_) {
+        result = {};
+      }
+
+      if (response.status === 429) {
+        throw new Error("RATE_LIMIT");
+      }
+
+      if (response.status === 503) {
+        throw new Error("SERVICE_UNAVAILABLE");
+      }
+
+      if (!response.ok) {
+        throw new Error("REQUEST_FAILED");
+      }
+
+      return result;
+    } finally {
+      clearTimeout(timeoutId);
     }
   }
 
@@ -159,60 +208,35 @@
     showStatus(t("loading"), "loading");
 
     try {
-      const response = await fetch("/api/contact", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Accept": "application/json"
-        },
-        body: JSON.stringify(data),
-        credentials: "same-origin"
-      });
-
-      let result = {};
-
-      try {
-        result = await response.json();
-      } catch (_) {
-        result = {};
-      }
-
-      if (response.status === 429) {
-        throw new Error(t("tooMany"));
-      }
-
-      if (response.status === 503) {
-        throw new Error(t("unavailable"));
-      }
-
-      if (!response.ok) {
-        throw new Error(
-          typeof result.error === "string"
-            ? result.error
-            : t("failed")
-        );
-      }
+      await sendMessage(data);
 
       showStatus(t("success"), "success");
       form.reset();
 
     } catch (error) {
-      showStatus(
-        error instanceof TypeError
-          ? t("connection")
-          : error.message || t("failed"),
-        "error"
-      );
+      let message = t("failed");
+
+      if (error.name === "AbortError") {
+        message = t("timeout");
+      } else if (error.message === "RATE_LIMIT") {
+        message = t("tooMany");
+      } else if (error.message === "SERVICE_UNAVAILABLE") {
+        message = t("unavailable");
+      } else if (error instanceof TypeError) {
+        message = t("connection");
+      }
+
+      showStatus(message, "error");
 
     } finally {
       setSubmitting(false);
     }
   });
 
-  // Update the submit button when the site language changes.
   const observer = new MutationObserver(function () {
     if (!isSubmitting) {
-      submitButton.textContent = t("submit");
+      originalButtonText = t("submit");
+      submitButton.textContent = originalButtonText;
     }
   });
 
@@ -220,5 +244,8 @@
     attributes: true,
     attributeFilter: ["lang"]
   });
+
+  originalButtonText = t("submit");
+  submitButton.textContent = originalButtonText;
 
 })();
