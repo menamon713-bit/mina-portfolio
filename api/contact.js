@@ -2,8 +2,19 @@
 
 const { neon } = require("@neondatabase/serverless");
 
-const MAX_REQUESTS = 5;
-const WINDOW_SECONDS = 600;
+const { checkSameOrigin } = require("./_lib/admin-auth");
+const { getClientKey } = require("./_lib/client-ip");
+const { hit } = require("./_lib/rate-limit");
+
+const MAX_REQUESTS_PER_IP = 5;
+const IP_WINDOW_SECONDS = 600;
+
+// Total messages accepted from everyone per hour (protects the database
+// from distributed floods). Override with CONTACT_GLOBAL_LIMIT in Vercel env.
+const GLOBAL_WINDOW_SECONDS = 3600;
+const DEFAULT_GLOBAL_LIMIT = 100;
+const GLOBAL_KEY = "mash:contact:global";
+
 const MAX_BODY_BYTES = 12 * 1024;
 
 const MAX_LENGTHS = {
@@ -13,62 +24,45 @@ const MAX_LENGTHS = {
   message: 5000
 };
 
+// PostgreSQL text cannot hold NUL, and control characters have no
+// business in a name/email/subject. The message may keep \n, \r and \t.
+const SINGLE_LINE_BAD = /[\u0000-\u001F\u007F\u2028\u2029]/;
+const MESSAGE_BAD = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/;
+
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 function send(res, status, payload) {
   return res.status(status).json(payload);
 }
 
-function getClientIP(req) {
-  const forwarded = req.headers["x-forwarded-for"];
+function getGlobalLimit() {
+  const value = Number(process.env.CONTACT_GLOBAL_LIMIT);
 
-  if (typeof forwarded === "string" && forwarded.length) {
-    const ip = forwarded.split(",")[0].trim();
+  return Number.isSafeInteger(value) && value >= 10 && value <= 10000
+    ? value
+    : DEFAULT_GLOBAL_LIMIT;
+}
 
-    if (ip.length <= 100 && /^[0-9a-fA-F.:]+$/.test(ip)) {
-      return ip;
-    }
-  }
-
-  const realIP = req.headers["x-real-ip"];
-
-  if (typeof realIP === "string" && realIP.length) {
-    const ip = realIP.trim();
-
-    if (ip.length <= 100 && /^[0-9a-fA-F.:]+$/.test(ip)) {
-      return ip;
-    }
-  }
-
-  return "unknown";
+function isHoneypotFilled(body) {
+  return (
+    body &&
+    typeof body === "object" &&
+    typeof body.website === "string" &&
+    body.website.trim() !== ""
+  );
 }
 
 function validateBody(body) {
-  if (
-    !body ||
-    typeof body !== "object" ||
-    Array.isArray(body)
-  ) {
+  if (!body || typeof body !== "object" || Array.isArray(body)) {
     return "Invalid request body.";
   }
 
-  if (
-    body.website !== undefined &&
-    typeof body.website !== "string"
-  ) {
+  if (body.website !== undefined && typeof body.website !== "string") {
     return "Invalid submission.";
   }
 
-  // Honeypot protection.
-  if (body.website && body.website.trim()) {
-    return "Invalid submission.";
-  }
-
-  const fields = ["name", "email", "subject", "message"];
-
-  for (const field of fields) {
-    if (
-      body[field] !== undefined &&
-      typeof body[field] !== "string"
-    ) {
+  for (const field of ["name", "email", "subject", "message"]) {
+    if (body[field] !== undefined && typeof body[field] !== "string") {
       return "Invalid field type.";
     }
   }
@@ -82,86 +76,28 @@ function validateBody(body) {
     return "Name, email and message are required.";
   }
 
-  if (name.length > MAX_LENGTHS.name) {
-    return "Name is too long.";
-  }
+  if (name.length > MAX_LENGTHS.name) return "Name is too long.";
+  if (email.length > MAX_LENGTHS.email) return "Email is too long.";
+  if (subject.length > MAX_LENGTHS.subject) return "Subject is too long.";
 
-  if (email.length > MAX_LENGTHS.email) {
-    return "Email is too long.";
-  }
-
-  if (subject.length > MAX_LENGTHS.subject) {
-    return "Subject is too long.";
-  }
-
-  if (
-    message.length < 10 ||
-    message.length > MAX_LENGTHS.message
-  ) {
+  if (message.length < 10 || message.length > MAX_LENGTHS.message) {
     return "Message length is invalid.";
   }
 
-  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (
+    SINGLE_LINE_BAD.test(name) ||
+    SINGLE_LINE_BAD.test(email) ||
+    SINGLE_LINE_BAD.test(subject) ||
+    MESSAGE_BAD.test(message)
+  ) {
+    return "Invalid characters.";
+  }
 
-  if (!emailPattern.test(email)) {
+  if (!EMAIL_PATTERN.test(email)) {
     return "Invalid email address.";
   }
 
   return null;
-}
-
-async function checkRateLimit(ip) {
-  const redisUrl = process.env.KV_REST_API_URL;
-  const redisToken = process.env.KV_REST_API_TOKEN;
-
-  if (!redisUrl || !redisToken) {
-    throw new Error("RATE_LIMIT_CONFIG_MISSING");
-  }
-
-  const key = `mash:contact:${ip}`;
-
-  const luaScript = `
-    local current = redis.call("INCR", KEYS[1])
-
-    if current == 1 then
-      redis.call("EXPIRE", KEYS[1], ARGV[1])
-    end
-
-    return current
-  `;
-
-  const response = await fetch(redisUrl, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${redisToken}`,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify([
-      "EVAL",
-      luaScript,
-      "1",
-      key,
-      String(WINDOW_SECONDS)
-    ])
-  });
-
-  if (!response.ok) {
-    throw new Error("RATE_LIMIT_SERVICE_ERROR");
-  }
-
-  const result = await response.json();
-
-  if (result.error) {
-    throw new Error("RATE_LIMIT_SERVICE_ERROR");
-  }
-
-  const count = Number(result.result);
-
-  if (!Number.isSafeInteger(count) || count < 1) {
-    throw new Error("RATE_LIMIT_INVALID_RESPONSE");
-  }
-
-  return count <= MAX_REQUESTS;
 }
 
 module.exports = async function handler(req, res) {
@@ -172,71 +108,46 @@ module.exports = async function handler(req, res) {
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
 
-    return send(res, 405, {
-      error: "Method not allowed."
-    });
+    return send(res, 405, { error: "Method not allowed." });
+  }
+
+  // Browser requests must come from this site.
+  if (!checkSameOrigin(req)) {
+    return send(res, 403, { error: "Forbidden origin." });
   }
 
   // JSON only.
   const contentType = req.headers["content-type"] || "";
 
-  if (
-    !contentType.toLowerCase().includes("application/json")
-  ) {
+  if (!contentType.toLowerCase().includes("application/json")) {
     return send(res, 415, {
       error: "Content-Type must be application/json."
     });
   }
 
-  // Check declared request size.
+  // Declared size.
   const contentLength = Number(req.headers["content-length"]);
 
-  if (
-    Number.isFinite(contentLength) &&
-    contentLength > MAX_BODY_BYTES
-  ) {
-    return send(res, 413, {
-      error: "Request body is too large."
-    });
+  if (Number.isFinite(contentLength) && contentLength > MAX_BODY_BYTES) {
+    return send(res, 413, { error: "Request body is too large." });
   }
 
-  // Check actual parsed body size.
+  // Actual parsed size.
   let serializedBody;
 
   try {
     serializedBody = JSON.stringify(req.body);
   } catch (_) {
-    return send(res, 400, {
-      error: "Invalid request body."
-    });
+    return send(res, 400, { error: "Invalid request body." });
   }
 
   if (
     !serializedBody ||
     Buffer.byteLength(serializedBody, "utf8") > MAX_BODY_BYTES
   ) {
-    return send(res, 413, {
-      error: "Request body is too large."
-    });
+    return send(res, 413, { error: "Request body is too large." });
   }
 
-  const body = req.body;
-
-  // Validate input.
-  const validationError = validateBody(body);
-
-  if (validationError) {
-    return send(res, 400, {
-      error: validationError
-    });
-  }
-
-  const name = body.name.trim();
-  const email = body.email.trim();
-  const subject = (body.subject || "").trim();
-  const message = body.message.trim();
-
-  // Database configuration.
   const databaseUrl = process.env.DATABASE_URL;
 
   if (!databaseUrl) {
@@ -245,29 +156,61 @@ module.exports = async function handler(req, res) {
     });
   }
 
-  // Rate limiting.
-  const clientIP = getClientIP(req);
-
+  // Rate limits run BEFORE validation, so invalid spam is counted too.
   try {
-    const allowed = await checkRateLimit(clientIP);
+    const clientKey = getClientKey(req);
 
-    if (!allowed) {
+    const ipCount = await hit(
+      `mash:contact:${clientKey}`,
+      IP_WINDOW_SECONDS
+    );
+
+    if (ipCount > MAX_REQUESTS_PER_IP) {
+      res.setHeader("Retry-After", String(IP_WINDOW_SECONDS));
+
+      return send(res, 429, {
+        error: "Too many requests. Please try again later."
+      });
+    }
+
+    const globalCount = await hit(GLOBAL_KEY, GLOBAL_WINDOW_SECONDS);
+
+    if (globalCount > getGlobalLimit()) {
+      res.setHeader("Retry-After", String(GLOBAL_WINDOW_SECONDS));
+
       return send(res, 429, {
         error: "Too many requests. Please try again later."
       });
     }
   } catch (error) {
-    console.error(
-      "Contact rate limit error:",
-      error.message
-    );
+    console.error("Contact rate limit error:", error.message);
 
     return send(res, 503, {
       error: "Contact service is temporarily unavailable."
     });
   }
 
-  // Save message to Neon PostgreSQL.
+  const body = req.body;
+
+  // Honeypot: pretend it worked so bots don't learn they were caught.
+  if (isHoneypotFilled(body)) {
+    return send(res, 201, {
+      success: true,
+      message: "Message received successfully."
+    });
+  }
+
+  const validationError = validateBody(body);
+
+  if (validationError) {
+    return send(res, 400, { error: validationError });
+  }
+
+  const name = body.name.trim();
+  const email = body.email.trim();
+  const subject = (body.subject || "").trim();
+  const message = body.message.trim().replace(/\r\n?/g, "\n");
+
   try {
     const sql = neon(databaseUrl);
 
@@ -282,15 +225,9 @@ module.exports = async function handler(req, res) {
       success: true,
       message: "Message received successfully."
     });
-
   } catch (error) {
-    console.error(
-      "Contact database error:",
-      error.message
-    );
+    console.error("Contact database error:", error.message);
 
-    return send(res, 500, {
-      error: "Could not save your message."
-    });
+    return send(res, 500, { error: "Could not save your message." });
   }
 };
