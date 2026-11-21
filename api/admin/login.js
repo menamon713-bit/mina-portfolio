@@ -16,61 +16,18 @@ const scrypt = promisify(crypto.scrypt);
 
 const MAX_ATTEMPTS_PER_IP = 5;
 const IP_WINDOW_SECONDS = 900;
-
-const GLOBAL_WINDOW_SECONDS = 3600;
-const DEFAULT_GLOBAL_LIMIT = 100;
-
 const MAX_PASSWORD_LENGTH = 512;
-
-const GLOBAL_KEY = "mash:admin-login:global-attempts:v2";
 
 function send(res, status, data) {
   return res.status(status).json(data);
 }
 
-function getGlobalLimit() {
-  const value = process.env.ADMIN_LOGIN_GLOBAL_LIMIT;
-
-  if (value === undefined || value === "") {
-    return DEFAULT_GLOBAL_LIMIT;
-  }
-
-  if (
-    typeof value !== "string" ||
-    !/^\d+$/.test(value)
-  ) {
-    throw new Error("ADMIN_LOGIN_GLOBAL_LIMIT is invalid.");
-  }
-
-  const limit = Number(value);
-
-  if (
-    !Number.isSafeInteger(limit) ||
-    limit < 10 ||
-    limit > 10000
-  ) {
-    throw new Error("ADMIN_LOGIN_GLOBAL_LIMIT is invalid.");
-  }
-
-  return limit;
-}
-
-/* ---------- password verification ---------- */
-
-// Format:
-// scrypt$N$r$p$salt_base64url$hash_base64url
-
 function parseScryptHash(value) {
-  if (typeof value !== "string") {
-    return null;
-  }
+  if (typeof value !== "string") return null;
 
   const parts = value.split("$");
 
-  if (
-    parts.length !== 6 ||
-    parts[0] !== "scrypt"
-  ) {
+  if (parts.length !== 6 || parts[0] !== "scrypt") {
     return null;
   }
 
@@ -82,20 +39,10 @@ function parseScryptHash(value) {
     !Number.isInteger(N) ||
     N < 2 ** 14 ||
     N > 2 ** 16 ||
-    (N & (N - 1)) !== 0
-  ) {
-    return null;
-  }
-
-  if (
+    (N & (N - 1)) !== 0 ||
     !Number.isInteger(r) ||
     r < 8 ||
-    r > 16
-  ) {
-    return null;
-  }
-
-  if (
+    r > 16 ||
     !Number.isInteger(p) ||
     p < 1 ||
     p > 4
@@ -110,15 +57,8 @@ function parseScryptHash(value) {
     return null;
   }
 
-  const salt = Buffer.from(
-    parts[4],
-    "base64url"
-  );
-
-  const hash = Buffer.from(
-    parts[5],
-    "base64url"
-  );
+  const salt = Buffer.from(parts[4], "base64url");
+  const hash = Buffer.from(parts[5], "base64url");
 
   if (
     salt.toString("base64url") !== parts[4] ||
@@ -131,22 +71,13 @@ function parseScryptHash(value) {
     return null;
   }
 
-  return {
-    N,
-    r,
-    p,
-    salt,
-    hash
-  };
+  return { N, r, p, salt, hash };
 }
 
 function getPasswordConfig() {
   const value = process.env.ADMIN_PASSWORD_HASH;
 
-  if (
-    typeof value !== "string" ||
-    value.trim() === ""
-  ) {
+  if (typeof value !== "string" || value.trim() === "") {
     throw new Error("ADMIN_PASSWORD_HASH is missing.");
   }
 
@@ -168,38 +99,27 @@ async function verifyPassword(input, config) {
       N: config.N,
       r: config.r,
       p: config.p,
-      maxmem:
-        128 * config.N * config.r * 2 +
-        1024 * 1024
+      maxmem: 128 * config.N * config.r * 2 + 1024 * 1024
     }
   );
 
   return (
     derived.length === config.hash.length &&
-    crypto.timingSafeEqual(
-      derived,
-      config.hash
-    )
+    crypto.timingSafeEqual(derived, config.hash)
   );
 }
 
-/* ---------- handler ---------- */
-
 module.exports = async function handler(req, res) {
   res.setHeader("Cache-Control", "no-store");
+  res.setHeader("X-Content-Type-Options", "nosniff");
 
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
-
-    return send(res, 405, {
-      error: "Method not allowed."
-    });
+    return send(res, 405, { error: "Method not allowed." });
   }
 
   if (!checkSameOrigin(req)) {
-    return send(res, 403, {
-      error: "Forbidden origin."
-    });
+    return send(res, 403, { error: "Forbidden origin." });
   }
 
   const body = req.body;
@@ -210,29 +130,21 @@ module.exports = async function handler(req, res) {
     Array.isArray(body) ||
     Object.getPrototypeOf(body) !== Object.prototype ||
     Object.keys(body).length !== 1 ||
-    !Object.prototype.hasOwnProperty.call(
-      body,
-      "password"
-    ) ||
+    !Object.prototype.hasOwnProperty.call(body, "password") ||
     typeof body.password !== "string" ||
     body.password.length === 0 ||
     body.password.length > MAX_PASSWORD_LENGTH ||
     Buffer.byteLength(body.password, "utf8") > 2048
   ) {
-    return send(res, 400, {
-      error: "Invalid request."
-    });
+    return send(res, 400, { error: "Invalid request." });
   }
 
   let passwordConfig;
-  let globalLimit;
 
   try {
     passwordConfig = getPasswordConfig();
-    globalLimit = getGlobalLimit();
   } catch {
-    console.error("[admin-login] Invalid authentication configuration.");
-
+    console.error("[admin-login] Authentication configuration error.");
     return send(res, 503, {
       error: "Admin authentication is not configured."
     });
@@ -240,7 +152,6 @@ module.exports = async function handler(req, res) {
 
   const clientKey = getClientKey(req);
 
-  // Never put unknown IPs into a shared rate-limit bucket.
   if (!clientKey) {
     return send(res, 503, {
       error: "Unable to verify client address."
@@ -249,36 +160,17 @@ module.exports = async function handler(req, res) {
 
   const ipKey = `mash:admin-login:${clientKey}`;
 
-  // Both limits use atomic Redis operations.
-  // IP limit is checked first to avoid unnecessary global consumption.
   try {
-    const ipResult = await consume(
+    const result = await consume(
       ipKey,
       IP_WINDOW_SECONDS,
       MAX_ATTEMPTS_PER_IP
     );
 
-    if (!ipResult.allowed) {
+    if (!result.allowed) {
       res.setHeader(
         "Retry-After",
-        String(ipResult.retryAfter)
-      );
-
-      return send(res, 429, {
-        error: "Too many login attempts. Try again later."
-      });
-    }
-
-    const globalResult = await consume(
-      GLOBAL_KEY,
-      GLOBAL_WINDOW_SECONDS,
-      globalLimit
-    );
-
-    if (!globalResult.allowed) {
-      res.setHeader(
-        "Retry-After",
-        String(globalResult.retryAfter)
+        String(result.retryAfter)
       );
 
       return send(res, 429, {
@@ -296,10 +188,7 @@ module.exports = async function handler(req, res) {
   let valid;
 
   try {
-    valid = await verifyPassword(
-      body.password,
-      passwordConfig
-    );
+    valid = await verifyPassword(body.password, passwordConfig);
   } catch {
     console.error("[admin-login] Password verification failed.");
 
@@ -314,8 +203,6 @@ module.exports = async function handler(req, res) {
     });
   }
 
-  // Reset the per-IP counter after successful authentication.
-  // The global counter is intentionally not reset.
   try {
     await reset(ipKey);
   } catch {
