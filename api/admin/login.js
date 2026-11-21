@@ -1,6 +1,8 @@
 "use strict";
 
 const crypto = require("crypto");
+const net = require("net");
+
 const {
   createSession,
   setSessionCookie,
@@ -9,18 +11,23 @@ const {
 
 const MAX_ATTEMPTS = 5;
 const WINDOW_SECONDS = 900;
+const REDIS_TIMEOUT_MS = 5000;
+const MAX_PASSWORD_LENGTH = 512;
 
 function send(res, status, data) {
   return res.status(status).json(data);
 }
 
 function safeCompare(a, b) {
-  const first = Buffer.from(a);
-  const second = Buffer.from(b);
+  const first = crypto
+    .createHash("sha256")
+    .update(a, "utf8")
+    .digest();
 
-  if (first.length !== second.length) {
-    return false;
-  }
+  const second = crypto
+    .createHash("sha256")
+    .update(b, "utf8")
+    .digest();
 
   return crypto.timingSafeEqual(first, second);
 }
@@ -28,19 +35,46 @@ function safeCompare(a, b) {
 function getIP(req) {
   const value = req.headers["x-forwarded-for"];
 
-  if (typeof value === "string" && value.length) {
-    return value.split(",")[0].trim().slice(0, 100);
+  if (typeof value !== "string" || value.length > 1024) {
+    return "unknown";
   }
 
-  return "unknown";
+  const ip = value.split(",")[0].trim();
+
+  if (!ip || net.isIP(ip) === 0) {
+    return "unknown";
+  }
+
+  return ip;
 }
 
 async function checkLoginLimit(ip) {
   const url = process.env.KV_REST_API_URL;
   const token = process.env.KV_REST_API_TOKEN;
 
-  if (!url || !token) {
+  if (
+    typeof url !== "string" ||
+    typeof token !== "string" ||
+    !url ||
+    !token
+  ) {
     throw new Error("RATE_LIMIT_CONFIG_MISSING");
+  }
+
+  let redisURL;
+
+  try {
+    redisURL = new URL(url);
+  } catch {
+    throw new Error("RATE_LIMIT_CONFIG_INVALID");
+  }
+
+  if (
+    redisURL.protocol !== "https:" ||
+    redisURL.username ||
+    redisURL.password
+  ) {
+    throw new Error("RATE_LIMIT_CONFIG_INVALID");
   }
 
   const key = `mash:admin-login:${ip}`;
@@ -53,33 +87,64 @@ async function checkLoginLimit(ip) {
     return count
   `;
 
-  const response = await fetch(url, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify([
-      "EVAL",
-      script,
-      "1",
-      key,
-      String(WINDOW_SECONDS)
-    ])
-  });
+  const controller = new AbortController();
+  const timeout = setTimeout(
+    () => controller.abort(),
+    REDIS_TIMEOUT_MS
+  );
 
-  if (!response.ok) {
-    throw new Error("RATE_LIMIT_SERVICE_ERROR");
+  try {
+    const response = await fetch(redisURL.toString(), {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify([
+        "EVAL",
+        script,
+        "1",
+        key,
+        String(WINDOW_SECONDS)
+      ]),
+      signal: controller.signal
+    });
+
+    if (!response.ok) {
+      throw new Error("RATE_LIMIT_SERVICE_ERROR");
+    }
+
+    const result = await response.json();
+
+    if (
+      !result ||
+      typeof result !== "object" ||
+      result.error
+    ) {
+      throw new Error("RATE_LIMIT_INVALID_RESPONSE");
+    }
+
+    const count = Number(result.result);
+
+    if (
+      !Number.isSafeInteger(count) ||
+      count < 1
+    ) {
+      throw new Error("RATE_LIMIT_INVALID_RESPONSE");
+    }
+
+    return count <= MAX_ATTEMPTS;
+
+  } catch (error) {
+    if (error.name === "AbortError") {
+      throw new Error("RATE_LIMIT_TIMEOUT");
+    }
+
+    throw error;
+
+  } finally {
+    clearTimeout(timeout);
   }
-
-  const result = await response.json();
-  const count = Number(result.result);
-
-  if (result.error || !Number.isSafeInteger(count)) {
-    throw new Error("RATE_LIMIT_INVALID_RESPONSE");
-  }
-
-  return count <= MAX_ATTEMPTS;
 }
 
 module.exports = async function handler(req, res) {
@@ -87,48 +152,70 @@ module.exports = async function handler(req, res) {
 
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
-    return send(res, 405, { error: "Method not allowed." });
+
+    return send(res, 405, {
+      error: "Method not allowed."
+    });
   }
 
   if (!checkSameOrigin(req)) {
-    return send(res, 403, { error: "Forbidden origin." });
+    return send(res, 403, {
+      error: "Forbidden origin."
+    });
   }
 
+  const body = req.body;
+
   if (
-    !req.body ||
-    typeof req.body !== "object" ||
-    Array.isArray(req.body) ||
-    typeof req.body.password !== "string" ||
-    req.body.password.length > 512
+    !body ||
+    typeof body !== "object" ||
+    Array.isArray(body) ||
+    Object.getPrototypeOf(body) !== Object.prototype ||
+    Object.keys(body).length !== 1 ||
+    !Object.prototype.hasOwnProperty.call(body, "password") ||
+    typeof body.password !== "string" ||
+    body.password.length === 0 ||
+    body.password.length > MAX_PASSWORD_LENGTH ||
+    Buffer.byteLength(body.password, "utf8") > 2048
   ) {
-    return send(res, 400, { error: "Invalid request." });
+    return send(res, 400, {
+      error: "Invalid request."
+    });
   }
 
   const adminPassword = process.env.ADMIN_PASSWORD;
 
-  if (!adminPassword) {
+  if (
+    typeof adminPassword !== "string" ||
+    adminPassword.length === 0
+  ) {
     return send(res, 503, {
       error: "Admin authentication is not configured."
     });
   }
 
   try {
-    const allowed = await checkLoginLimit(getIP(req));
+    const ip = getIP(req);
+    const allowed = await checkLoginLimit(ip);
 
     if (!allowed) {
       return send(res, 429, {
         error: "Too many login attempts. Try again later."
       });
     }
+
   } catch (error) {
-    console.error("Admin rate limit error:", error.message);
+    console.error(
+      "Admin rate limit error:",
+      error.message
+    );
 
     return send(res, 503, {
       error: "Login service temporarily unavailable."
     });
   }
 
-  if (!safeCompare(req.body.password, adminPassword)) {
+  if (!safeCompare(body.password, adminPassword)) {
     return send(res, 401, {
       error: "Incorrect password."
     });
@@ -136,13 +223,18 @@ module.exports = async function handler(req, res) {
 
   try {
     const session = createSession();
+
     setSessionCookie(res, session);
 
     return send(res, 200, {
       success: true
     });
+
   } catch (error) {
-    console.error("Admin session error:", error.message);
+    console.error(
+      "Admin session error:",
+      error.message
+    );
 
     return send(res, 503, {
       error: "Could not create admin session."
