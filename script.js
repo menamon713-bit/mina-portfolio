@@ -1,7 +1,7 @@
 /* =====================================================
    M.A.S.H CYVEX — Main JavaScript
    Navigation / Sidebar / Modals
-   Language / Theme / WhatsApp / Animations
+   Language / Theme / Projects API / WhatsApp
 ===================================================== */
 
 (() => {
@@ -113,19 +113,10 @@
         "مجموعة من المشاريع والتجارب التي عملت عليها.",
       viewDetails: "عرض التفاصيل",
       liveDemo: "الموقع المباشر",
-
-      projectReportTitle: "تقرير تقييم أمني",
-      projectReportText:
-        "نموذج تقرير يعرض نتائج تقييم أمني وملاحظات حول نقاط الضعف والتوصيات.",
-      projectMalwareText:
-        "مشروع لتحليل الملفات بشكل ثابت والمساعدة في فحص خصائصها ومؤشراتها.",
-      projectReconText:
-        "أداة لاستكشاف المعلومات وجمع البيانات الأولية ضمن نطاقات اختبار مصرح بها.",
-      projectAwidaTitle: "مطعم عويضة الجمهورية",
-      projectAwidaText:
-        "موقع ويب تعريفي لمطعم يعرض معلوماته وخدماته.",
-      projectLetsGoText:
-        "موقع ويب تعريفي لمقهى بتصميم متجاوب.",
+      github: "مستودع GitHub",
+      noProjects: "لا توجد مشاريع منشورة حالياً.",
+      projectsLoading: "جارٍ تحميل المشاريع...",
+      projectsError: "تعذر تحميل المشاريع حالياً. حاول تحديث الصفحة.",
 
       contactKicker: "لنتواصل",
       contactTitle: "تواصل معي",
@@ -155,34 +146,11 @@
       rights: "جميع الحقوق محفوظة.",
       footerMade: "صُنع باهتمام بالتفاصيل.",
 
-      reportModalKicker: "مشروع أمني",
-      reportModalTitle: "تقرير التقييم الأمني",
-      reportModalIntro:
-        "عرض توضيحي لطريقة تنظيم نتائج التقييم الأمني وتوثيق الملاحظات.",
-      reportScopeTitle: "نطاق العمل",
-      reportScopeText:
-        "تقييم أمني ضمن نطاق محدد ومصرح به.",
-      reportMethodTitle: "المنهجية",
-      reportMethodText:
-        "جمع المعلومات، مراجعة النتائج، وتوثيق الملاحظات.",
-      reportOutputTitle: "المخرجات",
-      reportOutputText:
-        "ملخص للملاحظات الأمنية وتوصيات المعالجة.",
-
-      reconModalIntro:
-        "مشروع لاستكشاف المعلومات الأولية وتنظيم نتائج الاستطلاع الأمني.",
-      reconPurposeTitle: "الهدف",
-      reconPurposeText:
-        "المساعدة في تنظيم عملية الاستطلاع وجمع المعلومات العامة.",
-      reconUsageTitle: "الاستخدام",
-      reconUsageText:
-        "يُستخدم فقط على الأنظمة والنطاقات التي يوجد تصريح باختبارها.",
-      reconTechTitle: "التقنيات",
-
       closeMenu: "إغلاق القائمة",
       openMenu: "فتح القائمة",
       changeTheme: "تغيير المظهر",
-      switchLanguage: "تغيير اللغة"
+      switchLanguage: "تغيير اللغة",
+      close: "إغلاق"
     },
 
     en: {
@@ -268,19 +236,10 @@
         "A collection of projects and experiments I have worked on.",
       viewDetails: "View Details",
       liveDemo: "Live Demo",
-
-      projectReportTitle: "Security Assessment Report",
-      projectReportText:
-        "A sample report presenting security assessment findings, weaknesses, and recommendations.",
-      projectMalwareText:
-        "A static file analysis project that helps inspect file properties and indicators.",
-      projectReconText:
-        "An information-gathering tool for authorized testing scopes.",
-      projectAwidaTitle: "Awida Republic Restaurant",
-      projectAwidaText:
-        "An informational restaurant website presenting its details and services.",
-      projectLetsGoText:
-        "A responsive informational website for a cafe.",
+      github: "GitHub Repository",
+      noProjects: "There are no published projects yet.",
+      projectsLoading: "Loading projects...",
+      projectsError: "Unable to load projects. Please refresh the page.",
 
       contactKicker: "Get in Touch",
       contactTitle: "Contact Me",
@@ -310,36 +269,363 @@
       rights: "All rights reserved.",
       footerMade: "Made with attention to detail.",
 
-      reportModalKicker: "SECURITY PROJECT",
-      reportModalTitle: "Security Assessment Report",
-      reportModalIntro:
-        "A demonstration of how security assessment findings and observations are organized.",
-      reportScopeTitle: "Scope",
-      reportScopeText:
-        "A security assessment within a defined and authorized scope.",
-      reportMethodTitle: "Methodology",
-      reportMethodText:
-        "Information gathering, reviewing results, and documenting findings.",
-      reportOutputTitle: "Deliverables",
-      reportOutputText:
-        "A summary of security observations and remediation recommendations.",
-
-      reconModalIntro:
-        "A project for gathering initial information and organizing security reconnaissance results.",
-      reconPurposeTitle: "Purpose",
-      reconPurposeText:
-        "Helping organize reconnaissance and collect publicly available information.",
-      reconUsageTitle: "Usage",
-      reconUsageText:
-        "Used only on systems and domains where testing is authorized.",
-      reconTechTitle: "Technologies",
-
       closeMenu: "Close menu",
       openMenu: "Open menu",
       changeTheme: "Change appearance",
-      switchLanguage: "Switch language"
+      switchLanguage: "Switch language",
+      close: "Close"
     }
   };
+
+  /* PROJECTS STATE */
+  const projectsGrid = $("#projectsGrid");
+  const projectsStatus = $("#projectsStatus");
+  let projectsData = [];
+  let projectsLoaded = false;
+
+  function currentDictionary() {
+    return translations[html.lang] || translations.ar;
+  }
+
+  function currentProjectText(project, arValue, enValue) {
+    return html.lang === "ar"
+      ? (project[arValue] || project[enValue] || "")
+      : (project[enValue] || project[arValue] || "");
+  }
+
+  function makeElement(tag, className, text) {
+    const element = document.createElement(tag);
+
+    if (className) element.className = className;
+    if (text !== undefined && text !== null) {
+      element.textContent = String(text);
+    }
+
+    return element;
+  }
+
+  function safeHttpUrl(value) {
+    if (typeof value !== "string" || !value.trim()) return "";
+
+    try {
+      const url = new URL(value, window.location.origin);
+
+      if (url.protocol !== "https:" && url.protocol !== "http:") {
+        return "";
+      }
+
+      return url.href;
+    } catch {
+      return "";
+    }
+  }
+
+  function safeImageUrl(value) {
+    if (typeof value !== "string" || !value.trim()) return "";
+
+    try {
+      const url = new URL(value, window.location.origin);
+
+      if (
+        url.origin !== window.location.origin &&
+        url.protocol !== "https:"
+      ) {
+        return "";
+      }
+
+      if (url.protocol !== "https:" && url.protocol !== "http:") {
+        return "";
+      }
+
+      return url.href;
+    } catch {
+      return "";
+    }
+  }
+
+  function makeProjectVisual(project) {
+    const imageUrl = safeImageUrl(project.image_url);
+
+    if (imageUrl) {
+      const wrapper = makeElement("div", "project-image");
+      const image = document.createElement("img");
+
+      image.src = imageUrl;
+      image.alt = currentProjectText(project, "title_ar", "title_en");
+      image.loading = "lazy";
+      image.onerror = () => wrapper.remove();
+
+      wrapper.appendChild(image);
+      return wrapper;
+    }
+
+    const visualClass = typeof project.visual_style === "string" &&
+      /^[a-z0-9_-]{1,60}$/i.test(project.visual_style)
+      ? project.visual_style
+      : "project-visual-default";
+
+    const visual = makeElement("div", `project-visual ${visualClass}`);
+    const icon = makeElement("span", "project-visual-icon", "⌘");
+    icon.setAttribute("aria-hidden", "true");
+
+    const category = makeElement(
+      "span",
+      "project-category",
+      currentProjectText(project, "category_ar", "category_en")
+    );
+
+    visual.append(icon, category);
+    return visual;
+  }
+
+  function makeProjectActions(project) {
+    const actions = makeElement("div", "project-actions");
+    const liveUrl = safeHttpUrl(project.live_url);
+    const githubUrl = safeHttpUrl(project.github_url);
+    const dictionary = currentDictionary();
+
+    if (liveUrl) {
+      const link = makeElement("a", "project-link");
+      link.href = liveUrl;
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+
+      const label = makeElement("span", "", dictionary.liveDemo);
+      const arrow = makeElement("span", "", "↗");
+      arrow.setAttribute("aria-hidden", "true");
+
+      link.append(label, arrow);
+      actions.appendChild(link);
+    }
+
+    if (githubUrl) {
+      const link = makeElement("a", "project-link");
+      link.href = githubUrl;
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+
+      const label = makeElement("span", "", dictionary.github);
+      const arrow = makeElement("span", "", "↗");
+      arrow.setAttribute("aria-hidden", "true");
+
+      link.append(label, arrow);
+      actions.appendChild(link);
+    }
+
+    return actions;
+  }
+
+  function openProjectDetails(project) {
+    const modal = $("#projectModal");
+    const title = $("#projectModalTitle");
+    const category = $("#projectModalCategory");
+    const intro = $("#projectModalIntro");
+    const details = $("#projectModalDetails");
+    const actions = $("#projectModalActions");
+
+    if (!modal || !title || !category || !intro || !details || !actions) {
+      return;
+    }
+
+    const ar = html.lang === "ar";
+    const projectTitle = currentProjectText(
+      project,
+      "title_ar",
+      "title_en"
+    );
+
+    const projectDescription = currentProjectText(
+      project,
+      "description_ar",
+      "description_en"
+    );
+
+    const projectCategory = currentProjectText(
+      project,
+      "category_ar",
+      "category_en"
+    );
+
+    title.textContent = projectTitle;
+    category.textContent = projectCategory;
+    intro.textContent = projectDescription;
+    details.replaceChildren();
+    actions.replaceChildren();
+
+    const rawDetails = ar ? project.details_ar : project.details_en;
+    const detailObject = rawDetails &&
+      typeof rawDetails === "object" &&
+      !Array.isArray(rawDetails)
+      ? rawDetails
+      : {};
+
+    Object.entries(detailObject).forEach(([key, value]) => {
+      if (key === "intro") return;
+
+      let heading = "";
+      let description = "";
+
+      if (value && typeof value === "object" && !Array.isArray(value)) {
+        heading = typeof value.title === "string" ? value.title : "";
+        description = typeof value.text === "string" ? value.text : "";
+      } else if (typeof value === "string") {
+        description = value;
+      }
+
+      if (!heading && !description) return;
+
+      const item = makeElement("div", "modal-detail");
+
+      if (heading) {
+        item.appendChild(makeElement("strong", "", heading));
+      }
+
+      if (description) {
+        item.appendChild(makeElement("p", "", description));
+      }
+
+      details.appendChild(item);
+    });
+
+    const projectActions = makeProjectActions(project);
+    actions.replaceChildren(...projectActions.childNodes);
+
+    openModal("projectModal");
+  }
+
+  function renderProjects() {
+    if (!projectsGrid) return;
+
+    projectsGrid.replaceChildren();
+
+    if (!projectsData.length) {
+      const empty = makeElement(
+        "p",
+        "projects-status",
+        currentDictionary().noProjects
+      );
+      projectsGrid.appendChild(empty);
+      return;
+    }
+
+    projectsData.forEach(project => {
+      const card = makeElement("article", "project-card reveal");
+      const visual = makeProjectVisual(project);
+      const content = makeElement("div", "project-content");
+
+      const title = makeElement(
+        "h2",
+        "",
+        currentProjectText(project, "title_ar", "title_en")
+      );
+
+      const description = makeElement(
+        "p",
+        "",
+        currentProjectText(project, "description_ar", "description_en")
+      );
+
+      const categoryText = currentProjectText(
+        project,
+        "category_ar",
+        "category_en"
+      );
+
+      if (categoryText) {
+        const tags = makeElement("div", "project-tags");
+        tags.appendChild(makeElement("span", "", categoryText));
+        content.appendChild(tags);
+      }
+
+      content.append(title, description);
+
+      const detailsType = String(project.details_type || "").toLowerCase();
+
+      if (detailsType === "modal") {
+        const button = makeElement(
+          "button",
+          "project-link",
+          currentDictionary().viewDetails
+        );
+
+        button.type = "button";
+        button.dataset.projectId = String(project.id);
+        button.dataset.projectAction = "details";
+
+        const arrow = makeElement("span", "", "↗");
+        arrow.setAttribute("aria-hidden", "true");
+        button.appendChild(arrow);
+
+        content.appendChild(button);
+      } else {
+        const actions = makeProjectActions(project);
+
+        if (actions.childNodes.length) {
+          content.appendChild(actions);
+        }
+      }
+
+      card.append(visual, content);
+      projectsGrid.appendChild(card);
+    });
+
+    refreshReveal();
+  }
+
+  async function loadProjects() {
+    if (!projectsGrid || projectsLoaded) return;
+
+    const dictionary = currentDictionary();
+
+    if (projectsStatus) {
+      projectsStatus.textContent = dictionary.projectsLoading;
+    }
+
+    try {
+      const response = await fetch("/api/health?resource=projects", {
+        method: "GET",
+        headers: {
+          "Accept": "application/json"
+        },
+        cache: "no-store",
+        credentials: "same-origin"
+      });
+
+      if (!response.ok) {
+        throw new Error(`Projects request failed: ${response.status}`);
+      }
+
+      const result = await response.json();
+
+      if (
+        !result ||
+        result.success !== true ||
+        !Array.isArray(result.projects)
+      ) {
+        throw new Error("Invalid projects response.");
+      }
+
+      projectsData = result.projects.filter(project =>
+        project &&
+        typeof project === "object" &&
+        project.is_visible !== false
+      );
+
+      projectsLoaded = true;
+      renderProjects();
+
+    } catch (error) {
+      console.error("Projects loading error:", error);
+
+      projectsGrid.replaceChildren(
+        makeElement(
+          "p",
+          "projects-status",
+          currentDictionary().projectsError
+        )
+      );
+    }
+  }
 
   /* LANGUAGE */
   const languageToggle = $("#languageToggle");
@@ -374,7 +660,7 @@
     if (!menuBtn) return;
 
     const isOpen = body.classList.contains("menu-open");
-    const dictionary = translations[html.lang] || translations.ar;
+    const dictionary = currentDictionary();
 
     menuBtn.setAttribute("aria-expanded", String(isOpen));
     menuBtn.setAttribute(
@@ -453,6 +739,10 @@
     }
 
     safeStorage.set("mash-language", lang);
+
+    if (projectsLoaded) {
+      renderProjects();
+    }
   }
 
   languageToggle?.addEventListener("click", () => {
@@ -469,7 +759,7 @@
       themeToggle.textContent =
         selectedTheme === "dark" ? "☀️" : "🌙";
 
-      const dictionary = translations[html.lang] || translations.ar;
+      const dictionary = currentDictionary();
 
       themeToggle.setAttribute(
         "aria-label",
@@ -552,6 +842,10 @@
 
     refreshReveal();
     animateSkills(target);
+
+    if (pageId === "projects") {
+      loadProjects();
+    }
   }
 
   pageLinks.forEach(link => {
@@ -574,8 +868,11 @@
   window.addEventListener("hashchange", handleHashNavigation);
 
   /* MODALS */
-  const modals = $$(".modal");
   let previousFocus = null;
+
+  function getModals() {
+    return $$(".modal");
+  }
 
   function openModal(modalId) {
     const modal = document.getElementById(modalId);
@@ -584,7 +881,7 @@
 
     previousFocus = document.activeElement;
 
-    modals.forEach(item => {
+    getModals().forEach(item => {
       item.classList.remove("active", "show");
       item.setAttribute("aria-hidden", "true");
     });
@@ -602,7 +899,7 @@
     modal.classList.remove("active", "show");
     modal.setAttribute("aria-hidden", "true");
 
-    const anotherOpen = modals.some(item =>
+    const anotherOpen = getModals().some(item =>
       item.classList.contains("active") ||
       item.classList.contains("show")
     );
@@ -622,7 +919,7 @@
   }
 
   function closeAllModals() {
-    const activeModal = modals.find(modal =>
+    const activeModal = getModals().find(modal =>
       modal.classList.contains("active") ||
       modal.classList.contains("show")
     );
@@ -632,29 +929,29 @@
     }
   }
 
-  /* ACTION BUTTONS */
-  $$("[data-action]").forEach(element => {
-    element.addEventListener("click", () => {
-      switch (element.dataset.action) {
-        case "open-report":
-          openModal("reportModal");
-          break;
+  /* ACTIONS — EVENT DELEGATION */
+  document.addEventListener("click", event => {
+    const closeButton = event.target.closest('[data-action="close-modal"]');
 
-        case "open-recon":
-          openModal("reconModal");
-          break;
+    if (closeButton) {
+      closeModal(closeButton.closest(".modal"));
+      return;
+    }
 
-        case "close-modal":
-          closeModal(element.closest(".modal"));
-          break;
+    const projectButton = event.target.closest(
+      '[data-project-action="details"]'
+    );
 
-        default:
-          break;
-      }
-    });
+    if (projectButton) {
+      const project = projectsData.find(item =>
+        String(item.id) === projectButton.dataset.projectId
+      );
+
+      if (project) openProjectDetails(project);
+    }
   });
 
-  modals.forEach(modal => {
+  getModals().forEach(modal => {
     modal.addEventListener("click", event => {
       if (event.target === modal) {
         closeModal(modal);
@@ -673,7 +970,7 @@
       event.key === "Tab" &&
       body.classList.contains("modal-open")
     ) {
-      const activeModal = modals.find(modal =>
+      const activeModal = getModals().find(modal =>
         modal.classList.contains("active")
       );
 
@@ -705,7 +1002,6 @@
   /* WHATSAPP APP SELECTION */
   const whatsappFloat = $("#whatsappFloat");
   const whatsappModal = $("#whatsappModal");
-
   const whatsappAppButtons = $$("[data-whatsapp-app]");
 
   whatsappFloat?.addEventListener("click", () => {
@@ -827,10 +1123,16 @@
       page.id === initialPage
     );
 
-    showPage(pageExists ? initialPage : "home", false);
+    const selectedPage = pageExists ? initialPage : "home";
+
+    showPage(selectedPage, false);
 
     refreshReveal();
     animateSkills(document);
+
+    if (selectedPage === "projects") {
+      loadProjects();
+    }
   }
 
   if (document.readyState === "loading") {
