@@ -9,12 +9,40 @@
   const $$ = (selector, parent = document) =>
     [...parent.querySelectorAll(selector)];
 
+  const PLATFORMS = Object.freeze({
+    github: {
+      platform: "github",
+      label_ar: "GitHub",
+      label_en: "GitHub",
+      icon: "github"
+    },
+    gmail: {
+      platform: "gmail",
+      label_ar: "Gmail",
+      label_en: "Gmail",
+      icon: "gmail"
+    },
+    facebook: {
+      platform: "facebook",
+      label_ar: "Facebook",
+      label_en: "Facebook",
+      icon: "facebook"
+    },
+    tiktok: {
+      platform: "tiktok",
+      label_ar: "TikTok",
+      label_en: "TikTok",
+      icon: "tiktok"
+    }
+  });
+
   const state = {
     links: [],
     editingId: null,
     loading: false,
     saving: false,
-    initialized: false
+    initialized: false,
+    legacyPlatform: null
   };
 
   // ==============================
@@ -80,6 +108,10 @@
       : "var(--success)";
   }
 
+  function getPlatformData(platform) {
+    return PLATFORMS[platform] || null;
+  }
+
   // ==============================
   // API REQUEST
   // ==============================
@@ -141,7 +173,7 @@
       <div class="panel-header">
         <div>
           <h2>إدارة روابط التواصل</h2>
-          <p>إضافة وتعديل وإخفاء روابط حساباتك.</p>
+          <p>اختر المنصة وأضف رابط حسابك.</p>
         </div>
 
         <button
@@ -158,60 +190,31 @@
         <div class="profile-form-grid">
 
           <div class="form-field">
-            <label for="socialPlatform">اسم المنصة *</label>
-            <input
-              id="socialPlatform"
-              type="text"
-              maxlength="50"
-              placeholder="github"
-              required
-            >
-          </div>
+            <label for="socialPlatform">المنصة *</label>
 
-          <div class="form-field">
-            <label for="socialIcon">الأيقونة</label>
-            <input
-              id="socialIcon"
-              type="text"
-              maxlength="100"
-              placeholder="github"
-            >
-          </div>
-
-          <div class="form-field">
-            <label for="socialLabelAr">الاسم بالعربية *</label>
-            <input
-              id="socialLabelAr"
-              type="text"
-              maxlength="120"
-              placeholder="جيت هاب"
-              required
-            >
-          </div>
-
-          <div class="form-field">
-            <label for="socialLabelEn">الاسم بالإنجليزية *</label>
-            <input
-              id="socialLabelEn"
-              type="text"
-              maxlength="120"
-              placeholder="GitHub"
-              required
-            >
+            <select id="socialPlatform" required>
+              <option value="">اختر المنصة</option>
+              <option value="github">GitHub</option>
+              <option value="gmail">Gmail</option>
+              <option value="facebook">Facebook</option>
+              <option value="tiktok">TikTok</option>
+            </select>
           </div>
 
           <div class="form-field">
             <label for="socialValue">اسم المستخدم أو القيمة</label>
+
             <input
               id="socialValue"
               type="text"
               maxlength="500"
-              placeholder="@username"
+              placeholder="اختياري"
             >
           </div>
 
           <div class="form-field">
             <label for="socialUrl">رابط الحساب *</label>
+
             <input
               id="socialUrl"
               type="url"
@@ -223,6 +226,7 @@
 
           <div class="form-field">
             <label for="socialSortOrder">ترتيب الظهور</label>
+
             <input
               id="socialSortOrder"
               type="number"
@@ -244,6 +248,18 @@
           </div>
 
         </div>
+
+        <input type="hidden" id="socialIcon">
+        <input type="hidden" id="socialLabelAr">
+        <input type="hidden" id="socialLabelEn">
+
+        <p
+          id="socialPlatformNote"
+          class="form-status"
+          aria-live="polite"
+        >
+          واتساب متاح بالفعل من خلال الزر العائم في الموقع.
+        </p>
 
         <div class="form-footer">
 
@@ -344,7 +360,75 @@
       </div>
     `;
 
+    $("#socialPlatform").addEventListener(
+      "change",
+      handlePlatformChange
+    );
+
     return true;
+  }
+
+  // ==============================
+  // PLATFORM SELECTION
+  // ==============================
+
+  function handlePlatformChange() {
+    const platform = $("#socialPlatform").value;
+    const data = getPlatformData(platform);
+
+    if (!data) {
+      if (state.legacyPlatform !== platform) {
+        $("#socialIcon").value = "";
+        $("#socialLabelAr").value = "";
+        $("#socialLabelEn").value = "";
+      }
+
+      return;
+    }
+
+    $("#socialIcon").value = data.icon;
+    $("#socialLabelAr").value = data.label_ar;
+    $("#socialLabelEn").value = data.label_en;
+
+    state.legacyPlatform = null;
+
+    setStatus("");
+  }
+
+  function setLegacyPlatform(link) {
+    const select = $("#socialPlatform");
+
+    const exists = [...select.options].some(
+      option => option.value === link.platform
+    );
+
+    if (!exists) {
+      const option = document.createElement("option");
+
+      option.value = link.platform;
+      option.textContent = `سجل قديم: ${link.label_en || link.platform}`;
+
+      select.appendChild(option);
+    }
+
+    select.value = link.platform;
+
+    state.legacyPlatform = link.platform;
+  }
+
+  function removeLegacyOption() {
+    const select = $("#socialPlatform");
+
+    [...select.options].forEach(option => {
+      if (
+        option.value &&
+        !getPlatformData(option.value)
+      ) {
+        option.remove();
+      }
+    });
+
+    state.legacyPlatform = null;
   }
 
   // ==============================
@@ -358,10 +442,16 @@
 
     form.reset();
 
+    removeLegacyOption();
+
     state.editingId = null;
 
     $("#socialSortOrder").value = "0";
     $("#socialVisible").checked = true;
+
+    $("#socialIcon").value = "";
+    $("#socialLabelAr").value = "";
+    $("#socialLabelEn").value = "";
 
     $("#saveSocialButton").textContent = "إضافة الرابط";
     $("#cancelSocialEdit").hidden = true;
@@ -370,11 +460,31 @@
   }
 
   function getPayload() {
+    const platform = $("#socialPlatform").value;
+    const platformData = getPlatformData(platform);
+
+    let metadata = platformData;
+
+    if (!metadata && state.editingId !== null) {
+      const original = state.links.find(
+        link => String(link.id) === String(state.editingId)
+      );
+
+      if (original && original.platform === platform) {
+        metadata = {
+          platform: original.platform,
+          label_ar: original.label_ar,
+          label_en: original.label_en,
+          icon: original.icon
+        };
+      }
+    }
+
     return {
-      platform: $("#socialPlatform").value.trim(),
-      icon: $("#socialIcon").value.trim(),
-      label_ar: $("#socialLabelAr").value.trim(),
-      label_en: $("#socialLabelEn").value.trim(),
+      platform,
+      icon: metadata?.icon || "",
+      label_ar: metadata?.label_ar || "",
+      label_en: metadata?.label_en || "",
       value: $("#socialValue").value.trim(),
       url: $("#socialUrl").value.trim(),
       sort_order: Number($("#socialSortOrder").value),
@@ -389,11 +499,21 @@
       !payload.label_en ||
       !payload.url
     ) {
-      return "أكمل الحقول المطلوبة.";
+      return "اختر المنصة وأدخل رابط الحساب.";
     }
 
-    if (!/^[a-zA-Z0-9_-]+$/.test(payload.platform)) {
-      return "اسم المنصة غير صحيح.";
+    if (
+      !getPlatformData(payload.platform) &&
+      state.editingId === null
+    ) {
+      return "هذه المنصة غير متاحة للإضافة.";
+    }
+
+    if (
+      !getPlatformData(payload.platform) &&
+      state.legacyPlatform !== payload.platform
+    ) {
+      return "لا يمكن إضافة هذه المنصة.";
     }
 
     if (
@@ -581,12 +701,21 @@
       return;
     }
 
+    resetForm();
+
     state.editingId = link.id;
 
-    $("#socialPlatform").value = link.platform || "";
-    $("#socialIcon").value = link.icon || "";
-    $("#socialLabelAr").value = link.label_ar || "";
-    $("#socialLabelEn").value = link.label_en || "";
+    if (getPlatformData(link.platform)) {
+      $("#socialPlatform").value = link.platform;
+      handlePlatformChange();
+    } else {
+      setLegacyPlatform(link);
+
+      $("#socialIcon").value = link.icon || "";
+      $("#socialLabelAr").value = link.label_ar || "";
+      $("#socialLabelEn").value = link.label_en || "";
+    }
+
     $("#socialValue").value = link.value || "";
     $("#socialUrl").value = link.url || "";
     $("#socialSortOrder").value = link.sort_order ?? 0;
