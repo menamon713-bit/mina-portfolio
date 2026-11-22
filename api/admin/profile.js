@@ -7,6 +7,8 @@ const {
   checkSameOrigin
 } = require("../_lib/admin-auth");
 
+const { adminQuery } = require("../_lib/admin-db");
+
 const FIELDS = Object.freeze({
   full_name: 120,
   job_title: 180,
@@ -134,14 +136,22 @@ module.exports = async function handler(req, res) {
       return sendError(res, 415, "Content-Type must be application/json.");
     }
 
-    if (Buffer.byteLength(JSON.stringify(req.body ?? null), "utf8") > MAX_BODY_BYTES) {
+    if (
+      Buffer.byteLength(
+        JSON.stringify(req.body ?? null),
+        "utf8"
+      ) > MAX_BODY_BYTES
+    ) {
       return sendError(res, 413, "Request body is too large.");
     }
   }
 
   const databaseUrl = process.env.DATABASE_URL;
 
-  if (typeof databaseUrl !== "string" || !databaseUrl.trim()) {
+  if (
+    typeof databaseUrl !== "string" ||
+    !databaseUrl.trim()
+  ) {
     return sendError(res, 503, "Database is unavailable.");
   }
 
@@ -149,7 +159,7 @@ module.exports = async function handler(req, res) {
     const sql = neon(databaseUrl);
 
     if (req.method === "GET") {
-      const rows = await sql`
+      const query = sql`
         SELECT
           full_name,
           job_title,
@@ -163,6 +173,8 @@ module.exports = async function handler(req, res) {
         ORDER BY id ASC
         LIMIT 1
       `;
+
+      const rows = await adminQuery(sql, query);
 
       if (rows.length === 0) {
         return sendError(res, 404, "Profile not found.");
@@ -186,7 +198,7 @@ module.exports = async function handler(req, res) {
       ])
     );
 
-    const rows = await sql`
+    const query = sql`
       UPDATE site_profile
       SET
         full_name = ${values.full_name},
@@ -214,6 +226,8 @@ module.exports = async function handler(req, res) {
         updated_at
     `;
 
+    const rows = await adminQuery(sql, query);
+
     if (rows.length === 0) {
       return sendError(res, 404, "Profile not found.");
     }
@@ -225,6 +239,10 @@ module.exports = async function handler(req, res) {
   } catch {
     console.error("[admin-profile] Database operation failed.");
 
-    return sendError(res, 500, "An internal server error occurred.");
+    return sendError(
+      res,
+      500,
+      "An internal server error occurred."
+    );
   }
 };
