@@ -294,6 +294,9 @@
     }
 
     container.replaceChildren(fragment);
+
+    // ضمان ظهور قسم روابط التواصل بعد تحميل البيانات.
+    container.closest(".reveal")?.classList.add("visible");
   }
 
   function applyWebsiteData() {
