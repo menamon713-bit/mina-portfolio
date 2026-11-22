@@ -7,7 +7,7 @@ const {
   checkSameOrigin
 } = require("../_lib/admin-auth");
 
-const FIELDS = {
+const FIELDS = Object.freeze({
   full_name: 120,
   job_title: 180,
   short_bio: 2000,
@@ -15,19 +15,22 @@ const FIELDS = {
   location: 120,
   email: 255,
   image: 2000
-};
+});
+
+const MAX_BODY_BYTES = 12 * 1024;
 
 function sendError(res, status, message) {
   return res.status(status).json({ error: message });
 }
 
 function isPlainObject(value) {
-  return (
-    value !== null &&
-    typeof value === "object" &&
-    !Array.isArray(value) &&
-    Object.getPrototypeOf(value) === Object.prototype
-  );
+  if (value === null || typeof value !== "object" || Array.isArray(value)) {
+    return false;
+  }
+
+  const prototype = Object.getPrototypeOf(value);
+
+  return prototype === Object.prototype || prototype === null;
 }
 
 function validImageUrl(value) {
@@ -47,7 +50,7 @@ function validImageUrl(value) {
 
     return (
       url.protocol === "https:" &&
-      url.hostname.length > 0 &&
+      Boolean(url.hostname) &&
       !url.username &&
       !url.password
     );
@@ -61,25 +64,25 @@ function validateProfile(body) {
     return "Invalid request body.";
   }
 
-  const allowedFields = Object.keys(FIELDS);
+  const fields = Object.keys(FIELDS);
+  const received = Object.keys(body);
 
-  for (const field of Object.keys(body)) {
-    if (!allowedFields.includes(field)) {
-      return `Unknown field: ${field}`;
-    }
+  if (
+    received.length !== fields.length ||
+    received.some((field) => !Object.hasOwn(FIELDS, field))
+  ) {
+    return "Invalid request fields.";
   }
 
   for (const [field, maxLength] of Object.entries(FIELDS)) {
-    if (!Object.hasOwn(body, field)) {
-      return `Missing field: ${field}`;
-    }
+    const value = body[field];
 
-    if (typeof body[field] !== "string") {
+    if (
+      typeof value !== "string" ||
+      value.length > maxLength ||
+      Buffer.byteLength(value, "utf8") > maxLength * 4
+    ) {
       return `Invalid field: ${field}`;
-    }
-
-    if (body[field].length > maxLength) {
-      return `${field} exceeds the maximum length.`;
     }
   }
 
@@ -87,9 +90,14 @@ function validateProfile(body) {
     return "Full name is required.";
   }
 
+  const email = body.email.trim();
+
   if (
-    body.email.trim() &&
-    !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(body.email.trim())
+    email &&
+    (
+      email.length > 255 ||
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+    )
   ) {
     return "Invalid email address.";
   }
@@ -103,6 +111,7 @@ function validateProfile(body) {
 
 module.exports = async function handler(req, res) {
   res.setHeader("Cache-Control", "no-store");
+  res.setHeader("X-Content-Type-Options", "nosniff");
 
   if (!["GET", "POST"].includes(req.method)) {
     res.setHeader("Allow", "GET, POST");
@@ -113,16 +122,26 @@ module.exports = async function handler(req, res) {
     return;
   }
 
-  if (
-    req.method === "POST" &&
-    !checkSameOrigin(req)
-  ) {
-    return sendError(res, 403, "Invalid request origin.");
+  if (req.method === "POST") {
+    if (!checkSameOrigin(req)) {
+      return sendError(res, 403, "Invalid request origin.");
+    }
+
+    if (
+      !req.headers["content-type"] ||
+      !/^application\/json(?:\s*;|$)/i.test(req.headers["content-type"])
+    ) {
+      return sendError(res, 415, "Content-Type must be application/json.");
+    }
+
+    if (Buffer.byteLength(JSON.stringify(req.body ?? null), "utf8") > MAX_BODY_BYTES) {
+      return sendError(res, 413, "Request body is too large.");
+    }
   }
 
   const databaseUrl = process.env.DATABASE_URL;
 
-  if (!databaseUrl) {
+  if (typeof databaseUrl !== "string" || !databaseUrl.trim()) {
     return sendError(res, 503, "Database is unavailable.");
   }
 
@@ -145,7 +164,7 @@ module.exports = async function handler(req, res) {
         LIMIT 1
       `;
 
-      if (!rows.length) {
+      if (rows.length === 0) {
         return sendError(res, 404, "Profile not found.");
       }
 
@@ -154,8 +173,7 @@ module.exports = async function handler(req, res) {
       });
     }
 
-    const body = req.body;
-    const validationError = validateProfile(body);
+    const validationError = validateProfile(req.body);
 
     if (validationError) {
       return sendError(res, 400, validationError);
@@ -164,7 +182,7 @@ module.exports = async function handler(req, res) {
     const values = Object.fromEntries(
       Object.keys(FIELDS).map((field) => [
         field,
-        body[field].trim()
+        req.body[field].trim()
       ])
     );
 
@@ -196,7 +214,7 @@ module.exports = async function handler(req, res) {
         updated_at
     `;
 
-    if (!rows.length) {
+    if (rows.length === 0) {
       return sendError(res, 404, "Profile not found.");
     }
 
@@ -207,10 +225,6 @@ module.exports = async function handler(req, res) {
   } catch {
     console.error("[admin-profile] Database operation failed.");
 
-    return sendError(
-      res,
-      500,
-      "An internal server error occurred."
-    );
+    return sendError(res, 500, "An internal server error occurred.");
   }
 };
