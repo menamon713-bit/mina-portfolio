@@ -484,7 +484,11 @@ module.exports = async function handler(req, res) {
       return sendError(res, 409, "Content key already exists.");
     }
 
-    console.error("[admin-content] Database operation failed.");
+    console.error("[admin-content] Database operation failed.", {
+  name: error?.name || "UnknownError",
+  code: error?.code || "NO_CODE",
+  message: String(error?.message || "No error message").slice(0, 300)
+});
 
     return sendError(
       res,
