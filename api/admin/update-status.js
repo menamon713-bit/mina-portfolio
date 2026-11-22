@@ -7,6 +7,8 @@ const {
   checkSameOrigin
 } = require("../_lib/admin-auth");
 
+const { adminQuery } = require("../_lib/admin-db");
+
 const ALLOWED_STATUSES = [
   "new",
   "read",
@@ -74,7 +76,10 @@ module.exports = async function handler(req, res) {
 
   const databaseUrl = process.env.DATABASE_URL;
 
-  if (!databaseUrl) {
+  if (
+    typeof databaseUrl !== "string" ||
+    !databaseUrl.trim()
+  ) {
     return res.status(503).json({
       error: "Database is unavailable."
     });
@@ -83,12 +88,14 @@ module.exports = async function handler(req, res) {
   try {
     const sql = neon(databaseUrl);
 
-    const result = await sql`
+    const query = sql`
       UPDATE contact_messages
       SET status = ${body.status}
       WHERE id = ${Number(body.id)}
       RETURNING id, status
     `;
+
+    const result = await adminQuery(sql, query);
 
     if (!result.length) {
       return res.status(404).json({
