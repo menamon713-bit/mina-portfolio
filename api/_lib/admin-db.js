@@ -1,31 +1,59 @@
 "use strict";
 
-/**
- * Runs one admin query inside a transaction.
- * The admin marker exists only for this transaction.
- *
- * IMPORTANT:
- * Call this helper only after requireAdmin succeeds.
- */
+const crypto = require("crypto");
 
-async function adminQuery(sql, buildQuery) {
+const TOKEN_LIFETIME_SECONDS = 120;
+
+function getHmacSecret() {
+  const secret = process.env.ADMIN_RLS_HMAC_SECRET;
+
+  if (
+    typeof secret !== "string" ||
+    Buffer.byteLength(secret, "utf8") < 32
+  ) {
+    throw new Error("ADMIN_RLS_HMAC_SECRET_INVALID");
+  }
+
+  return secret;
+}
+
+function createAdminToken() {
+  const expiresAt =
+    Math.floor(Date.now() / 1000) +
+    TOKEN_LIFETIME_SECONDS;
+
+  const nonce = crypto.randomBytes(32).toString("hex");
+  const payload = `${expiresAt}.${nonce}`;
+
+  const signature = crypto
+    .createHmac("sha256", getHmacSecret())
+    .update(payload, "utf8")
+    .digest("hex");
+
+  return `${payload}.${signature}`;
+}
+
+async function adminQuery(sql, query) {
   if (
     typeof sql !== "function" ||
     typeof sql.transaction !== "function" ||
-    typeof buildQuery !== "function"
+    !query ||
+    typeof query !== "object"
   ) {
     throw new Error("ADMIN_DATABASE_INVALID_ARGUMENT");
   }
 
-  const results = await sql.transaction((txn) => [
-    txn`
+  const token = createAdminToken();
+
+  const results = await sql.transaction([
+    sql`
       SELECT set_config(
-        'app.is_admin',
-        'true',
+        'app.admin_token',
+        ${token},
         true
       )
     `,
-    buildQuery(txn)
+    query
   ]);
 
   if (!Array.isArray(results) || results.length !== 2) {
