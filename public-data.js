@@ -22,30 +22,50 @@
     const about = textValue(profile.about);
 
     if (name) {
-      const nameElement = $(".profile-name");
-      if (nameElement) nameElement.textContent = name;
+      const element = $(".profile-name");
+      if (element) element.textContent = name;
     }
 
     if (role) {
-      const roleElement = $(".profile-role");
-      if (roleElement) roleElement.textContent = role;
+      const element = $(".profile-role");
+      if (element) element.textContent = role;
     }
 
     if (bio) {
-      const bioElement = $(".hero-description");
-      if (bioElement) bioElement.textContent = bio;
+      const element = $(".hero-description");
+      if (element) element.textContent = bio;
     }
 
     if (about) {
-      const aboutElement = $(".about-main p");
-      if (aboutElement) aboutElement.textContent = about;
+      const element = $(".about-main p");
+      if (element) element.textContent = about;
     }
+  }
+
+  function animateSkillBars(container) {
+    const bars = container.querySelectorAll(".skill-progress");
+
+    bars.forEach((bar) => {
+      const progress = Number(bar.dataset.progress);
+
+      if (!Number.isFinite(progress)) return;
+
+      bar.style.width = "0%";
+
+      requestAnimationFrame(() => {
+        bar.style.width = `${progress}%`;
+      });
+    });
   }
 
   function renderSkills(skills) {
     const container = $(".skills-grid");
 
-    if (!container || !Array.isArray(skills) || !skills.length) {
+    if (
+      !container ||
+      !Array.isArray(skills) ||
+      skills.length === 0
+    ) {
       return;
     }
 
@@ -63,12 +83,13 @@
       if (!name) return;
 
       const progress = Number(skill.progress);
+
       const safeProgress = Number.isFinite(progress)
         ? Math.min(100, Math.max(0, progress))
         : 0;
 
       const card = document.createElement("article");
-      card.className = "skill-card";
+      card.className = "skill-card reveal";
 
       const top = document.createElement("div");
       top.className = "skill-top";
@@ -89,7 +110,6 @@
       const bar = document.createElement("span");
       bar.className = "skill-progress";
       bar.dataset.progress = String(safeProgress);
-      bar.style.width = `${safeProgress}%`;
 
       track.appendChild(bar);
       card.append(top, track);
@@ -97,8 +117,14 @@
       fragment.appendChild(card);
     });
 
-    if (fragment.childNodes.length) {
-      container.replaceChildren(fragment);
+    if (!fragment.childNodes.length) return;
+
+    container.replaceChildren(fragment);
+
+    animateSkillBars(container);
+
+    if (typeof window.refreshReveal === "function") {
+      window.refreshReveal();
     }
   }
 
@@ -111,16 +137,21 @@
 
   async function loadWebsiteData() {
     try {
-      const response = await fetch("/api/health?resource=site-data", {
-        method: "GET",
-        headers: {
-          Accept: "application/json"
-        },
-        credentials: "same-origin"
-      });
+      const response = await fetch(
+        "/api/health?resource=site-data",
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json"
+          },
+          credentials: "same-origin"
+        }
+      );
 
       if (!response.ok) {
-        throw new Error(`Website data request failed: ${response.status}`);
+        throw new Error(
+          `Website data request failed: ${response.status}`
+        );
       }
 
       const result = await response.json();
@@ -142,9 +173,11 @@
     }
   }
 
-  document.addEventListener("DOMContentLoaded", loadWebsiteData, {
-    once: true
-  });
+  document.addEventListener(
+    "DOMContentLoaded",
+    loadWebsiteData,
+    { once: true }
+  );
 
   const languageButton = $("#languageToggle");
 
