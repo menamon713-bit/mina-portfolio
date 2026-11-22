@@ -21,6 +21,20 @@ const MAX_LENGTH = {
 const FIELDS = Object.keys(MAX_LENGTH);
 const PATCH_FIELDS = [...FIELDS, "is_visible", "sort_order"];
 
+const SEO_LIMITS = {
+  page_slug: 100,
+  title_ar: 500,
+  title_en: 500,
+  description_ar: 1000,
+  description_en: 1000,
+  keywords_ar: 2000,
+  keywords_en: 2000,
+  og_image: 2000,
+  canonical_url: 2000
+};
+
+const SEO_FIELDS = Object.keys(SEO_LIMITS);
+
 function sendError(res, status, message) {
   return res.status(status).json({ error: message });
 }
@@ -103,6 +117,173 @@ function validateId(value) {
   );
 }
 
+function validateSeoBody(body) {
+  if (!isPlainObject(body)) {
+    return "Invalid request body.";
+  }
+
+  for (const field of Object.keys(body)) {
+    if (!SEO_FIELDS.includes(field)) {
+      return `Unknown field: ${field}`;
+    }
+  }
+
+  for (const field of SEO_FIELDS) {
+    if (!Object.hasOwn(body, field)) continue;
+
+    if (
+      typeof body[field] !== "string" ||
+      body[field].length > SEO_LIMITS[field]
+    ) {
+      return `Invalid field: ${field}`;
+    }
+  }
+
+  if (
+    typeof body.page_slug !== "string" ||
+    !/^[a-zA-Z0-9_-]+$/.test(body.page_slug)
+  ) {
+    return "Invalid page slug.";
+  }
+
+  if (!body.title_ar.trim() || !body.title_en.trim()) {
+    return "Arabic and English titles are required.";
+  }
+
+  for (const field of ["canonical_url", "og_image"]) {
+    const value = body[field];
+
+    if (!value) continue;
+
+    try {
+      const url = new URL(value);
+
+      if (!["http:", "https:"].includes(url.protocol)) {
+        return `Invalid ${field}.`;
+      }
+    } catch {
+      return `Invalid ${field}.`;
+    }
+  }
+
+  return null;
+}
+
+async function handleSeo(sql, req, res) {
+  if (req.method === "GET") {
+    const rows = await adminQuery(
+      sql,
+      sql`
+        SELECT
+          id,
+          page_slug,
+          title_ar,
+          title_en,
+          description_ar,
+          description_en,
+          keywords_ar,
+          keywords_en,
+          og_image,
+          canonical_url,
+          updated_at
+        FROM site_seo
+        ORDER BY page_slug ASC
+      `
+    );
+
+    return res.status(200).json({
+      seo: rows,
+      count: rows.length
+    });
+  }
+
+  if (req.method === "POST") {
+    const body = req.body;
+    const error = validateSeoBody(body);
+
+    if (error) return sendError(res, 400, error);
+
+    const rows = await adminQuery(
+      sql,
+      sql`
+        INSERT INTO site_seo (
+          page_slug,
+          title_ar,
+          title_en,
+          description_ar,
+          description_en,
+          keywords_ar,
+          keywords_en,
+          og_image,
+          canonical_url,
+          updated_at
+        )
+        VALUES (
+          ${body.page_slug.trim()},
+          ${body.title_ar.trim()},
+          ${body.title_en.trim()},
+          ${body.description_ar || ""},
+          ${body.description_en || ""},
+          ${body.keywords_ar || ""},
+          ${body.keywords_en || ""},
+          ${body.og_image || ""},
+          ${body.canonical_url || ""},
+          NOW()
+        )
+        ON CONFLICT (page_slug)
+        DO UPDATE SET
+          title_ar = EXCLUDED.title_ar,
+          title_en = EXCLUDED.title_en,
+          description_ar = EXCLUDED.description_ar,
+          description_en = EXCLUDED.description_en,
+          keywords_ar = EXCLUDED.keywords_ar,
+          keywords_en = EXCLUDED.keywords_en,
+          og_image = EXCLUDED.og_image,
+          canonical_url = EXCLUDED.canonical_url,
+          updated_at = NOW()
+        RETURNING *
+      `
+    );
+
+    return res.status(200).json({
+      message: "SEO settings saved successfully.",
+      item: rows[0]
+    });
+  }
+
+  if (req.method === "DELETE") {
+    const body = req.body;
+
+    if (
+      !isPlainObject(body) ||
+      !validateId(body.id) ||
+      Object.keys(body).length !== 1
+    ) {
+      return sendError(res, 400, "Invalid SEO record ID.");
+    }
+
+    const rows = await adminQuery(
+      sql,
+      sql`
+        DELETE FROM site_seo
+        WHERE id = ${Number(body.id)}
+        RETURNING id
+      `
+    );
+
+    if (!rows.length) {
+      return sendError(res, 404, "SEO record not found.");
+    }
+
+    return res.status(200).json({
+      message: "SEO record deleted successfully.",
+      id: rows[0].id
+    });
+  }
+
+  return sendError(res, 405, "Method not allowed.");
+}
+
 module.exports = async function handler(req, res) {
   res.setHeader("Cache-Control", "no-store");
   res.setHeader("X-Content-Type-Options", "nosniff");
@@ -120,6 +301,29 @@ module.exports = async function handler(req, res) {
     return sendError(res, 403, "Invalid request origin.");
   }
 
+  if (req.method !== "GET") {
+    const contentType = req.headers["content-type"] || "";
+
+    if (!/^application\/json(?:\s*;|$)/i.test(contentType)) {
+      return sendError(res, 415, "Content-Type must be application/json.");
+    }
+
+    let bodySize;
+
+    try {
+      bodySize = Buffer.byteLength(
+        JSON.stringify(req.body ?? null),
+        "utf8"
+      );
+    } catch {
+      return sendError(res, 400, "Invalid request body.");
+    }
+
+    if (bodySize > 20 * 1024) {
+      return sendError(res, 413, "Request body is too large.");
+    }
+  }
+
   const databaseUrl = process.env.DATABASE_URL;
 
   if (
@@ -131,6 +335,10 @@ module.exports = async function handler(req, res) {
 
   try {
     const sql = neon(databaseUrl);
+
+    if (req.query?.resource === "seo") {
+      return await handleSeo(sql, req, res);
+    }
 
     if (req.method === "GET") {
       const query = sql`
@@ -159,7 +367,6 @@ module.exports = async function handler(req, res) {
 
     if (req.method === "POST") {
       const body = req.body;
-
       const error = validateBody(body, FIELDS, FIELDS);
 
       if (error) return sendError(res, 400, error);
