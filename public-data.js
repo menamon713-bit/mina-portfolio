@@ -15,11 +15,7 @@
 
     gmail: {
       label: "Gmail",
-      paths: [
-        "M3 5.5 12 12l9-6.5",
-        "M3 5.5v13h18v-13",
-        "M3 5.5 12 12l9-6.5"
-      ]
+      paths: []
     },
 
     facebook: {
@@ -196,6 +192,26 @@
     svg.setAttribute("aria-hidden", "true");
     svg.setAttribute("focusable", "false");
 
+    // Gmail: حرف G
+    if (platform === "gmail") {
+      const letter = document.createElementNS(
+        "http://www.w3.org/2000/svg",
+        "text"
+      );
+
+      letter.setAttribute("x", "12");
+      letter.setAttribute("y", "18");
+      letter.setAttribute("text-anchor", "middle");
+      letter.setAttribute("font-family", "Arial, sans-serif");
+      letter.setAttribute("font-size", "21");
+      letter.setAttribute("font-weight", "700");
+      letter.setAttribute("fill", "currentColor");
+      letter.textContent = "G";
+
+      svg.appendChild(letter);
+      return svg;
+    }
+
     config.paths.forEach((pathData) => {
       const path = document.createElementNS(
         "http://www.w3.org/2000/svg",
@@ -203,16 +219,7 @@
       );
 
       path.setAttribute("d", pathData);
-
-      if (platform === "gmail") {
-        path.setAttribute("fill", "none");
-        path.setAttribute("stroke", "currentColor");
-        path.setAttribute("stroke-width", "2");
-        path.setAttribute("stroke-linecap", "round");
-        path.setAttribute("stroke-linejoin", "round");
-      } else {
-        path.setAttribute("fill", "currentColor");
-      }
+      path.setAttribute("fill", "currentColor");
 
       svg.appendChild(path);
     });
