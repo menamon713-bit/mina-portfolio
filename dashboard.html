@@ -18,22 +18,19 @@
     rel="stylesheet"
   >
 
-  <link rel="stylesheet" href="dashboard.css?v=4">
+  <link rel="stylesheet" href="dashboard.css?v=5">
 </head>
 
 <body>
 
   <div class="dashboard-layout">
 
-    <!-- SIDEBAR OVERLAY -->
     <div class="sidebar-overlay" id="sidebarOverlay" aria-hidden="true"></div>
 
-    <!-- SIDEBAR -->
     <aside class="sidebar" id="sidebar">
 
       <div class="sidebar-brand">
         <div class="brand-mark">M</div>
-
         <div class="brand-copy">
           <strong>M.A.S.H</strong>
           <span>CYVEX CONTROL</span>
@@ -45,53 +42,43 @@
       <nav class="sidebar-nav" aria-label="القائمة الرئيسية">
 
         <button type="button" class="nav-item active" data-section="overview" aria-current="page">
-          <span>◫</span>
-          <span>الرئيسية</span>
+          <span>◫</span><span>الرئيسية</span>
         </button>
 
         <button type="button" class="nav-item" data-section="profile">
-          <span>◉</span>
-          <span>الملف الشخصي</span>
+          <span>◉</span><span>الملف الشخصي</span>
         </button>
 
         <button type="button" class="nav-item" data-section="skills">
-          <span>⌘</span>
-          <span>المهارات</span>
+          <span>⌘</span><span>المهارات</span>
         </button>
 
         <button type="button" class="nav-item" data-section="projects">
-          <span>▣</span>
-          <span>المشاريع</span>
+          <span>▣</span><span>المشاريع</span>
         </button>
 
         <button type="button" class="nav-item" data-section="messages">
-          <span>✉</span>
-          <span>الرسائل</span>
+          <span>✉</span><span>الرسائل</span>
         </button>
 
         <button type="button" class="nav-item" data-section="social">
-          <span>◎</span>
-          <span>روابط التواصل</span>
+          <span>◎</span><span>روابط التواصل</span>
         </button>
 
         <button type="button" class="nav-item" data-section="pages">
-          <span>▤</span>
-          <span>الصفحات والمحتوى</span>
+          <span>▤</span><span>الصفحات والمحتوى</span>
         </button>
 
         <button type="button" class="nav-item" data-section="seo">
-          <span>⌕</span>
-          <span>SEO</span>
+          <span>⌕</span><span>SEO</span>
         </button>
 
         <button type="button" class="nav-item" data-section="security">
-          <span>◇</span>
-          <span>الأمان والسجلات</span>
+          <span>◇</span><span>الأمان والسجلات</span>
         </button>
 
         <button type="button" class="nav-item" data-section="settings">
-          <span>⚙</span>
-          <span>الإعدادات</span>
+          <span>⚙</span><span>الإعدادات</span>
         </button>
 
       </nav>
@@ -100,7 +87,6 @@
 
         <div class="sidebar-user">
           <div class="sidebar-avatar">M</div>
-
           <div class="sidebar-user-info">
             <strong>M.A.S.H Admin</strong>
             <span>Administrator</span>
@@ -116,11 +102,8 @@
 
     </aside>
 
-
-    <!-- MAIN CONTENT -->
     <main class="dashboard-main">
 
-      <!-- TOPBAR -->
       <header class="topbar">
 
         <div class="topbar-start">
@@ -132,9 +115,7 @@
             aria-label="فتح القائمة"
             aria-controls="sidebar"
             aria-expanded="false"
-          >
-            ☰
-          </button>
+          >☰</button>
 
           <div class="topbar-brand">
             <span class="topbar-eyebrow">CONTROL PANEL</span>
@@ -152,8 +133,6 @@
 
       </header>
 
-
-      <!-- DASHBOARD CONTENT -->
       <div class="dashboard-content">
 
         <!-- OVERVIEW -->
@@ -225,9 +204,7 @@
                 </thead>
 
                 <tbody id="dashboardMessages">
-                  <tr>
-                    <td colspan="5">جاري تحميل الرسائل...</td>
-                  </tr>
+                  <tr><td colspan="5">جاري تحميل الرسائل...</td></tr>
                 </tbody>
               </table>
             </div>
@@ -235,7 +212,6 @@
           </div>
 
         </section>
-
 
         <!-- PROFILE -->
         <section class="dashboard-section" id="section-profile">
@@ -304,7 +280,6 @@
 
               <div class="form-footer">
                 <p id="profileFormStatus" class="form-status" aria-live="polite"></p>
-
                 <button type="submit" class="primary-button" id="saveProfile">
                   حفظ التغييرات
                 </button>
@@ -315,7 +290,6 @@
           </div>
 
         </section>
-
 
         <!-- SKILLS -->
         <section class="dashboard-section" id="section-skills">
@@ -395,7 +369,6 @@
               <span>⌘</span>
               <h2>لا توجد مهارات حتى الآن</h2>
               <p>ابدأ بإضافة أول مهارة إلى موقعك.</p>
-
               <button type="button" class="primary-button" id="addFirstSkillButton">
                 + إضافة مهارة
               </button>
@@ -405,7 +378,6 @@
               <span>!</span>
               <h2>تعذر تحميل المهارات</h2>
               <p id="skillsErrorMessage">حدث خطأ أثناء جلب البيانات.</p>
-
               <button type="button" class="secondary-button" id="retrySkillsButton">
                 إعادة المحاولة
               </button>
@@ -423,7 +395,6 @@
                     <th>الإجراءات</th>
                   </tr>
                 </thead>
-
                 <tbody id="skillsTableBody"></tbody>
               </table>
             </div>
@@ -434,10 +405,7 @@
 
           </div>
 
-
-          <!-- SKILL FORM MODAL -->
           <div class="modal-overlay" id="skillModal" hidden>
-
             <div class="modal-content skill-modal-content" role="dialog" aria-modal="true" aria-labelledby="skillModalTitle">
 
               <div class="modal-header">
@@ -446,13 +414,10 @@
                   <h2 id="skillModalTitle">إضافة مهارة جديدة</h2>
                 </div>
 
-                <button type="button" class="modal-close" id="closeSkillModal" aria-label="إغلاق">
-                  ×
-                </button>
+                <button type="button" class="modal-close" id="closeSkillModal" aria-label="إغلاق">×</button>
               </div>
 
               <form id="skillForm">
-
                 <input type="hidden" id="skillId">
 
                 <div class="skill-form-grid">
@@ -499,58 +464,35 @@
                 <p id="skillFormStatus" class="form-status" aria-live="polite"></p>
 
                 <div class="modal-actions">
-                  <button type="button" class="secondary-button" id="cancelSkillForm">
-                    إلغاء
-                  </button>
-
-                  <button type="submit" class="primary-button" id="saveSkillButton">
-                    حفظ المهارة
-                  </button>
+                  <button type="button" class="secondary-button" id="cancelSkillForm">إلغاء</button>
+                  <button type="submit" class="primary-button" id="saveSkillButton">حفظ المهارة</button>
                 </div>
 
               </form>
-
             </div>
-
           </div>
 
-
-          <!-- DELETE CONFIRMATION -->
           <div class="modal-overlay" id="deleteSkillModal" hidden>
-
             <div class="modal-content delete-modal-content" role="dialog" aria-modal="true" aria-labelledby="deleteSkillTitle">
 
               <div class="modal-header">
                 <h2 id="deleteSkillTitle">حذف المهارة</h2>
-
-                <button type="button" class="modal-close" id="closeDeleteSkillModal" aria-label="إغلاق">
-                  ×
-                </button>
+                <button type="button" class="modal-close" id="closeDeleteSkillModal" aria-label="إغلاق">×</button>
               </div>
 
-              <p>
-                هل أنت متأكد من حذف هذه المهارة؟
-                لا يمكن التراجع عن هذا الإجراء.
-              </p>
+              <p>هل أنت متأكد من حذف هذه المهارة؟ لا يمكن التراجع عن هذا الإجراء.</p>
 
               <input type="hidden" id="deleteSkillId">
 
               <div class="modal-actions">
-                <button type="button" class="secondary-button" id="cancelDeleteSkill">
-                  إلغاء
-                </button>
-
-                <button type="button" class="danger-button" id="confirmDeleteSkill">
-                  حذف نهائي
-                </button>
+                <button type="button" class="secondary-button" id="cancelDeleteSkill">إلغاء</button>
+                <button type="button" class="danger-button" id="confirmDeleteSkill">حذف نهائي</button>
               </div>
 
             </div>
-
           </div>
 
         </section>
-
 
         <!-- PROJECTS -->
         <section class="dashboard-section" id="section-projects">
@@ -567,14 +509,11 @@
             <div class="section-placeholder">
               <span>▣</span>
               <h2>إدارة المشاريع</h2>
-              <p>
-                سيتم توصيل إدارة المشاريع بقاعدة البيانات في المرحلة التالية.
-              </p>
+              <p>سيتم توصيل إدارة المشاريع بقاعدة البيانات في المرحلة التالية.</p>
             </div>
           </div>
 
         </section>
-
 
         <!-- MESSAGES -->
         <section class="dashboard-section" id="section-messages">
@@ -623,39 +562,28 @@
                 </thead>
 
                 <tbody id="messagesTableBody">
-                  <tr>
-                    <td colspan="6">جاري تحميل الرسائل...</td>
-                  </tr>
+                  <tr><td colspan="6">جاري تحميل الرسائل...</td></tr>
                 </tbody>
               </table>
             </div>
 
           </div>
 
-
-          <!-- MESSAGE DETAILS MODAL -->
           <div class="modal-overlay" id="messageModal" hidden>
-
             <div class="modal-content message-modal" role="dialog" aria-modal="true" aria-labelledby="messageModalTitle">
 
               <div class="modal-header">
                 <h2 id="messageModalTitle">تفاصيل الرسالة</h2>
-
-                <button type="button" class="modal-close" id="closeMessageModal" aria-label="إغلاق">
-                  ×
-                </button>
+                <button type="button" class="modal-close" id="closeMessageModal" aria-label="إغلاق">×</button>
               </div>
 
               <div class="modal-content-body" id="messageModalBody"></div>
-
               <div class="modal-actions" id="messageModalActions"></div>
 
             </div>
-
           </div>
 
         </section>
-
 
         <!-- SOCIAL -->
         <section class="dashboard-section" id="section-social">
@@ -678,7 +606,6 @@
 
         </section>
 
-
         <!-- PAGES -->
         <section class="dashboard-section" id="section-pages">
 
@@ -690,7 +617,6 @@
             </div>
           </div>
 
-          <!-- PAGE FORM -->
           <div class="panel-card">
 
             <div class="panel-header">
@@ -752,7 +678,6 @@
               </div>
 
               <div class="form-footer">
-
                 <p id="pageFormStatus" class="form-status" aria-live="polite"></p>
 
                 <div class="modal-actions">
@@ -764,15 +689,12 @@
                     حفظ الصفحة
                   </button>
                 </div>
-
               </div>
 
             </form>
 
           </div>
 
-
-          <!-- EXISTING PAGES -->
           <div class="panel-card">
 
             <div class="panel-header">
@@ -784,11 +706,7 @@
 
             <div class="form-field">
               <label for="pageSearch">البحث عن صفحة</label>
-              <input
-                id="pageSearch"
-                type="search"
-                placeholder="ابحث بالعنوان أو slug..."
-              >
+              <input id="pageSearch" type="search" placeholder="ابحث بالعنوان أو slug...">
             </div>
 
             <div id="pagesLoading" class="section-placeholder">
@@ -798,7 +716,6 @@
             <div id="pagesError" class="section-placeholder" hidden>
               <h2>تعذر تحميل الصفحات</h2>
               <p id="pagesErrorMessage"></p>
-
               <button type="button" class="secondary-button" id="retryPagesButton">
                 إعادة المحاولة
               </button>
@@ -806,7 +723,6 @@
 
             <div class="table-container" id="pagesTableContainer" hidden>
               <table class="admin-table">
-
                 <thead>
                   <tr>
                     <th>العنوان</th>
@@ -816,9 +732,7 @@
                     <th>الإجراءات</th>
                   </tr>
                 </thead>
-
                 <tbody id="pagesTableBody"></tbody>
-
               </table>
             </div>
 
@@ -833,7 +747,6 @@
 
         </section>
 
-
         <!-- SEO -->
         <section class="dashboard-section" id="section-seo">
 
@@ -841,20 +754,144 @@
             <div>
               <span class="eyebrow">SEARCH ENGINE OPTIMIZATION</span>
               <h1>تحسين محركات البحث</h1>
-              <p>إعدادات ظهور الموقع في محركات البحث.</p>
+              <p>إدارة عناوين ووصف صفحات الموقع لمحركات البحث والمشاركة.</p>
             </div>
+
+            <button type="button" class="secondary-button" id="refreshSeoButton">
+              ↻ تحديث البيانات
+            </button>
+          </div>
+
+          <div class="stats-grid seo-stats">
+            <article class="stat-card">
+              <span class="stat-icon">⌕</span>
+              <span class="stat-label">صفحات لها إعدادات SEO</span>
+              <strong id="seoRecordsCount">—</strong>
+            </article>
+          </div>
+
+          <div class="panel-card seo-panel">
+
+            <div class="panel-header">
+              <div>
+                <h2 id="seoFormTitle">إضافة إعدادات صفحة</h2>
+                <p>أدخل بيانات الصفحة بالعربية والإنجليزية.</p>
+              </div>
+            </div>
+
+            <form id="seoForm">
+              <input type="hidden" id="seoRecordId">
+
+              <div class="seo-form-grid">
+
+                <div class="form-field">
+                  <label for="seoPageSlug">معرّف الصفحة *</label>
+                  <input
+                    id="seoPageSlug"
+                    type="text"
+                    maxlength="100"
+                    placeholder="مثال: home"
+                    pattern="[a-zA-Z0-9_-]+"
+                    required
+                  >
+                  <small>استخدم الحروف الإنجليزية والأرقام والشرطة فقط.</small>
+                </div>
+
+                <div class="form-field">
+                  <label for="seoTitleAr">عنوان الصفحة بالعربية *</label>
+                  <input id="seoTitleAr" type="text" maxlength="500" required>
+                </div>
+
+                <div class="form-field">
+                  <label for="seoTitleEn">عنوان الصفحة بالإنجليزية *</label>
+                  <input id="seoTitleEn" type="text" maxlength="500" required>
+                </div>
+
+                <div class="form-field full-width">
+                  <label for="seoDescriptionAr">الوصف بالعربية</label>
+                  <textarea id="seoDescriptionAr" rows="3" maxlength="1000" placeholder="اكتب وصفًا واضحًا لمحتوى الصفحة..."></textarea>
+                </div>
+
+                <div class="form-field full-width">
+                  <label for="seoDescriptionEn">الوصف بالإنجليزية</label>
+                  <textarea id="seoDescriptionEn" rows="3" maxlength="1000" placeholder="Write a clear description of this page..."></textarea>
+                </div>
+
+                <div class="form-field full-width">
+                  <label for="seoKeywordsAr">الكلمات المفتاحية بالعربية</label>
+                  <textarea id="seoKeywordsAr" rows="2" maxlength="2000" placeholder="مطور ويب، أمن سيبراني، تصميم مواقع"></textarea>
+                </div>
+
+                <div class="form-field full-width">
+                  <label for="seoKeywordsEn">الكلمات المفتاحية بالإنجليزية</label>
+                  <textarea id="seoKeywordsEn" rows="2" maxlength="2000" placeholder="Web Developer, Cybersecurity, Web Design"></textarea>
+                </div>
+
+                <div class="form-field full-width">
+                  <label for="seoOgImage">رابط صورة المشاركة (Open Graph)</label>
+                  <input id="seoOgImage" type="url" maxlength="2000" placeholder="https://example.com/og-image.jpg">
+                </div>
+
+                <div class="form-field full-width">
+                  <label for="seoCanonical">الرابط الأساسي للصفحة (Canonical)</label>
+                  <input id="seoCanonical" type="url" maxlength="2000" placeholder="https://example.com/">
+                </div>
+
+              </div>
+
+              <p id="seoFormStatus" class="form-status" aria-live="polite"></p>
+
+              <div class="form-footer">
+                <button type="button" class="secondary-button" id="cancelSeoEdit" hidden>
+                  إلغاء التعديل
+                </button>
+
+                <button type="submit" class="primary-button" id="saveSeoButton">
+                  حفظ إعدادات SEO
+                </button>
+              </div>
+            </form>
+
           </div>
 
           <div class="panel-card">
-            <div class="section-placeholder">
-              <span>⌕</span>
-              <h2>إعدادات SEO</h2>
-              <p>سيتم تفعيل إعدادات SEO في المرحلة التالية.</p>
+
+            <div class="panel-header">
+              <div>
+                <h2>صفحات الموقع</h2>
+                <p>تعديل أو حذف إعدادات SEO المحفوظة لكل صفحة.</p>
+              </div>
+
+              <button type="button" class="secondary-button" id="retrySeoButton">
+                إعادة تحميل
+              </button>
             </div>
+
+            <div id="seoLoading" class="section-placeholder">
+              <span>⌕</span>
+              <h2>جاري تحميل إعدادات SEO</h2>
+              <p>يرجى الانتظار...</p>
+            </div>
+
+            <div id="seoError" class="seo-error" hidden></div>
+
+            <div class="table-container" id="seoTableContainer" hidden>
+              <table class="admin-table seo-table">
+                <thead>
+                  <tr>
+                    <th>معرّف الصفحة</th>
+                    <th>العنوان العربي</th>
+                    <th>العنوان الإنجليزي</th>
+                    <th>الإجراءات</th>
+                  </tr>
+                </thead>
+                <tbody id="seoTableBody"></tbody>
+              </table>
+            </div>
+
           </div>
 
         </section>
-
 
         <!-- SECURITY -->
         <section class="dashboard-section" id="section-security">
@@ -871,14 +908,11 @@
             <div class="section-placeholder">
               <span>◇</span>
               <h2>مركز الأمان</h2>
-              <p>
-                سيتم تفعيل سجلات النشاط وإدارة الجلسات في المرحلة التالية.
-              </p>
+              <p>سيتم تفعيل سجلات النشاط وإدارة الجلسات في المرحلة التالية.</p>
             </div>
           </div>
 
         </section>
-
 
         <!-- SETTINGS -->
         <section class="dashboard-section" id="section-settings">
@@ -903,31 +937,21 @@
 
       </div>
 
-
-      <!-- FOOTER -->
       <footer class="dashboard-footer">
-
-        <span>
-          © <span id="currentYear"></span> M.A.S.H CYVEX
-        </span>
-
+        <span>© <span id="currentYear"></span> M.A.S.H CYVEX</span>
         <span>Admin Control Panel</span>
-
       </footer>
 
     </main>
 
   </div>
 
-
-  <!-- GLOBAL TOAST -->
   <div class="admin-toast" id="adminToast" role="status" aria-live="polite"></div>
 
-
-  <!-- DASHBOARD SCRIPT -->
-  <script src="dashboard.js?v=5" defer></script>
-  <script src="social.js?v=2" defer></script> 
+  <script src="dashboard.js?v=6" defer></script>
+  <script src="social.js?v=2" defer></script>
   <script src="projects.js?v=1" defer></script>
+  <script src="seo.js?v=1" defer></script>
 
 </body>
-</html> 
+</html>
