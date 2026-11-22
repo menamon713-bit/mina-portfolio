@@ -71,6 +71,76 @@ function getGlobalLimit() {
 }
 
 /* =====================================================
+   REQUEST SIZE VALIDATION
+===================================================== */
+
+function validateBodySize(req) {
+  const rawLength = req.headers["content-length"];
+
+  if (rawLength !== undefined) {
+    const value = String(rawLength).trim();
+
+    if (!/^\d+$/.test(value)) {
+      return {
+        status: 400,
+        error: "Invalid Content-Length."
+      };
+    }
+
+    const declaredLength = Number(value);
+
+    if (
+      !Number.isSafeInteger(declaredLength) ||
+      declaredLength < 0
+    ) {
+      return {
+        status: 400,
+        error: "Invalid Content-Length."
+      };
+    }
+
+    if (declaredLength > MAX_BODY_BYTES) {
+      return {
+        status: 413,
+        error: "Request body is too large."
+      };
+    }
+  }
+
+  let serializedBody;
+
+  try {
+    serializedBody = JSON.stringify(req.body);
+  } catch {
+    return {
+      status: 400,
+      error: "Invalid request body."
+    };
+  }
+
+  if (typeof serializedBody !== "string") {
+    return {
+      status: 400,
+      error: "Invalid request body."
+    };
+  }
+
+  const actualLength = Buffer.byteLength(
+    serializedBody,
+    "utf8"
+  );
+
+  if (actualLength > MAX_BODY_BYTES) {
+    return {
+      status: 413,
+      error: "Request body is too large."
+    };
+  }
+
+  return null;
+}
+
+/* =====================================================
    BODY VALIDATION
 ===================================================== */
 
@@ -155,53 +225,6 @@ function validateBody(body) {
 }
 
 /* =====================================================
-   REQUEST BODY SIZE
-===================================================== */
-
-function validateBodySize(req) {
-  const rawLength = req.headers["content-length"];
-
-  if (rawLength !== undefined) {
-    if (!/^\d+$/.test(String(rawLength))) {
-      return {
-        status: 400,
-        error: "Invalid Content-Length."
-      };
-    }
-
-    if (Number(rawLength) > MAX_BODY_BYTES) {
-      return {
-        status: 413,
-        error: "Request body is too large."
-      };
-    }
-  }
-
-  let serializedBody;
-
-  try {
-    serializedBody = JSON.stringify(req.body);
-  } catch {
-    return {
-      status: 400,
-      error: "Invalid request body."
-    };
-  }
-
-  if (
-    !serializedBody ||
-    Buffer.byteLength(serializedBody, "utf8") > MAX_BODY_BYTES
-  ) {
-    return {
-      status: 413,
-      error: "Request body is too large."
-    };
-  }
-
-  return null;
-}
-
-/* =====================================================
    HANDLER
 ===================================================== */
 
@@ -230,6 +253,7 @@ module.exports = async function handler(req, res) {
   /* CONTENT TYPE */
 
   const contentType = req.headers["content-type"] || "";
+
   const mimeType = contentType
     .split(";")[0]
     .trim()
@@ -293,11 +317,8 @@ module.exports = async function handler(req, res) {
         error: "Too many requests. Please try again later."
       });
     }
-  } catch (error) {
-    console.error(
-      "Contact IP rate limit failed:",
-      error.message
-    );
+  } catch {
+    console.error("Contact IP rate limit unavailable.");
 
     return send(res, 503, {
       error: "Contact service is temporarily unavailable."
@@ -360,11 +381,8 @@ module.exports = async function handler(req, res) {
         error: "Too many requests. Please try again later."
       });
     }
-  } catch (error) {
-    console.error(
-      "Contact global rate limit failed:",
-      error.message
-    );
+  } catch {
+    console.error("Contact global rate limit unavailable.");
 
     return send(res, 503, {
       error: "Contact service is temporarily unavailable."
@@ -387,11 +405,8 @@ module.exports = async function handler(req, res) {
       success: true,
       message: "Message received successfully."
     });
-  } catch (error) {
-    console.error(
-      "Contact database operation failed:",
-      error.message
-    );
+  } catch {
+    console.error("Contact database operation failed.");
 
     return send(res, 500, {
       error: "Could not save your message."
