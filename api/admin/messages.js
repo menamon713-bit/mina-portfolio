@@ -7,6 +7,8 @@ const {
   checkSameOrigin
 } = require("../_lib/admin-auth");
 
+const { adminQuery } = require("../_lib/admin-db");
+
 const ALLOWED_STATUSES = [
   "new",
   "read",
@@ -15,9 +17,7 @@ const ALLOWED_STATUSES = [
 ];
 
 function sendError(res, status, message) {
-  return res.status(status).json({
-    error: message
-  });
+  return res.status(status).json({ error: message });
 }
 
 function isPlainObject(value) {
@@ -47,47 +47,30 @@ function validId(value) {
 
 module.exports = async function handler(req, res) {
   res.setHeader("Cache-Control", "no-store");
+  res.setHeader("X-Content-Type-Options", "nosniff");
 
   if (!["GET", "PATCH"].includes(req.method)) {
     res.setHeader("Allow", "GET, PATCH");
-
-    return sendError(
-      res,
-      405,
-      "Method not allowed."
-    );
+    return sendError(res, 405, "Method not allowed.");
   }
 
-  if (!(await requireAdmin(req, res))) {
-    return;
-  } 
+  if (!(await requireAdmin(req, res))) return;
 
-  if (
-    req.method === "PATCH" &&
-    !checkSameOrigin(req)
-  ) {
-    return sendError(
-      res,
-      403,
-      "Invalid request origin."
-    );
+  if (req.method === "PATCH" && !checkSameOrigin(req)) {
+    return sendError(res, 403, "Invalid request origin.");
   }
 
   const databaseUrl = process.env.DATABASE_URL;
 
-  if (!databaseUrl) {
-    return sendError(
-      res,
-      503,
-      "Database is unavailable."
-    );
+  if (typeof databaseUrl !== "string" || !databaseUrl.trim()) {
+    return sendError(res, 503, "Database is unavailable.");
   }
 
   try {
     const sql = neon(databaseUrl);
 
     if (req.method === "GET") {
-      const messages = await sql`
+      const query = sql`
         SELECT
           id,
           name,
@@ -100,6 +83,8 @@ module.exports = async function handler(req, res) {
         ORDER BY created_at DESC
         LIMIT 100
       `;
+
+      const messages = await adminQuery(sql, query);
 
       return res.status(200).json({
         success: true,
@@ -116,14 +101,10 @@ module.exports = async function handler(req, res) {
       !ALLOWED_STATUSES.includes(body.status) ||
       Object.keys(body).length !== 2
     ) {
-      return sendError(
-        res,
-        400,
-        "Invalid message update."
-      );
+      return sendError(res, 400, "Invalid message update.");
     }
 
-    const rows = await sql`
+    const query = sql`
       UPDATE contact_messages
       SET status = ${body.status}
       WHERE id = ${Number(body.id)}
@@ -137,12 +118,10 @@ module.exports = async function handler(req, res) {
         created_at
     `;
 
+    const rows = await adminQuery(sql, query);
+
     if (!rows.length) {
-      return sendError(
-        res,
-        404,
-        "Message not found."
-      );
+      return sendError(res, 404, "Message not found.");
     }
 
     return res.status(200).json({
@@ -150,12 +129,8 @@ module.exports = async function handler(req, res) {
       message: "Message status updated successfully.",
       data: rows[0]
     });
-
   } catch (error) {
-    console.error(
-      "Admin messages API error:",
-      error
-    );
+    console.error("[admin-messages] Database operation failed.");
 
     return sendError(
       res,
