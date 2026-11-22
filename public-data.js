@@ -13,13 +13,35 @@
     return typeof value === "string" ? value.trim() : "";
   }
 
+  function getLocalizedAbout(value, language) {
+    const content = textValue(value);
+
+    if (!content) return "";
+
+    const match = content.match(
+      /\[AR\]\s*([\s\S]*?)\s*\[EN\]\s*([\s\S]*)$/i
+    );
+
+    if (!match) return content;
+
+    const arabic = textValue(match[1]);
+    const english = textValue(match[2]);
+
+    return language === "en"
+      ? english || arabic
+      : arabic || english;
+  }
+
   function applyProfile(profile) {
     if (!profile) return;
 
     const name = textValue(profile.full_name);
     const role = textValue(profile.job_title);
     const bio = textValue(profile.short_bio);
-    const about = textValue(profile.about);
+    const about = getLocalizedAbout(
+      profile.about,
+      currentLanguage()
+    );
 
     if (name) {
       const element = $(".profile-name");
