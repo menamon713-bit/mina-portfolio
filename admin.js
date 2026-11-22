@@ -8,35 +8,48 @@
   const loginButton = $("#loginButton");
   const loginError = $("#loginError");
 
-  const API = {
+  const API = Object.freeze({
     login: "/api/admin/login",
     session: "/api/admin/session"
-  };
+  });
 
   let isSubmitting = false;
 
-  // Update footer year without inline JavaScript.
   const currentYear = $("#currentYear");
 
   if (currentYear) {
-    currentYear.textContent = String(new Date().getFullYear());
+    currentYear.textContent = String(
+      new Date().getFullYear()
+    );
   }
 
   async function apiRequest(url, options = {}) {
+    const headers = new Headers(options.headers || {});
+
+    headers.set("Accept", "application/json");
+
+    if (options.body !== undefined) {
+      headers.set("Content-Type", "application/json");
+    }
+
     const response = await fetch(url, {
+      ...options,
       credentials: "same-origin",
       cache: "no-store",
-      ...options,
-      headers: {
-        "Content-Type": "application/json",
-        ...options.headers
-      }
+      mode: "same-origin",
+      redirect: "error",
+      headers
     });
 
     let data = {};
 
     try {
-      data = await response.json();
+      const contentType =
+        response.headers.get("content-type") || "";
+
+      if (contentType.includes("application/json")) {
+        data = await response.json();
+      }
     } catch {
       data = {};
     }
@@ -55,7 +68,10 @@
   function showError(message) {
     if (!loginError) return;
 
-    loginError.textContent = message;
+    loginError.textContent = String(
+      message || "حدث خطأ غير متوقع."
+    );
+
     loginError.classList.remove("hidden");
   }
 
@@ -72,10 +88,13 @@
     loginButton.disabled = loading;
 
     if (loading) {
-      loginButton.dataset.originalText =
-        loginButton.textContent;
+      if (!loginButton.dataset.originalText) {
+        loginButton.dataset.originalText =
+          loginButton.textContent;
+      }
 
-      loginButton.textContent = "جاري تسجيل الدخول...";
+      loginButton.textContent =
+        "جاري تسجيل الدخول...";
     } else {
       loginButton.textContent =
         loginButton.dataset.originalText ||
@@ -86,7 +105,7 @@
   }
 
   function redirectToDashboard() {
-    window.location.replace("dashboard.html");
+    window.location.replace("/dashboard.html");
   }
 
   async function checkSession() {
@@ -105,6 +124,7 @@
     if (isSubmitting) return;
 
     isSubmitting = true;
+
     hideError();
     setLoading(true);
 
@@ -119,8 +139,14 @@
       }
 
       redirectToDashboard();
+
     } catch (error) {
-      showError(error.message);
+      showError(
+        error instanceof Error
+          ? error.message
+          : "تعذر تسجيل الدخول. حاول مرة أخرى."
+      );
+
       setLoading(false);
       isSubmitting = false;
     }
@@ -140,7 +166,11 @@
     login(password);
   });
 
-  adminPassword?.addEventListener("input", hideError);
+  adminPassword?.addEventListener(
+    "input",
+    hideError
+  );
 
   checkSession();
+
 })();
