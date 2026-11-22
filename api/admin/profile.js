@@ -130,10 +130,6 @@ module.exports = async function handler(req, res) {
     const sql = neon(databaseUrl);
 
     if (req.method === "GET") {
-      const dbIdentity = await sql`
-        SELECT current_user AS database_user
-      `;
-
       const rows = await sql`
         SELECT
           full_name,
@@ -150,15 +146,11 @@ module.exports = async function handler(req, res) {
       `;
 
       if (!rows.length) {
-        return res.status(200).json({
-          profile: null,
-          databaseUser: dbIdentity[0].database_user
-        });
+        return sendError(res, 404, "Profile not found.");
       }
 
       return res.status(200).json({
-        profile: rows[0],
-        databaseUser: dbIdentity[0].database_user
+        profile: rows[0]
       });
     }
 
