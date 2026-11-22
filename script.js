@@ -330,6 +330,17 @@
         return "";
       }
 
+      if (url.username || url.password) {
+        return "";
+      }
+
+      if (
+        url.origin !== window.location.origin &&
+        url.protocol !== "https:"
+      ) {
+        return "";
+      }
+
       return url.href;
     } catch {
       return "";
@@ -351,10 +362,11 @@
         return "";
       }
 
-      if (
-        url.origin !== window.location.origin &&
-        url.protocol !== "https:"
-      ) {
+      if (url.origin !== window.location.origin) {
+        return "";
+      }
+
+      if (url.username || url.password) {
         return "";
       }
 
@@ -368,7 +380,7 @@
     const imageUrl = safeImageUrl(project.image_url);
 
     if (imageUrl) {
-      const wrapper = makeElement("div", "project-image");
+             const wrapper = makeElement("div", "project-image");
       const image = document.createElement("img");
 
       image.src = imageUrl;
@@ -781,7 +793,7 @@
     }
   }
 
-  /* LANGUAGE */
+   /* LANGUAGE */
 
   const languageToggle = $("#languageToggle");
   const themeToggle = $("#themeToggle");
@@ -1135,7 +1147,7 @@
     handleHashNavigation
   );
 
-  /* MODALS */
+   /* MODALS */
 
   let previousFocus = null;
 
