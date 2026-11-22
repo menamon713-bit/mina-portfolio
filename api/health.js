@@ -15,6 +15,143 @@ module.exports = async function handler(req, res) {
 
   const resource = req.query?.resource;
 
+  // Public website data
+  if (resource === "site-data") {
+    res.setHeader(
+      "Cache-Control",
+      "public, s-maxage=60, stale-while-revalidate=300"
+    );
+
+    const databaseUrl = process.env.DATABASE_URL;
+
+    if (
+      typeof databaseUrl !== "string" ||
+      !databaseUrl.trim()
+    ) {
+      return res.status(503).json({
+        success: false,
+        message: "Website data is currently unavailable."
+      });
+    }
+
+    try {
+      const { neon } = require("@neondatabase/serverless");
+      const sql = neon(databaseUrl);
+
+      const [
+        profile,
+        skills,
+        socialLinks,
+        content,
+        pages,
+        seo
+      ] = await Promise.all([
+        sql`
+          SELECT
+            full_name,
+            job_title,
+            short_bio,
+            about,
+            location,
+            profile_image
+          FROM site_profile
+          ORDER BY id ASC
+          LIMIT 1
+        `,
+
+        sql`
+          SELECT
+            id,
+            name_ar,
+            name_en,
+            icon,
+            progress,
+            category,
+            sort_order
+          FROM site_skills
+          WHERE is_visible = TRUE
+          ORDER BY sort_order ASC, id ASC
+        `,
+
+        sql`
+          SELECT
+            id,
+            platform,
+            label_ar,
+            label_en,
+            value,
+            url,
+            icon,
+            sort_order
+          FROM site_social_links
+          WHERE is_visible = TRUE
+          ORDER BY sort_order ASC, id ASC
+        `,
+
+        sql`
+          SELECT
+            content_key,
+            section,
+            title_ar,
+            title_en,
+            content_ar,
+            content_en,
+            sort_order
+          FROM site_content
+          WHERE is_visible = TRUE
+          ORDER BY sort_order ASC, id ASC
+        `,
+
+        sql`
+          SELECT
+            slug,
+            title_ar,
+            title_en,
+            content_ar,
+            content_en
+          FROM site_pages
+          WHERE is_published = TRUE
+          ORDER BY slug ASC
+        `,
+
+        sql`
+          SELECT
+            page_slug,
+            title_ar,
+            title_en,
+            description_ar,
+            description_en,
+            keywords_ar,
+            keywords_en,
+            og_image,
+            canonical_url
+          FROM site_seo
+          ORDER BY page_slug ASC
+        `
+      ]);
+
+      return res.status(200).json({
+        success: true,
+        data: {
+          profile: profile[0] || null,
+          skills,
+          socialLinks,
+          content,
+          pages,
+          seo
+        }
+      });
+
+    } catch (error) {
+      console.error("Public site data error:", error);
+
+      return res.status(503).json({
+        success: false,
+        message: "Website data is currently unavailable."
+      });
+    }
+  }
+
   // Public projects endpoint
   if (resource === "projects") {
     res.setHeader(
