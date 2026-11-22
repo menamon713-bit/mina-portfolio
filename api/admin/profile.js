@@ -150,7 +150,10 @@ module.exports = async function handler(req, res) {
       `;
 
       if (!rows.length) {
-        return sendError(res, 404, "Profile not found.");
+        return res.status(200).json({
+          profile: null,
+          databaseUser: dbIdentity[0].database_user
+        });
       }
 
       return res.status(200).json({
