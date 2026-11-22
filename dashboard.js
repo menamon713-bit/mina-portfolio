@@ -24,6 +24,7 @@
     activeSection: "overview",
     loadingMessages: false,
     loadingSkills: false,
+    loadingPages: false,
     redirectingToLogin: false
   };
 
@@ -131,10 +132,12 @@
       if (!button.dataset.originalText) {
         button.dataset.originalText = button.textContent;
       }
+
       button.disabled = true;
       button.textContent = text;
     } else {
       button.disabled = false;
+
       if (button.dataset.originalText !== undefined) {
         button.textContent = button.dataset.originalText;
         delete button.dataset.originalText;
@@ -148,6 +151,7 @@
 
   function formatDate(value) {
     if (!value) return "—";
+
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) return "—";
 
@@ -335,6 +339,7 @@
     const form = $("#profileForm");
     const button = $("#saveProfile");
     const status = $("#profileFormStatus");
+
     if (!form || button?.disabled) return;
 
     const payload = {
@@ -348,6 +353,7 @@
     };
 
     setButtonLoading(button, true);
+
     if (status) status.textContent = "جاري الحفظ...";
 
     try {
@@ -357,6 +363,7 @@
       });
 
       if (data.profile) fillProfileForm(data.profile);
+
       if (status) status.textContent = "تم حفظ البيانات بنجاح.";
       showToast("تم تحديث الملف الشخصي.");
     } catch (error) {
@@ -483,6 +490,7 @@
     if (state.loadingSkills || state.redirectingToLogin) return;
 
     state.loadingSkills = true;
+
     setVisible($("#skillsLoading"), true);
     setVisible($("#skillsError"), false);
     setVisible($("#skillsTableContainer"), false);
@@ -501,6 +509,7 @@
     } catch (error) {
       setVisible($("#skillsLoading"), false);
       setVisible($("#skillsError"), true);
+
       const message = $("#skillsErrorMessage");
       if (message) message.textContent = error.message;
     } finally {
@@ -512,6 +521,7 @@
   function openSkillModal(skill = null) {
     const modal = $("#skillModal");
     const form = $("#skillForm");
+
     if (!modal || !form) return;
 
     state.editingSkillId = skill ? skill.id : null;
@@ -558,6 +568,7 @@
 
     const button = $("#saveSkillButton");
     const status = $("#skillFormStatus");
+
     if (button?.disabled) return;
 
     const id = $("#skillId")?.value;
@@ -583,6 +594,7 @@
     }
 
     setButtonLoading(button, true);
+
     if (status) status.textContent = "جاري الحفظ...";
 
     try {
@@ -607,6 +619,7 @@
 
   async function toggleSkillVisibility(id, button) {
     const skill = state.skills.find((item) => String(item.id) === String(id));
+
     if (!skill || button?.disabled) return;
 
     if (button) button.disabled = true;
@@ -638,6 +651,7 @@
     $("#deleteSkillId").value = skill.id;
 
     const modal = $("#deleteSkillModal");
+
     setVisible(modal, true);
     modal?.classList.add("active");
   }
@@ -667,6 +681,7 @@
 
       closeDeleteSkillModal();
       await loadSkills();
+
       showToast("تم حذف المهارة.");
     } catch (error) {
       if (!state.redirectingToLogin) showToast(error.message, "error");
@@ -684,10 +699,17 @@
     if (!form) return;
 
     form.reset();
-    $("#pageId").value = "";
-    $("#pageFormTitle").textContent = "إضافة صفحة جديدة";
-    $("#savePageButton").textContent = "حفظ الصفحة";
-    $("#pageFormStatus").textContent = "";
+
+    const pageId = $("#pageId");
+    const title = $("#pageFormTitle");
+    const saveButton = $("#savePageButton");
+    const status = $("#pageFormStatus");
+
+    if (pageId) pageId.value = "";
+    if (title) title.textContent = "إضافة صفحة جديدة";
+    if (saveButton) saveButton.textContent = "حفظ الصفحة";
+    if (status) status.textContent = "";
+
     setVisible($("#cancelPageEdit"), false);
     state.editingPageId = null;
   }
@@ -699,9 +721,11 @@
     const search = ($("#pageSearch")?.value || "").trim().toLowerCase();
 
     const filtered = state.pages.filter((page) => {
-      const searchable = [page.title_ar, page.title_en, page.slug]
-        .join(" ")
-        .toLowerCase();
+      const searchable = [
+        page.title_ar,
+        page.title_en,
+        page.slug
+      ].join(" ").toLowerCase();
 
       return searchable.includes(search);
     });
@@ -766,7 +790,9 @@
   }
 
   async function loadPages() {
-    if (state.redirectingToLogin) return;
+    if (state.loadingPages || state.redirectingToLogin) return false;
+
+    state.loadingPages = true;
 
     setVisible($("#pagesLoading"), true);
     setVisible($("#pagesError"), false);
@@ -775,15 +801,31 @@
 
     try {
       const data = await api(API.pages);
-      state.pages = getArray(data.pages);
+
+      if (!Array.isArray(data.pages)) {
+        throw new Error("استجابة السيرفر غير صحيحة أثناء تحميل الصفحات.");
+      }
+
+      state.pages = data.pages;
       renderPages();
+
+      return true;
     } catch (error) {
       setVisible($("#pagesLoading"), false);
       setVisible($("#pagesError"), true);
+      setVisible($("#pagesTableContainer"), false);
+      setVisible($("#pagesEmpty"), false);
 
       const message = $("#pagesErrorMessage");
       if (message) message.textContent = error.message;
+
+      if (!state.redirectingToLogin) {
+        showToast(error.message, "error");
+      }
+
+      return false;
     } finally {
+      state.loadingPages = false;
       setVisible($("#pagesLoading"), false);
     }
   }
@@ -811,6 +853,7 @@
     $("#pageFormStatus").textContent = "";
 
     setVisible($("#cancelPageEdit"), true);
+
     activateSection("pages");
     $("#pageSlug")?.focus();
   }
@@ -820,6 +863,7 @@
 
     const button = $("#savePageButton");
     const status = $("#pageFormStatus");
+
     if (button?.disabled) return;
 
     const id = $("#pageId")?.value;
@@ -840,7 +884,28 @@
       return;
     }
 
+    if (!payload.title_ar || !payload.title_en) {
+      if (status) status.textContent = "اكتب عنوان الصفحة بالعربية والإنجليزية.";
+      return;
+    }
+
+    if (payload.slug.length > 150) {
+      if (status) status.textContent = "معرّف الصفحة طويل جدًا.";
+      return;
+    }
+
+    if (payload.title_ar.length > 500 || payload.title_en.length > 500) {
+      if (status) status.textContent = "عنوان الصفحة تجاوز الحد المسموح.";
+      return;
+    }
+
+    if (payload.content_ar.length > 30000 || payload.content_en.length > 30000) {
+      if (status) status.textContent = "محتوى الصفحة تجاوز الحد المسموح.";
+      return;
+    }
+
     setButtonLoading(button, true);
+
     if (status) status.textContent = "جاري حفظ الصفحة...";
 
     try {
@@ -852,12 +917,25 @@
       });
 
       resetPageForm();
-      await loadPages();
 
-      showToast(editing ? "تم تحديث الصفحة بنجاح." : "تمت إضافة الصفحة بنجاح.");
+      const refreshed = await loadPages();
+
+      if (refreshed) {
+        showToast(
+          editing ? "تم تحديث الصفحة بنجاح." : "تمت إضافة الصفحة بنجاح."
+        );
+      } else {
+        showToast(
+          "تم حفظ الصفحة، لكن تعذر تحديث القائمة. اضغط تحديث الصفحات.",
+          "error"
+        );
+      }
     } catch (error) {
       if (status) status.textContent = error.message;
-      if (!state.redirectingToLogin) showToast(error.message, "error");
+
+      if (!state.redirectingToLogin) {
+        showToast(error.message, "error");
+      }
     } finally {
       setButtonLoading(button, false);
     }
@@ -865,6 +943,7 @@
 
   async function togglePagePublication(id, button) {
     const page = state.pages.find((item) => String(item.id) === String(id));
+
     if (!page || button?.disabled) return;
 
     if (button) button.disabled = true;
@@ -878,8 +957,13 @@
         })
       });
 
-      await loadPages();
-      showToast("تم تحديث حالة نشر الصفحة.");
+      const refreshed = await loadPages();
+
+      if (refreshed) {
+        showToast("تم تحديث حالة نشر الصفحة.");
+      } else {
+        showToast("تم تحديث الحالة، لكن تعذر تحديث القائمة.", "error");
+      }
     } catch (error) {
       if (!state.redirectingToLogin) showToast(error.message, "error");
     } finally {
@@ -889,6 +973,7 @@
 
   async function deletePage(id, button) {
     const page = state.pages.find((item) => String(item.id) === String(id));
+
     if (!page || button?.disabled) return;
 
     const title = page.title_ar || page.slug || "هذه الصفحة";
@@ -909,8 +994,13 @@
         resetPageForm();
       }
 
-      await loadPages();
-      showToast("تم حذف الصفحة.");
+      const refreshed = await loadPages();
+
+      if (refreshed) {
+        showToast("تم حذف الصفحة.");
+      } else {
+        showToast("تم الحذف، لكن تعذر تحديث القائمة.", "error");
+      }
     } catch (error) {
       if (!state.redirectingToLogin) showToast(error.message, "error");
     } finally {
@@ -1015,6 +1105,7 @@
 
       if (tbody) {
         tbody.textContent = "";
+
         const row = document.createElement("tr");
         const cell = document.createElement("td");
 
@@ -1039,6 +1130,7 @@
 
     const body = $("#messageModalBody");
     const actions = $("#messageModalActions");
+
     if (!body) return;
 
     body.innerHTML = `
@@ -1084,6 +1176,7 @@
     }
 
     const modal = $("#messageModal");
+
     setVisible(modal, true);
     modal?.classList.add("active");
   }
@@ -1121,6 +1214,7 @@
 
       closeMessageModal();
       await loadMessages();
+
       showToast("تم تحديث حالة الرسالة.");
     } catch (error) {
       if (!state.redirectingToLogin) showToast(error.message, "error");
