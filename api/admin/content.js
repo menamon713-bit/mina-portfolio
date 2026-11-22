@@ -146,7 +146,12 @@ function validateSeoBody(body) {
     return "Invalid page slug.";
   }
 
-  if (!body.title_ar.trim() || !body.title_en.trim()) {
+  if (
+    typeof body.title_ar !== "string" ||
+    typeof body.title_en !== "string" ||
+    !body.title_ar.trim() ||
+    !body.title_en.trim()
+  ) {
     return "Arabic and English titles are required.";
   }
 
