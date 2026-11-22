@@ -6,21 +6,83 @@
   const $ = (selector, parent = document) =>
     parent.querySelector(selector);
 
-  const escapeHTML = (value) =>
-    String(value ?? "").replace(/[&<>"']/g, (char) => ({
+  const $$ = (selector, parent = document) =>
+    [...parent.querySelectorAll(selector)];
+
+  const state = {
+    links: [],
+    editingId: null,
+    loading: false,
+    saving: false,
+    initialized: false
+  };
+
+  // ==============================
+  // HELPERS
+  // ==============================
+
+  function escapeHTML(value) {
+    return String(value ?? "").replace(/[&<>"']/g, char => ({
       "&": "&amp;",
       "<": "&lt;",
       ">": "&gt;",
       '"': "&quot;",
       "'": "&#039;"
     })[char]);
+  }
 
-  const state = {
-    links: [],
-    editingId: null,
-    loading: false,
-    initialized: false
-  };
+  function safeExternalUrl(value) {
+    try {
+      const url = new URL(String(value));
+
+      if (
+        url.protocol !== "https:" ||
+        !url.hostname ||
+        url.username ||
+        url.password
+      ) {
+        return null;
+      }
+
+      return url.href;
+    } catch {
+      return null;
+    }
+  }
+
+  function toast(message, type = "success") {
+    const element = $("#adminToast");
+
+    if (!element) return;
+
+    element.textContent = message;
+    element.className =
+      `admin-toast show ${type === "error" ? "error" : "success"}`;
+
+    element.hidden = false;
+
+    clearTimeout(toast.timer);
+
+    toast.timer = setTimeout(() => {
+      element.classList.remove("show");
+      element.hidden = true;
+    }, 3500);
+  }
+
+  function setStatus(message, isError = false) {
+    const element = $("#socialFormStatus");
+
+    if (!element) return;
+
+    element.textContent = message;
+    element.style.color = isError
+      ? "var(--danger)"
+      : "var(--success)";
+  }
+
+  // ==============================
+  // API REQUEST
+  // ==============================
 
   async function request(method = "GET", body) {
     let response;
@@ -58,38 +120,17 @@
     }
 
     if (!response.ok) {
-      throw new Error(data.error || "حدث خطأ أثناء تنفيذ الطلب.");
+      throw new Error(
+        data.error || "حدث خطأ أثناء تنفيذ الطلب."
+      );
     }
 
     return data;
   }
 
-  function toast(message, type = "success") {
-    const element = $("#adminToast");
-
-    if (!element) return;
-
-    element.textContent = message;
-    element.className =
-      `admin-toast show ${type === "error" ? "error" : "success"}`;
-    element.hidden = false;
-
-    clearTimeout(toast.timer);
-
-    toast.timer = setTimeout(() => {
-      element.classList.remove("show");
-      element.hidden = true;
-    }, 3500);
-  }
-
-  function setStatus(message, isError = false) {
-    const element = $("#socialFormStatus");
-
-    if (!element) return;
-
-    element.textContent = message;
-    element.style.color = isError ? "var(--danger)" : "var(--success)";
-  }
+  // ==============================
+  // INTERFACE
+  // ==============================
 
   function buildInterface() {
     const panel = $("#section-social .panel-card");
@@ -112,9 +153,7 @@
         </button>
       </div>
 
-      <form id="socialForm">
-
-        <input type="hidden" id="socialId">
+      <form id="socialForm" novalidate>
 
         <div class="profile-form-grid">
 
@@ -195,7 +234,11 @@
 
           <div class="form-field">
             <label class="checkbox-field" for="socialVisible">
-              <input id="socialVisible" type="checkbox" checked>
+              <input
+                id="socialVisible"
+                type="checkbox"
+                checked
+              >
               <span>إظهار الرابط</span>
             </label>
           </div>
@@ -203,6 +246,7 @@
         </div>
 
         <div class="form-footer">
+
           <p
             id="socialFormStatus"
             class="form-status"
@@ -210,6 +254,7 @@
           ></p>
 
           <div class="modal-actions">
+
             <button
               type="button"
               class="secondary-button"
@@ -226,7 +271,9 @@
             >
               إضافة الرابط
             </button>
+
           </div>
+
         </div>
 
       </form>
@@ -279,6 +326,7 @@
         hidden
       >
         <table class="admin-table">
+
           <thead>
             <tr>
               <th>المنصة</th>
@@ -291,12 +339,17 @@
           </thead>
 
           <tbody id="socialTableBody"></tbody>
+
         </table>
       </div>
     `;
 
     return true;
   }
+
+  // ==============================
+  // FORM
+  // ==============================
 
   function resetForm() {
     const form = $("#socialForm");
@@ -307,189 +360,13 @@
 
     state.editingId = null;
 
-    $("#socialId").value = "";
     $("#socialSortOrder").value = "0";
     $("#socialVisible").checked = true;
 
     $("#saveSocialButton").textContent = "إضافة الرابط";
-
     $("#cancelSocialEdit").hidden = true;
 
     setStatus("");
-  }
-
-  function renderLinks() {
-    const tbody = $("#socialTableBody");
-
-    if (!tbody) return;
-
-    const links = [...state.links].sort((a, b) =>
-      Number(a.sort_order || 0) - Number(b.sort_order || 0) ||
-      Number(a.id || 0) - Number(b.id || 0)
-    );
-
-    $("#socialCount").textContent =
-      `إجمالي الروابط: ${links.length}`;
-
-    $("#socialLoading").hidden = true;
-    $("#socialError").hidden = true;
-    $("#socialEmpty").hidden = links.length !== 0;
-    $("#socialTableContainer").hidden = links.length === 0;
-
-    if (links.length === 0) {
-      tbody.replaceChildren();
-      return;
-    }
-
-    tbody.innerHTML = links.map((link) => {
-      const visible = link.is_visible === true;
-
-      return `
-        <tr>
-          <td>
-            <strong>${escapeHTML(link.label_ar)}</strong>
-            <small>${escapeHTML(link.label_en)}</small>
-            <small>${escapeHTML(link.platform)}</small>
-          </td>
-
-          <td>${escapeHTML(link.value || "—")}</td>
-
-          <td>
-            <a
-              href="${escapeHTML(link.url)}"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              فتح الرابط
-            </a>
-          </td>
-
-          <td>${escapeHTML(link.sort_order ?? 0)}</td>
-
-          <td>
-            <span class="status-badge ${
-              visible ? "status-visible" : "status-hidden"
-            }">
-              ${visible ? "ظاهر" : "مخفي"}
-            </span>
-          </td>
-
-          <td>
-            <div class="table-actions">
-              <button
-                type="button"
-                class="action-button"
-                data-social-edit="${escapeHTML(link.id)}"
-              >
-                تعديل
-              </button>
-
-              <button
-                type="button"
-                class="action-button"
-                data-social-toggle="${escapeHTML(link.id)}"
-              >
-                ${visible ? "إخفاء" : "إظهار"}
-              </button>
-
-              <button
-                type="button"
-                class="action-button danger-button"
-                data-social-delete="${escapeHTML(link.id)}"
-              >
-                حذف
-              </button>
-            </div>
-          </td>
-        </tr>
-      `;
-    }).join("");
-
-    $$("[data-social-edit]", tbody).forEach((button) => {
-      button.addEventListener("click", () => {
-        editLink(button.dataset.socialEdit);
-      });
-    });
-
-    $$("[data-social-toggle]", tbody).forEach((button) => {
-      button.addEventListener("click", () => {
-        toggleVisibility(button.dataset.socialToggle, button);
-      });
-    });
-
-    $$("[data-social-delete]", tbody).forEach((button) => {
-      button.addEventListener("click", () => {
-        deleteLink(button.dataset.socialDelete, button);
-      });
-    });
-  }
-
-  async function loadLinks() {
-    if (state.loading) return;
-
-    state.loading = true;
-
-    $("#socialLoading").hidden = false;
-    $("#socialError").hidden = true;
-    $("#socialTableContainer").hidden = true;
-    $("#socialEmpty").hidden = true;
-
-    try {
-      const data = await request();
-
-      if (!Array.isArray(data.socialLinks)) {
-        throw new Error("استجابة السيرفر غير صحيحة.");
-      }
-
-      state.links = data.socialLinks;
-
-      renderLinks();
-    } catch (error) {
-      $("#socialLoading").hidden = true;
-      $("#socialError").hidden = false;
-      $("#socialErrorMessage").textContent = error.message;
-
-      toast(error.message, "error");
-    } finally {
-      state.loading = false;
-      $("#socialLoading").hidden = true;
-    }
-  }
-
-  function editLink(id) {
-    const link = state.links.find(
-      (item) => String(item.id) === String(id)
-    );
-
-    if (!link) {
-      toast("الرابط غير موجود.", "error");
-      return;
-    }
-
-    state.editingId = link.id;
-
-    $("#socialId").value = link.id;
-    $("#socialPlatform").value = link.platform || "";
-    $("#socialIcon").value = link.icon || "";
-    $("#socialLabelAr").value = link.label_ar || "";
-    $("#socialLabelEn").value = link.label_en || "";
-    $("#socialValue").value = link.value || "";
-    $("#socialUrl").value = link.url || "";
-    $("#socialSortOrder").value = link.sort_order ?? 0;
-    $("#socialVisible").checked = link.is_visible === true;
-
-    $("#saveSocialButton").textContent = "حفظ التعديلات";
-    $("#cancelSocialEdit").hidden = false;
-
-    setStatus("");
-
-    $("#socialPlatform").focus();
-
-    window.scrollTo({
-      top: $("#socialForm").getBoundingClientRect().top +
-        window.scrollY - 100,
-      behavior: "smooth"
-    });
   }
 
   function getPayload() {
@@ -516,47 +393,241 @@
     }
 
     if (!/^[a-zA-Z0-9_-]+$/.test(payload.platform)) {
-      return "اسم المنصة يقبل الحروف الإنجليزية والأرقام والشرطة فقط.";
+      return "اسم المنصة غير صحيح.";
     }
 
-    if (!Number.isSafeInteger(payload.sort_order) || payload.sort_order < 0) {
+    if (
+      !Number.isSafeInteger(payload.sort_order) ||
+      payload.sort_order < 0
+    ) {
       return "قيمة ترتيب الظهور غير صحيحة.";
     }
 
-    try {
-      const url = new URL(payload.url);
-
-      if (
-        url.protocol !== "https:" ||
-        !url.hostname ||
-        url.username ||
-        url.password
-      ) {
-        return "أدخل رابط HTTPS صحيحًا.";
-      }
-    } catch {
-      return "رابط الحساب غير صحيح.";
+    if (!safeExternalUrl(payload.url)) {
+      return "أدخل رابط HTTPS صحيحًا.";
     }
 
     return null;
   }
 
+  // ==============================
+  // RENDER
+  // ==============================
+
+  function renderLinks() {
+    const tbody = $("#socialTableBody");
+
+    if (!tbody) return;
+
+    const links = [...state.links].sort((a, b) =>
+      Number(a.sort_order || 0) -
+      Number(b.sort_order || 0) ||
+      Number(a.id || 0) -
+      Number(b.id || 0)
+    );
+
+    $("#socialCount").textContent =
+      `إجمالي الروابط: ${links.length}`;
+
+    $("#socialLoading").hidden = true;
+    $("#socialError").hidden = true;
+    $("#socialEmpty").hidden = links.length !== 0;
+    $("#socialTableContainer").hidden = links.length === 0;
+
+    if (links.length === 0) {
+      tbody.replaceChildren();
+      return;
+    }
+
+    tbody.innerHTML = links.map(link => {
+      const visible = link.is_visible === true;
+      const safeUrl = safeExternalUrl(link.url);
+
+      return `
+        <tr>
+
+          <td>
+            <strong>${escapeHTML(link.label_ar)}</strong>
+            <small>${escapeHTML(link.label_en)}</small>
+            <small>${escapeHTML(link.platform)}</small>
+          </td>
+
+          <td>${escapeHTML(link.value || "—")}</td>
+
+          <td>
+            ${
+              safeUrl
+                ? `<a
+                    href="${escapeHTML(safeUrl)}"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >فتح الرابط</a>`
+                : "رابط غير صالح"
+            }
+          </td>
+
+          <td>${escapeHTML(link.sort_order ?? 0)}</td>
+
+          <td>
+            <span class="status-badge ${
+              visible ? "status-visible" : "status-hidden"
+            }">
+              ${visible ? "ظاهر" : "مخفي"}
+            </span>
+          </td>
+
+          <td>
+            <div class="table-actions">
+
+              <button
+                type="button"
+                class="secondary-button"
+                data-social-edit="${escapeHTML(link.id)}"
+              >
+                تعديل
+              </button>
+
+              <button
+                type="button"
+                class="secondary-button"
+                data-social-toggle="${escapeHTML(link.id)}"
+              >
+                ${visible ? "إخفاء" : "إظهار"}
+              </button>
+
+              <button
+                type="button"
+                class="danger-button"
+                data-social-delete="${escapeHTML(link.id)}"
+              >
+                حذف
+              </button>
+
+            </div>
+          </td>
+
+        </tr>
+      `;
+    }).join("");
+
+    $$("[data-social-edit]", tbody).forEach(button => {
+      button.addEventListener("click", () => {
+        editLink(button.dataset.socialEdit);
+      });
+    });
+
+    $$("[data-social-toggle]", tbody).forEach(button => {
+      button.addEventListener("click", () => {
+        toggleVisibility(button.dataset.socialToggle, button);
+      });
+    });
+
+    $$("[data-social-delete]", tbody).forEach(button => {
+      button.addEventListener("click", () => {
+        deleteLink(button.dataset.socialDelete, button);
+      });
+    });
+  }
+
+  // ==============================
+  // LOAD
+  // ==============================
+
+  async function loadLinks() {
+    if (state.loading) return;
+
+    state.loading = true;
+
+    $("#socialLoading").hidden = false;
+    $("#socialError").hidden = true;
+    $("#socialTableContainer").hidden = true;
+    $("#socialEmpty").hidden = true;
+
+    try {
+      const data = await request("GET");
+
+      if (!Array.isArray(data.socialLinks)) {
+        throw new Error("استجابة السيرفر غير صحيحة.");
+      }
+
+      state.links = data.socialLinks;
+
+      renderLinks();
+
+    } catch (error) {
+      $("#socialLoading").hidden = true;
+      $("#socialError").hidden = false;
+      $("#socialErrorMessage").textContent = error.message;
+
+      toast(error.message, "error");
+
+    } finally {
+      state.loading = false;
+      $("#socialLoading").hidden = true;
+    }
+  }
+
+  // ==============================
+  // EDIT
+  // ==============================
+
+  function editLink(id) {
+    const link = state.links.find(
+      item => String(item.id) === String(id)
+    );
+
+    if (!link) {
+      toast("الرابط غير موجود.", "error");
+      return;
+    }
+
+    state.editingId = link.id;
+
+    $("#socialPlatform").value = link.platform || "";
+    $("#socialIcon").value = link.icon || "";
+    $("#socialLabelAr").value = link.label_ar || "";
+    $("#socialLabelEn").value = link.label_en || "";
+    $("#socialValue").value = link.value || "";
+    $("#socialUrl").value = link.url || "";
+    $("#socialSortOrder").value = link.sort_order ?? 0;
+    $("#socialVisible").checked = link.is_visible === true;
+
+    $("#saveSocialButton").textContent = "حفظ التعديلات";
+    $("#cancelSocialEdit").hidden = false;
+
+    setStatus("");
+
+    $("#socialPlatform").focus();
+
+    window.scrollTo({
+      top:
+        $("#socialForm").getBoundingClientRect().top +
+        window.scrollY - 100,
+      behavior: "smooth"
+    });
+  }
+
+  // ==============================
+  // SAVE
+  // ==============================
+
   async function saveLink(event) {
     event.preventDefault();
 
-    const button = $("#saveSocialButton");
-
-    if (button.disabled) return;
+    if (state.saving) return;
 
     const payload = getPayload();
-    const error = validatePayload(payload);
+    const validationError = validatePayload(payload);
 
-    if (error) {
-      setStatus(error, true);
+    if (validationError) {
+      setStatus(validationError, true);
       return;
     }
 
     const editing = state.editingId !== null;
+    const button = $("#saveSocialButton");
+
+    state.saving = true;
 
     button.disabled = true;
     button.textContent = "جاري الحفظ...";
@@ -580,23 +651,29 @@
           ? "تم تحديث الرابط بنجاح."
           : "تمت إضافة الرابط بنجاح."
       );
+
     } catch (error) {
       setStatus(error.message, true);
       toast(error.message, "error");
+
     } finally {
+      state.saving = false;
+
       button.disabled = false;
 
-      if (!state.editingId) {
-        button.textContent = "إضافة الرابط";
-      } else {
-        button.textContent = "حفظ التعديلات";
-      }
+      button.textContent = state.editingId !== null
+        ? "حفظ التعديلات"
+        : "إضافة الرابط";
     }
   }
 
+  // ==============================
+  // VISIBILITY
+  // ==============================
+
   async function toggleVisibility(id, button) {
     const link = state.links.find(
-      (item) => String(item.id) === String(id)
+      item => String(item.id) === String(id)
     );
 
     if (!link || button.disabled) return;
@@ -612,16 +689,22 @@
       await loadLinks();
 
       toast("تم تحديث حالة ظهور الرابط.");
+
     } catch (error) {
       toast(error.message, "error");
+
     } finally {
       button.disabled = false;
     }
   }
 
+  // ==============================
+  // DELETE
+  // ==============================
+
   async function deleteLink(id, button) {
     const link = state.links.find(
-      (item) => String(item.id) === String(id)
+      item => String(item.id) === String(id)
     );
 
     if (!link || button.disabled) return;
@@ -635,21 +718,32 @@
     button.disabled = true;
 
     try {
-      await request("DELETE", { id: link.id });
+      await request("DELETE", {
+        id: link.id
+      });
 
-      if (String(state.editingId) === String(link.id)) {
+      if (
+        state.editingId !== null &&
+        String(state.editingId) === String(link.id)
+      ) {
         resetForm();
       }
 
       await loadLinks();
 
       toast("تم حذف الرابط.");
+
     } catch (error) {
       toast(error.message, "error");
+
     } finally {
       button.disabled = false;
     }
   }
+
+  // ==============================
+  // INITIALIZATION
+  // ==============================
 
   function initialize() {
     if (state.initialized) return;
@@ -658,23 +752,40 @@
 
     state.initialized = true;
 
-    $("#socialForm").addEventListener("submit", saveLink);
+    $("#socialForm").addEventListener(
+      "submit",
+      saveLink
+    );
 
-    $("#cancelSocialEdit").addEventListener("click", resetForm);
+    $("#cancelSocialEdit").addEventListener(
+      "click",
+      resetForm
+    );
 
-    $("#refreshSocialButton").addEventListener("click", loadLinks);
+    $("#refreshSocialButton").addEventListener(
+      "click",
+      loadLinks
+    );
 
-    $("#retrySocialButton").addEventListener("click", loadLinks);
+    $("#retrySocialButton").addEventListener(
+      "click",
+      loadLinks
+    );
 
     loadLinks();
   }
 
-  document.addEventListener("click", (event) => {
-    const navigationButton = event.target.closest(
+  // Start when the social section is opened.
+  document.addEventListener("click", event => {
+    const target = event.target;
+
+    if (!(target instanceof Element)) return;
+
+    const navigationButton = target.closest(
       '.nav-item[data-section="social"]'
     );
 
-    const shortcutButton = event.target.closest(
+    const shortcutButton = target.closest(
       '[data-go-section="social"]'
     );
 
