@@ -7,6 +7,8 @@ const {
   checkSameOrigin
 } = require("../_lib/admin-auth");
 
+const { adminQuery } = require("../_lib/admin-db");
+
 const ALLOWED_FIELDS = [
   "name_ar",
   "name_en",
@@ -25,9 +27,7 @@ const STRING_FIELDS = {
 };
 
 function sendError(res, status, message) {
-  return res.status(status).json({
-    error: message
-  });
+  return res.status(status).json({ error: message });
 }
 
 function isPlainObject(value) {
@@ -66,9 +66,7 @@ function validateBody(body, options = {}) {
   }
 
   for (const field of Object.keys(body)) {
-    if (field === "id" && allowId) {
-      continue;
-    }
+    if (field === "id" && allowId) continue;
 
     if (!ALLOWED_FIELDS.includes(field)) {
       return `Unknown field: ${field}`;
@@ -142,6 +140,7 @@ function cleanString(value) {
 
 module.exports = async function handler(req, res) {
   res.setHeader("Cache-Control", "no-store");
+  res.setHeader("X-Content-Type-Options", "nosniff");
 
   const methods = ["GET", "POST", "PATCH", "DELETE"];
 
@@ -152,7 +151,7 @@ module.exports = async function handler(req, res) {
 
   if (!(await requireAdmin(req, res))) {
     return;
-  } 
+  }
 
   if (
     req.method !== "GET" &&
@@ -163,7 +162,10 @@ module.exports = async function handler(req, res) {
 
   const databaseUrl = process.env.DATABASE_URL;
 
-  if (!databaseUrl) {
+  if (
+    typeof databaseUrl !== "string" ||
+    !databaseUrl.trim()
+  ) {
     return sendError(res, 503, "Database is unavailable.");
   }
 
@@ -171,7 +173,7 @@ module.exports = async function handler(req, res) {
     const sql = neon(databaseUrl);
 
     if (req.method === "GET") {
-      const rows = await sql`
+      const query = sql`
         SELECT
           id,
           name_ar,
@@ -187,6 +189,8 @@ module.exports = async function handler(req, res) {
         ORDER BY sort_order ASC, id ASC
       `;
 
+      const rows = await adminQuery(sql, query);
+
       return res.status(200).json({
         skills: rows,
         count: rows.length
@@ -195,14 +199,13 @@ module.exports = async function handler(req, res) {
 
     if (req.method === "POST") {
       const body = req.body;
-
       const error = validateBody(body);
 
       if (error) {
         return sendError(res, 400, error);
       }
 
-      const rows = await sql`
+      const query = sql`
         INSERT INTO site_skills (
           name_ar,
           name_en,
@@ -223,6 +226,8 @@ module.exports = async function handler(req, res) {
         )
         RETURNING *
       `;
+
+      const rows = await adminQuery(sql, query);
 
       return res.status(201).json({
         message: "Skill created successfully.",
@@ -254,7 +259,7 @@ module.exports = async function handler(req, res) {
         return sendError(res, 400, "No fields to update.");
       }
 
-      const rows = await sql`
+      const query = sql`
         UPDATE site_skills
         SET
           name_ar = COALESCE(
@@ -298,6 +303,8 @@ module.exports = async function handler(req, res) {
         RETURNING *
       `;
 
+      const rows = await adminQuery(sql, query);
+
       if (!rows.length) {
         return sendError(res, 404, "Skill not found.");
       }
@@ -319,11 +326,13 @@ module.exports = async function handler(req, res) {
         return sendError(res, 400, "Invalid skill ID.");
       }
 
-      const rows = await sql`
+      const query = sql`
         DELETE FROM site_skills
         WHERE id = ${Number(body.id)}
         RETURNING id
       `;
+
+      const rows = await adminQuery(sql, query);
 
       if (!rows.length) {
         return sendError(res, 404, "Skill not found.");
@@ -334,9 +343,8 @@ module.exports = async function handler(req, res) {
         id: rows[0].id
       });
     }
-
-  } catch (error) {
-    console.error("Admin skills API error:", error);
+  } catch {
+    console.error("[admin-skills] Database operation failed.");
 
     return sendError(
       res,
