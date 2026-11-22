@@ -220,11 +220,29 @@
     return svg;
   }
 
-  function safeSocialUrl(value) {
+  function safeSocialUrl(value, platform) {
     const rawUrl = textValue(value);
 
     if (!rawUrl || rawUrl.length > 2048) return "";
 
+    // Gmail يسمح برابط mailto فقط.
+    if (platform === "gmail") {
+      if (!rawUrl.toLowerCase().startsWith("mailto:")) {
+        return "";
+      }
+
+      const email = rawUrl.slice(7).split("?")[0].trim();
+
+      if (
+        !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+      ) {
+        return "";
+      }
+
+      return `mailto:${email}`;
+    }
+
+    // باقي المنصات تسمح بروابط HTTPS فقط.
     try {
       const parsed = new URL(rawUrl);
 
@@ -252,7 +270,7 @@
 
         if (!config) return;
 
-        const url = safeSocialUrl(item.url);
+        const url = safeSocialUrl(item.url, platform);
 
         if (!url) return;
 
@@ -260,8 +278,12 @@
 
         link.className = `contact-social-link contact-social-${platform}`;
         link.href = url;
-        link.target = "_blank";
-        link.rel = "noopener noreferrer";
+
+        if (platform !== "gmail") {
+          link.target = "_blank";
+          link.rel = "noopener noreferrer";
+        }
+
         link.setAttribute(
           "aria-label",
           `Open ${config.label}`
