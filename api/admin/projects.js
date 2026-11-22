@@ -7,6 +7,8 @@ const {
   checkSameOrigin
 } = require("../_lib/admin-auth");
 
+const { adminQuery } = require("../_lib/admin-db");
+
 const STRING_FIELDS = {
   title_ar: 200,
   title_en: 200,
@@ -100,14 +102,10 @@ function isSafeJsonObject(value) {
   try {
     const serialized = JSON.stringify(value);
 
-    if (
-      typeof serialized !== "string" ||
-      Buffer.byteLength(serialized, "utf8") > 50000
-    ) {
-      return false;
-    }
-
-    return true;
+    return (
+      typeof serialized === "string" &&
+      Buffer.byteLength(serialized, "utf8") <= 50000
+    );
   } catch {
     return false;
   }
@@ -224,7 +222,10 @@ module.exports = async function handler(req, res) {
 
   const databaseUrl = process.env.DATABASE_URL;
 
-  if (!databaseUrl) {
+  if (
+    typeof databaseUrl !== "string" ||
+    !databaseUrl.trim()
+  ) {
     return sendError(res, 503, "Database is unavailable.");
   }
 
@@ -232,7 +233,7 @@ module.exports = async function handler(req, res) {
     const sql = neon(databaseUrl);
 
     if (req.method === "GET") {
-      const rows = await sql`
+      const query = sql`
         SELECT
           p.*,
           COALESCE(
@@ -254,6 +255,8 @@ module.exports = async function handler(req, res) {
         ORDER BY p.sort_order ASC, p.id ASC
       `;
 
+      const rows = await adminQuery(sql, query);
+
       return res.status(200).json({
         projects: rows,
         count: rows.length
@@ -266,7 +269,7 @@ module.exports = async function handler(req, res) {
 
       if (error) return sendError(res, 400, error);
 
-      const rows = await sql`
+      const query = sql`
         INSERT INTO site_projects (
           title_ar,
           title_en,
@@ -304,6 +307,8 @@ module.exports = async function handler(req, res) {
         RETURNING *
       `;
 
+      const rows = await adminQuery(sql, query);
+
       return res.status(201).json({
         message: "Project created successfully.",
         project: rows[0]
@@ -332,7 +337,7 @@ module.exports = async function handler(req, res) {
         return sendError(res, 400, "No fields to update.");
       }
 
-      const rows = await sql`
+      const query = sql`
         UPDATE site_projects
         SET
           title_ar = COALESCE(${body.title_ar === undefined ? null : body.title_ar.trim()}, title_ar),
@@ -355,6 +360,8 @@ module.exports = async function handler(req, res) {
         RETURNING *
       `;
 
+      const rows = await adminQuery(sql, query);
+
       if (!rows.length) {
         return sendError(res, 404, "Project not found.");
       }
@@ -376,11 +383,13 @@ module.exports = async function handler(req, res) {
         return sendError(res, 400, "Invalid project ID.");
       }
 
-      const rows = await sql`
+      const query = sql`
         DELETE FROM site_projects
         WHERE id = ${Number(body.id)}
         RETURNING id
       `;
+
+      const rows = await adminQuery(sql, query);
 
       if (!rows.length) {
         return sendError(res, 404, "Project not found.");
