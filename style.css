@@ -2028,3 +2028,131 @@ body.modal-open {
     transition: none;
   }
 }
+
+/* =========================================
+   TOPBAR CONTROLS — LANGUAGE & THEME
+========================================= */
+
+.topbar {
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.topbar-controls {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex-shrink: 0;
+}
+
+.topbar .theme-btn,
+.topbar .language-btn {
+  position: static;
+  inset: auto;
+  bottom: auto;
+  z-index: auto;
+  width: 42px;
+  height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-strong);
+  border-radius: 12px;
+  box-shadow: none;
+  cursor: pointer;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  transition:
+    background .2s ease,
+    border-color .2s ease,
+    transform .2s ease;
+}
+
+.topbar .theme-btn:hover,
+.topbar .language-btn:hover {
+  background: var(--surface-hover);
+  border-color: var(--primary-border);
+  transform: translateY(-2px);
+}
+
+.topbar .language-btn {
+  font-family: var(--font-en);
+  font-size: .75rem;
+  font-weight: 800;
+}
+
+@media (max-width: 849px) {
+  .topbar {
+    inset-inline: 0;
+    width: 100%;
+    padding-inline: 14px;
+  }
+
+  .topbar-logo {
+    margin-inline-end: auto;
+    margin-inline-start: 12px;
+    white-space: nowrap;
+  }
+
+  .topbar-controls {
+    margin-inline-start: auto;
+  }
+
+  .menu-btn {
+    flex: 0 0 42px;
+  }
+
+  .main-content {
+    padding-top: calc(var(--topbar-height) + 30px);
+  }
+}
+
+@media (min-width: 850px) {
+  .topbar {
+    display: flex;
+    inset-inline-start: var(--sidebar-width);
+    inset-inline-end: 0;
+    width: auto;
+    padding-inline: 28px;
+  }
+
+  .topbar .menu-btn {
+    display: none;
+  }
+
+  .topbar-logo {
+    margin-inline-end: auto;
+  }
+
+  .topbar-controls {
+    margin-inline-start: auto;
+  }
+
+  .main-content {
+    padding-top: calc(var(--topbar-height) + 30px);
+  }
+}
+
+@media (max-width: 380px) {
+  .topbar {
+    gap: 8px;
+    padding-inline: 10px;
+  }
+
+  .topbar-logo {
+    font-size: .9rem;
+    margin-inline-start: 7px;
+  }
+
+  .topbar-controls {
+    gap: 6px;
+  }
+
+  .topbar .theme-btn,
+  .topbar .language-btn {
+    width: 38px;
+    height: 38px;
+  }
+}
