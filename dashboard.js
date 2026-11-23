@@ -302,7 +302,6 @@
       profileFullName: profile.full_name,
       profileJobTitle: profile.job_title,
       profileLocation: profile.location,
-      profileEmail: profile.email,
       profileImage: profile.image,
       profileShortBio: profile.short_bio,
       profileAbout: profile.about
@@ -346,7 +345,6 @@
       full_name: $("#profileFullName")?.value.trim() || "",
       job_title: $("#profileJobTitle")?.value.trim() || "",
       location: $("#profileLocation")?.value.trim() || "",
-      email: $("#profileEmail")?.value.trim() || "",
       image: $("#profileImage")?.value.trim() || "",
       short_bio: $("#profileShortBio")?.value.trim() || "",
       about: $("#profileAbout")?.value.trim() || ""
