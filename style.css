@@ -1769,8 +1769,9 @@ body.modal-open {
   color: var(--text);
 }
 
-.public-page-view[hidden],
-.main-content[hidden] {
+/* تحديد إخفاء الحاويتين المقصودتين فقط */
+#publicPageView[hidden],
+#mainContent[hidden] {
   display: none !important;
 }
 
