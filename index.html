@@ -38,6 +38,7 @@
   <link rel="stylesheet" href="style.css?v=14">
   <script src="script.js?v=16" defer></script>
   <script src="public-data.js?v=7" defer></script>
+  <script src="public-pages.js?v=1" defer></script>
   <script src="contact.js?v=6" defer></script>
 
   <script type="application/ld+json">
@@ -470,12 +471,31 @@
     </section>
 
     <footer class="main-footer">
-      <p>© 2026 <strong>M.A.S.H CYVEX</strong>. <span data-i18n="rights">جميع الحقوق محفوظة.</span></p>
-      <p data-i18n="footerMade">صُنع باهتمام بالتفاصيل.</p>
+  <p>
+    © 2026 <strong>M.A.S.H CYVEX</strong>.
+    <span data-i18n="rights">جميع الحقوق محفوظة.</span>
+  </p>
+
+  <p data-i18n="footerMade">
+    صُنع باهتمام بالتفاصيل.
+  </p>
+
+  <nav
+    class="public-page-links"
+    id="publicPageLinks"
+    aria-label="صفحات الموقع"
+  ></nav>
     </footer>
 
   </main>
 
+    <main
+    id="publicPageView"
+    class="public-page-view"
+    hidden
+    aria-live="polite"
+  ></main>
+  
   <button type="button" class="theme-btn" id="themeToggle" aria-label="تغيير المظهر" title="تغيير المظهر">☀️</button>
   <button type="button" class="language-btn" id="languageToggle" aria-label="Switch language" title="Switch language">EN</button>
 
