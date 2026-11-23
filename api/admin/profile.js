@@ -15,7 +15,6 @@ const FIELDS = Object.freeze({
   short_bio: 2000,
   about: 5000,
   location: 120,
-  email: 255,
   image: 2000
 });
 
@@ -92,18 +91,6 @@ function validateProfile(body) {
     return "Full name is required.";
   }
 
-  const email = body.email.trim();
-
-  if (
-    email &&
-    (
-      email.length > 255 ||
-      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
-    )
-  ) {
-    return "Invalid email address.";
-  }
-
   if (!validImageUrl(body.image.trim())) {
     return "Invalid profile image URL.";
   }
@@ -166,7 +153,6 @@ module.exports = async function handler(req, res) {
           short_bio,
           about,
           location,
-          email,
           profile_image AS image,
           updated_at
         FROM site_profile
@@ -206,7 +192,6 @@ module.exports = async function handler(req, res) {
         short_bio = ${values.short_bio},
         about = ${values.about},
         location = ${values.location},
-        email = ${values.email},
         profile_image = ${values.image},
         updated_at = NOW()
       WHERE id = (
@@ -221,7 +206,6 @@ module.exports = async function handler(req, res) {
         short_bio,
         about,
         location,
-        email,
         profile_image AS image,
         updated_at
     `;
