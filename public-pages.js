@@ -16,7 +16,7 @@
   const language = () =>
     document.documentElement.lang === "en" ? "en" : "ar";
 
-  const safeText = (value) =>
+  const safeText = value =>
     typeof value === "string" ? value.trim() : "";
 
   function getPageTitle(page, lang = language()) {
@@ -72,9 +72,11 @@
 
     const description =
       safeText(
-        seo && (lang === "en"
-          ? seo.description_en
-          : seo.description_ar)
+        seo && (
+          lang === "en"
+            ? seo.description_en
+            : seo.description_ar
+        )
       ) ||
       getPageContent(page, lang)
         .replace(/[#*_\[\]()>`]/g, " ")
@@ -82,7 +84,11 @@
         .slice(0, 155);
 
     const keywords = safeText(
-      seo && (lang === "en" ? seo.keywords_en : seo.keywords_ar)
+      seo && (
+        lang === "en"
+          ? seo.keywords_en
+          : seo.keywords_ar
+      )
     );
 
     document.title = `${title} | ${SITE_NAME}`;
@@ -301,6 +307,15 @@
     flushList();
   }
 
+  function validPage(page) {
+    return (
+      page &&
+      typeof page === "object" &&
+      typeof page.slug === "string" &&
+      SLUG_PATTERN.test(page.slug)
+    );
+  }
+
   function createFooterLinks() {
     const container = $("#publicPageLinks");
 
@@ -310,9 +325,7 @@
     const fragment = document.createDocumentFragment();
 
     pages.forEach(page => {
-      if (!page || !SLUG_PATTERN.test(page.slug || "")) {
-        return;
-      }
+      if (!validPage(page)) return;
 
       const link = document.createElement("a");
       link.href = `/${encodeURIComponent(page.slug)}`;
@@ -330,7 +343,7 @@
     const link = document.createElement("a");
 
     link.href = "/";
-    link.className = "public-page-home-link";
+    link.className = "public-page-back";
     link.textContent =
       language() === "ar"
         ? "العودة للرئيسية"
@@ -352,13 +365,24 @@
     const wrapper = document.createElement("section");
     wrapper.className = "public-page-container";
 
+    const header = document.createElement("header");
+    header.className = "public-page-header";
+
     const heading = document.createElement("h1");
+    heading.className = "public-page-title";
     heading.textContent = title;
 
+    header.appendChild(heading);
+
     const paragraph = document.createElement("p");
+    paragraph.className = "public-page-description";
     paragraph.textContent = message;
 
-    wrapper.append(heading, paragraph, createHomeLink());
+    const footer = document.createElement("div");
+    footer.className = "public-page-footer";
+    footer.appendChild(createHomeLink());
+
+    wrapper.append(header, paragraph, footer);
     root.appendChild(wrapper);
   }
 
@@ -369,7 +393,7 @@
     if (!root || !main || !currentSlug) return;
 
     const page = pages.find(
-      item => item.slug === currentSlug
+      item => validPage(item) && item.slug === currentSlug
     );
 
     if (!page) {
@@ -400,52 +424,48 @@
     const wrapper = document.createElement("article");
     wrapper.className = "public-page-container";
 
-    const top = document.createElement("div");
-    top.className = "public-page-top";
+    const header = document.createElement("header");
+    header.className = "public-page-header";
 
-    const brand = document.createElement("a");
-    brand.href = "/";
-    brand.className = "public-page-brand";
-    brand.textContent = SITE_NAME;
-
-    top.appendChild(brand);
+    const kicker = document.createElement("span");
+    kicker.className = "public-page-kicker";
+    kicker.textContent = SITE_NAME;
 
     const title = document.createElement("h1");
     title.className = "public-page-title";
     title.textContent = getPageTitle(page, lang);
+
+    header.append(kicker, title);
 
     const content = document.createElement("div");
     content.className = "public-page-content";
 
     renderMarkdown(content, getPageContent(page, lang));
 
-    const bottom = document.createElement("div");
-    bottom.className = "public-page-bottom";
-    bottom.appendChild(createHomeLink());
-
     const footer = document.createElement("footer");
     footer.className = "public-page-footer";
 
-    const copyright = document.createElement("p");
-    copyright.textContent =
-      `© ${new Date().getFullYear()} ${SITE_NAME}`;
+    footer.appendChild(createHomeLink());
 
     const links = document.createElement("nav");
-    links.className = "public-page-footer-links";
+    links.className = "public-page-links";
     links.setAttribute(
       "aria-label",
       lang === "ar" ? "صفحات الموقع" : "Website pages"
     );
 
     pages.forEach(item => {
+      if (!validPage(item)) return;
+
       const link = document.createElement("a");
       link.href = `/${encodeURIComponent(item.slug)}`;
       link.textContent = getPageTitle(item, lang);
       links.appendChild(link);
     });
 
-    footer.append(copyright, links);
-    wrapper.append(top, title, content, bottom, footer);
+    footer.appendChild(links);
+
+    wrapper.append(header, content, footer);
     root.appendChild(wrapper);
 
     updateSeo(page);
@@ -511,11 +531,7 @@
         throw new Error("Invalid public pages response.");
       }
 
-      pages = result.data.pages.filter(page =>
-        page &&
-        typeof page === "object" &&
-        SLUG_PATTERN.test(page.slug || "")
-      );
+      pages = result.data.pages.filter(validPage);
 
       seoEntries = Array.isArray(result.data.seo)
         ? result.data.seo
@@ -523,7 +539,6 @@
 
       loaded = true;
 
-      // Links are loaded on the home page too.
       createFooterLinks();
 
       if (currentSlug) {
