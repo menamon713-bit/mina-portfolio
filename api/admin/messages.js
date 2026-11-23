@@ -9,6 +9,8 @@ const {
 
 const { adminQuery } = require("../_lib/admin-db");
 
+const MAX_BODY_BYTES = 8 * 1024;
+
 const ALLOWED_STATUSES = [
   "new",
   "read",
@@ -45,6 +47,43 @@ function validId(value) {
   );
 }
 
+function validateRequestBody(req, res) {
+  const contentType = req.headers["content-type"] || "";
+
+  if (!/^application\/json(?:\s*;|$)/i.test(contentType)) {
+    sendError(
+      res,
+      415,
+      "Content-Type must be application/json."
+    );
+
+    return false;
+  }
+
+  let serialized;
+
+  try {
+    serialized = JSON.stringify(req.body ?? null);
+  } catch {
+    sendError(res, 400, "Invalid request body.");
+    return false;
+  }
+
+  if (typeof serialized !== "string") {
+    sendError(res, 400, "Invalid request body.");
+    return false;
+  }
+
+  const bodySize = Buffer.byteLength(serialized, "utf8");
+
+  if (bodySize > MAX_BODY_BYTES) {
+    sendError(res, 413, "Request body is too large.");
+    return false;
+  }
+
+  return true;
+}
+
 module.exports = async function handler(req, res) {
   res.setHeader("Cache-Control", "no-store");
   res.setHeader("X-Content-Type-Options", "nosniff");
@@ -56,13 +95,22 @@ module.exports = async function handler(req, res) {
 
   if (!(await requireAdmin(req, res))) return;
 
-  if (req.method === "PATCH" && !checkSameOrigin(req)) {
-    return sendError(res, 403, "Invalid request origin.");
+  if (req.method === "PATCH") {
+    if (!checkSameOrigin(req)) {
+      return sendError(res, 403, "Invalid request origin.");
+    }
+
+    if (!validateRequestBody(req, res)) {
+      return;
+    }
   }
 
   const databaseUrl = process.env.DATABASE_URL;
 
-  if (typeof databaseUrl !== "string" || !databaseUrl.trim()) {
+  if (
+    typeof databaseUrl !== "string" ||
+    !databaseUrl.trim()
+  ) {
     return sendError(res, 503, "Database is unavailable.");
   }
 
@@ -130,7 +178,9 @@ module.exports = async function handler(req, res) {
       data: rows[0]
     });
   } catch (error) {
-    console.error("[admin-messages] Database operation failed.");
+    console.error("[admin-messages] Database operation failed.", {
+      code: error?.code || "NO_CODE"
+    });
 
     return sendError(
       res,
