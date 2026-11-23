@@ -19,6 +19,15 @@
   const safeText = value =>
     typeof value === "string" ? value.trim() : "";
 
+  function validPage(page) {
+    return (
+      page &&
+      typeof page === "object" &&
+      typeof page.slug === "string" &&
+      SLUG_PATTERN.test(page.slug)
+    );
+  }
+
   function getPageTitle(page, lang = language()) {
     return (
       safeText(lang === "en" ? page.title_en : page.title_ar) ||
@@ -40,6 +49,27 @@
     return seoEntries.find(
       item => item && item.page_slug === slug
     ) || null;
+  }
+
+  function getSameOriginUrl(value) {
+    const supplied = safeText(value);
+
+    if (!supplied) return "";
+
+    try {
+      const parsed = new URL(supplied, location.origin);
+
+      if (
+        !["https:", "http:"].includes(parsed.protocol) ||
+        parsed.origin !== location.origin
+      ) {
+        return "";
+      }
+
+      return parsed.href;
+    } catch {
+      return "";
+    }
   }
 
   function setMeta(selector, attribute, value) {
@@ -100,48 +130,46 @@
     setMeta('meta[property="og:title"]', "content", title);
     setMeta('meta[property="og:description"]', "content", description);
     setMeta('meta[property="og:site_name"]', "content", SITE_NAME);
-    setMeta('meta[property="og:url"]', "content", location.href);
 
-    setMeta('meta[name="twitter:title"]', "content", title);
-    setMeta('meta[name="twitter:description"]', "content", description);
+    const defaultCanonical =
+      new URL(location.pathname, location.origin).href;
+
+    const canonicalUrl =
+      getSameOriginUrl(seo && seo.canonical_url) ||
+      defaultCanonical;
+
+    setMeta(
+      'meta[property="og:url"]',
+      "content",
+      canonicalUrl
+    );
+
+    setMeta(
+      'meta[name="twitter:title"]',
+      "content",
+      title
+    );
+
+    setMeta(
+      'meta[name="twitter:description"]',
+      "content",
+      description
+    );
 
     const canonical = $("link[rel='canonical']");
 
     if (canonical) {
-      let canonicalUrl = location.href;
-      const supplied = safeText(seo && seo.canonical_url);
-
-      if (supplied) {
-        try {
-          const parsed = new URL(supplied);
-
-          if (parsed.protocol === "https:") {
-            canonicalUrl = parsed.href;
-          }
-        } catch {
-          // Ignore invalid canonical URLs.
-        }
-      }
-
       canonical.href = canonicalUrl;
     }
 
-    const suppliedImage = safeText(seo && seo.og_image);
+    const imageUrl = getSameOriginUrl(seo && seo.og_image);
 
-    if (suppliedImage) {
-      try {
-        const parsed = new URL(suppliedImage);
-
-        if (parsed.protocol === "https:") {
-          setMeta(
-            'meta[property="og:image"]',
-            "content",
-            parsed.href
-          );
-        }
-      } catch {
-        // Ignore invalid image URLs.
-      }
+    if (imageUrl) {
+      setMeta(
+        'meta[property="og:image"]',
+        "content",
+        imageUrl
+      );
     }
   }
 
@@ -305,15 +333,6 @@
 
     flushParagraph();
     flushList();
-  }
-
-  function validPage(page) {
-    return (
-      page &&
-      typeof page === "object" &&
-      typeof page.slug === "string" &&
-      SLUG_PATTERN.test(page.slug)
-    );
   }
 
   function createFooterLinks() {
@@ -534,7 +553,12 @@
       pages = result.data.pages.filter(validPage);
 
       seoEntries = Array.isArray(result.data.seo)
-        ? result.data.seo
+        ? result.data.seo.filter(
+            item =>
+              item &&
+              typeof item === "object" &&
+              typeof item.page_slug === "string"
+          )
         : [];
 
       loaded = true;
