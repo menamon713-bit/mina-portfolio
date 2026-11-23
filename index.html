@@ -35,7 +35,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="style.css?v=14">
+  <link rel="stylesheet" href="style.css?v=15">
   <script src="script.js?v=16" defer></script>
   <script src="public-data.js?v=7" defer></script>
   <script src="public-pages.js?v=1" defer></script>
@@ -93,6 +93,11 @@
     <a href="#home" class="topbar-logo" data-page="home" aria-label="M.A.S.H CYVEX Home">
       M.A.S.H <span>CYVEX</span>
     </a>
+
+    <div class="topbar-controls" aria-label="إعدادات العرض">
+      <button type="button" class="theme-btn" id="themeToggle" aria-label="تغيير المظهر" title="تغيير المظهر">☀️</button>
+      <button type="button" class="language-btn" id="languageToggle" aria-label="Switch language" title="Switch language">EN</button>
+    </div>
   </header>
 
   <div class="sidebar-overlay" id="overlay"></div>
@@ -453,7 +458,6 @@
         <p class="form-status" id="contactStatus" role="status" aria-live="polite"></p>
       </form>
 
-      <!-- SOCIAL LINKS -->
       <div class="contact-social-section reveal">
         <h2>تواصل عبر المنصات</h2>
         <div
@@ -471,33 +475,30 @@
     </section>
 
     <footer class="main-footer">
-  <p>
-    © 2026 <strong>M.A.S.H CYVEX</strong>.
-    <span data-i18n="rights">جميع الحقوق محفوظة.</span>
-  </p>
+      <p>
+        © 2026 <strong>M.A.S.H CYVEX</strong>.
+        <span data-i18n="rights">جميع الحقوق محفوظة.</span>
+      </p>
 
-  <p data-i18n="footerMade">
-    صُنع باهتمام بالتفاصيل.
-  </p>
+      <p data-i18n="footerMade">
+        صُنع باهتمام بالتفاصيل.
+      </p>
 
-  <nav
-    class="public-page-links"
-    id="publicPageLinks"
-    aria-label="صفحات الموقع"
-  ></nav>
+      <nav
+        class="public-page-links"
+        id="publicPageLinks"
+        aria-label="صفحات الموقع"
+      ></nav>
     </footer>
 
   </main>
 
-    <main
+  <main
     id="publicPageView"
     class="public-page-view"
     hidden
     aria-live="polite"
   ></main>
-  
-  <button type="button" class="theme-btn" id="themeToggle" aria-label="تغيير المظهر" title="تغيير المظهر">☀️</button>
-  <button type="button" class="language-btn" id="languageToggle" aria-label="Switch language" title="Switch language">EN</button>
 
   <div class="modal" id="projectModal" role="dialog" aria-modal="true" aria-labelledby="projectModalTitle" aria-hidden="true">
     <div class="modal-content">
