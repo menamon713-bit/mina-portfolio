@@ -1,233 +1,170 @@
 "use strict";
 
-module.exports = async function handler(req, res) {
-  res.setHeader("X-Content-Type-Options", "nosniff");
+const ALLOWED_WHATSAPP_APPS = Object.freeze({
+  business: "com.whatsapp.w4b",
+  messenger: "com.whatsapp"
+});
 
-  if (req.method !== "GET") {
-    res.setHeader("Cache-Control", "no-store");
-    res.setHeader("Allow", "GET");
+const CACHE_PUBLIC =
+  "public, s-maxage=60, stale-while-revalidate=300";
 
-    return res.status(405).json({
-      success: false,
-      message: "Method not allowed."
-    });
-  }
-
-  const resource = req.query?.resource;
-
-  // Public website data
-  if (resource === "site-data") {
-    res.setHeader(
-      "Cache-Control",
-      "public, s-maxage=60, stale-while-revalidate=300"
-    );
-
-    const databaseUrl = process.env.DATABASE_URL;
-
-    if (
-      typeof databaseUrl !== "string" ||
-      !databaseUrl.trim()
-    ) {
-      return res.status(503).json({
-        success: false,
-        message: "Website data is currently unavailable."
-      });
-    }
-
-    try {
-      const { neon } = require("@neondatabase/serverless");
-      const sql = neon(databaseUrl);
-
-      const [
-        profile,
-        skills,
-        socialLinks,
-        content,
-        pages,
-        seo
-      ] = await Promise.all([
-        sql`
-          SELECT
-            full_name,
-            job_title,
-            short_bio,
-            about,
-            location,
-            profile_image
-          FROM site_profile
-          ORDER BY id ASC
-          LIMIT 1
-        `,
-
-        sql`
-          SELECT
-            id,
-            name_ar,
-            name_en,
-            icon,
-            progress,
-            category,
-            sort_order
-          FROM site_skills
-          WHERE is_visible = TRUE
-          ORDER BY sort_order ASC, id ASC
-        `,
-
-        sql`
-          SELECT
-            id,
-            platform,
-            label_ar,
-            label_en,
-            value,
-            url,
-            icon,
-            sort_order
-          FROM site_social_links
-          WHERE is_visible = TRUE
-          ORDER BY sort_order ASC, id ASC
-        `,
-
-        sql`
-          SELECT
-            content_key,
-            section,
-            title_ar,
-            title_en,
-            content_ar,
-            content_en,
-            sort_order
-          FROM site_content
-          WHERE is_visible = TRUE
-          ORDER BY sort_order ASC, id ASC
-        `,
-
-        sql`
-          SELECT
-            slug,
-            title_ar,
-            title_en,
-            content_ar,
-            content_en
-          FROM site_pages
-          WHERE is_published = TRUE
-          ORDER BY slug ASC
-        `,
-
-        sql`
-          SELECT
-            page_slug,
-            title_ar,
-            title_en,
-            description_ar,
-            description_en,
-            keywords_ar,
-            keywords_en,
-            og_image,
-            canonical_url
-          FROM site_seo
-          ORDER BY page_slug ASC
-        `
-      ]);
-
-      return res.status(200).json({
-        success: true,
-        data: {
-          profile: profile[0] || null,
-          skills,
-          socialLinks,
-          content,
-          pages,
-          seo
-        }
-      });
-
-    } catch (error) {
-      console.error("Public site data error:", error);
-
-      return res.status(503).json({
-        success: false,
-        message: "Website data is currently unavailable."
-      });
-    }
-  }
-
-  // Public projects endpoint
-  if (resource === "projects") {
-    res.setHeader(
-      "Cache-Control",
-      "public, s-maxage=60, stale-while-revalidate=300"
-    );
-
-    const databaseUrl = process.env.DATABASE_URL;
-
-    if (
-      typeof databaseUrl !== "string" ||
-      !databaseUrl.trim()
-    ) {
-      return res.status(503).json({
-        success: false,
-        message: "Projects are currently unavailable."
-      });
-    }
-
-    try {
-      const { neon } = require("@neondatabase/serverless");
-      const sql = neon(databaseUrl);
-
-      const projects = await sql`
-        SELECT
-          id,
-          title_ar,
-          title_en,
-          description_ar,
-          description_en,
-          category_ar,
-          category_en,
-          image_url,
-          live_url,
-          github_url,
-          details_type,
-          details_ar,
-          details_en,
-          visual_style,
-          sort_order
-        FROM site_projects
-        WHERE is_visible = TRUE
-        ORDER BY sort_order ASC, id ASC
-      `;
-
-      return res.status(200).json({
-        success: true,
-        projects,
-        count: projects.length
-      });
-
-    } catch (error) {
-      console.error("Public projects error:", error);
-
-      return res.status(503).json({
-        success: false,
-        message: "Projects are currently unavailable."
-      });
-    }
-  }
-
-  // Reject unknown resources
-  if (resource !== undefined) {
-    res.setHeader("Cache-Control", "no-store");
-
-    return res.status(400).json({
-      success: false,
-      message: "Invalid resource."
-    });
-  }
-
+function sendError(res, status, message) {
   res.setHeader("Cache-Control", "no-store");
 
+  return res.status(status).json({
+    success: false,
+    message
+  });
+}
+
+function getDatabaseUrl() {
+  const value = process.env.DATABASE_URL;
+
+  if (typeof value !== "string" || !value.trim()) {
+    return null;
+  }
+
+  return value.trim();
+}
+
+function getSqlClient(databaseUrl) {
+  const { neon } = require("@neondatabase/serverless");
+  return neon(databaseUrl);
+}
+
+async function getSiteData(sql) {
+  const [
+    profile,
+    skills,
+    socialLinks,
+    content,
+    pages,
+    seo
+  ] = await Promise.all([
+    sql`
+      SELECT
+        full_name,
+        job_title,
+        short_bio,
+        about,
+        location,
+        profile_image
+      FROM site_profile
+      ORDER BY id ASC
+      LIMIT 1
+    `,
+
+    sql`
+      SELECT
+        id,
+        name_ar,
+        name_en,
+        icon,
+        progress,
+        category,
+        sort_order
+      FROM site_skills
+      WHERE is_visible = TRUE
+      ORDER BY sort_order ASC, id ASC
+    `,
+
+    sql`
+      SELECT
+        id,
+        platform,
+        label_ar,
+        label_en,
+        value,
+        url,
+        icon,
+        sort_order
+      FROM site_social_links
+      WHERE is_visible = TRUE
+      ORDER BY sort_order ASC, id ASC
+    `,
+
+    sql`
+      SELECT
+        content_key,
+        section,
+        title_ar,
+        title_en,
+        content_ar,
+        content_en,
+        sort_order
+      FROM site_content
+      WHERE is_visible = TRUE
+      ORDER BY sort_order ASC, id ASC
+    `,
+
+    sql`
+      SELECT
+        slug,
+        title_ar,
+        title_en,
+        content_ar,
+        content_en
+      FROM site_pages
+      WHERE is_published = TRUE
+      ORDER BY slug ASC
+    `,
+
+    sql`
+      SELECT
+        site_seo.page_slug,
+        site_seo.title_ar,
+        site_seo.title_en,
+        site_seo.description_ar,
+        site_seo.description_en,
+        site_seo.keywords_ar,
+        site_seo.keywords_en,
+        site_seo.og_image,
+        site_seo.canonical_url
+      FROM site_seo
+      INNER JOIN site_pages
+        ON site_pages.slug = site_seo.page_slug
+      WHERE site_pages.is_published = TRUE
+      ORDER BY site_seo.page_slug ASC
+    `
+  ]);
+
+  return {
+    profile: profile[0] || null,
+    skills,
+    socialLinks,
+    content,
+    pages,
+    seo
+  };
+}
+
+async function getProjects(sql) {
+  return sql`
+    SELECT
+      id,
+      title_ar,
+      title_en,
+      description_ar,
+      description_en,
+      category_ar,
+      category_en,
+      image_url,
+      live_url,
+      github_url,
+      details_type,
+      details_ar,
+      details_en,
+      visual_style,
+      sort_order
+    FROM site_projects
+    WHERE is_visible = TRUE
+    ORDER BY sort_order ASC, id ASC
+  `;
+}
+
+function handleWhatsApp(req, res) {
   const app = req.query?.app;
 
-  // Normal health check
   if (!app) {
     return res.status(200).json({
       success: true,
@@ -235,17 +172,18 @@ module.exports = async function handler(req, res) {
     });
   }
 
-  // WhatsApp application handling
-  const packages = {
-    business: "com.whatsapp.w4b",
-    messenger: "com.whatsapp"
-  };
-
-  if (!Object.prototype.hasOwnProperty.call(packages, app)) {
-    return res.status(400).json({
-      success: false,
-      message: "Invalid WhatsApp application."
-    });
+  if (
+    typeof app !== "string" ||
+    !Object.prototype.hasOwnProperty.call(
+      ALLOWED_WHATSAPP_APPS,
+      app
+    )
+  ) {
+    return sendError(
+      res,
+      400,
+      "Invalid WhatsApp application."
+    );
   }
 
   const phone = process.env.WHATSAPP_PHONE;
@@ -254,19 +192,121 @@ module.exports = async function handler(req, res) {
     typeof phone !== "string" ||
     !/^[1-9]\d{7,14}$/.test(phone)
   ) {
-    return res.status(503).json({
-      success: false,
-      message: "WhatsApp is currently unavailable."
-    });
+    return sendError(
+      res,
+      503,
+      "WhatsApp is currently unavailable."
+    );
   }
 
-  const fallback = `https://wa.me/${phone}`;
+  const packageName = ALLOWED_WHATSAPP_APPS[app];
+  const fallbackUrl = `https://wa.me/${phone}`;
 
-  const intent =
+  const intentUrl =
     `intent://send?phone=${phone}` +
     `#Intent;scheme=whatsapp;` +
-    `package=${packages[app]};` +
-    `S.browser_fallback_url=${encodeURIComponent(fallback)};end`;
+    `package=${packageName};` +
+    `S.browser_fallback_url=${encodeURIComponent(fallbackUrl)};end`;
 
-  return res.redirect(302, intent);
+  return res.redirect(302, intentUrl);
+}
+
+module.exports = async function handler(req, res) {
+  res.setHeader("X-Content-Type-Options", "nosniff");
+
+  if (req.method !== "GET") {
+    res.setHeader("Allow", "GET");
+
+    return sendError(
+      res,
+      405,
+      "Method not allowed."
+    );
+  }
+
+  const resource = req.query?.resource;
+
+  if (
+    resource !== undefined &&
+    resource !== "site-data" &&
+    resource !== "projects"
+  ) {
+    return sendError(
+      res,
+      400,
+      "Invalid resource."
+    );
+  }
+
+  // Public website data
+  if (resource === "site-data") {
+    const databaseUrl = getDatabaseUrl();
+
+    if (!databaseUrl) {
+      return sendError(
+        res,
+        503,
+        "Website data is currently unavailable."
+      );
+    }
+
+    try {
+      const sql = getSqlClient(databaseUrl);
+      const data = await getSiteData(sql);
+
+      res.setHeader("Cache-Control", CACHE_PUBLIC);
+
+      return res.status(200).json({
+        success: true,
+        data
+      });
+    } catch (error) {
+      console.error("Public site data error:", error);
+
+      return sendError(
+        res,
+        503,
+        "Website data is currently unavailable."
+      );
+    }
+  }
+
+  // Public projects
+  if (resource === "projects") {
+    const databaseUrl = getDatabaseUrl();
+
+    if (!databaseUrl) {
+      return sendError(
+        res,
+        503,
+        "Projects are currently unavailable."
+      );
+    }
+
+    try {
+      const sql = getSqlClient(databaseUrl);
+      const projects = await getProjects(sql);
+
+      res.setHeader("Cache-Control", CACHE_PUBLIC);
+
+      return res.status(200).json({
+        success: true,
+        projects,
+        count: projects.length
+      });
+    } catch (error) {
+      console.error("Public projects error:", error);
+
+      return sendError(
+        res,
+        503,
+        "Projects are currently unavailable."
+      );
+    }
+  }
+
+  // Health check and WhatsApp redirect
+  res.setHeader("Cache-Control", "no-store");
+
+  return handleWhatsApp(req, res);
 };
