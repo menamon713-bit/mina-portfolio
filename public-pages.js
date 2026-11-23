@@ -5,12 +5,13 @@
     root.querySelector(selector);
 
   const SITE_NAME = "M.A.S.H CYVEX";
-  const HOME_URL = "/";
   const MAX_CONTENT_LENGTH = 30000;
+  const SLUG_PATTERN = /^[a-zA-Z0-9_-]{1,100}$/;
 
   let pages = [];
   let seoEntries = [];
   let currentSlug = "";
+  let loaded = false;
 
   const language = () =>
     document.documentElement.lang === "en" ? "en" : "ar";
@@ -18,7 +19,7 @@
   const safeText = (value) =>
     typeof value === "string" ? value.trim() : "";
 
-  function getPageTitle(page, lang) {
+  function getPageTitle(page, lang = language()) {
     return (
       safeText(lang === "en" ? page.title_en : page.title_ar) ||
       safeText(page.title_en) ||
@@ -27,7 +28,7 @@
     );
   }
 
-  function getPageContent(page, lang) {
+  function getPageContent(page, lang = language()) {
     return (
       safeText(lang === "en" ? page.content_en : page.content_ar) ||
       safeText(page.content_en) ||
@@ -37,7 +38,7 @@
 
   function getSeo(slug) {
     return seoEntries.find(
-      (item) => item && item.page_slug === slug
+      item => item && item.page_slug === slug
     ) || null;
   }
 
@@ -47,14 +48,13 @@
     let element = $(selector);
 
     if (!element) {
-      element = document.createElement("meta");
-
       const match = selector.match(
         /meta\[(name|property)="([^"]+)"\]/
       );
 
       if (!match) return;
 
+      element = document.createElement("meta");
       element.setAttribute(match[1], match[2]);
       document.head.appendChild(element);
     }
@@ -67,14 +67,12 @@
     const seo = getSeo(page.slug);
 
     const title =
-      safeText(
-        seo && (lang === "en" ? seo.title_en : seo.title_ar)
-      ) || getPageTitle(page, lang);
+      safeText(seo && (lang === "en" ? seo.title_en : seo.title_ar)) ||
+      getPageTitle(page, lang);
 
     const description =
       safeText(
-        seo &&
-        (lang === "en"
+        seo && (lang === "en"
           ? seo.description_en
           : seo.description_ar)
       ) ||
@@ -84,8 +82,7 @@
         .slice(0, 155);
 
     const keywords = safeText(
-      seo &&
-      (lang === "en" ? seo.keywords_en : seo.keywords_ar)
+      seo && (lang === "en" ? seo.keywords_en : seo.keywords_ar)
     );
 
     document.title = `${title} | ${SITE_NAME}`;
@@ -106,7 +103,6 @@
 
     if (canonical) {
       let canonicalUrl = location.href;
-
       const supplied = safeText(seo && seo.canonical_url);
 
       if (supplied) {
@@ -248,8 +244,9 @@
         flushParagraph();
         flushList();
 
-        const level = heading[1].length;
-        const element = document.createElement(`h${level + 1}`);
+        const element = document.createElement(
+          `h${heading[1].length + 1}`
+        );
 
         appendInlineText(element, heading[2]);
         container.appendChild(element);
@@ -312,11 +309,12 @@
     const lang = language();
     const fragment = document.createDocumentFragment();
 
-    pages.forEach((page) => {
-      if (!page || !page.slug) return;
+    pages.forEach(page => {
+      if (!page || !SLUG_PATTERN.test(page.slug || "")) {
+        return;
+      }
 
       const link = document.createElement("a");
-
       link.href = `/${encodeURIComponent(page.slug)}`;
       link.textContent = getPageTitle(page, lang);
       link.className = "public-page-link";
@@ -331,10 +329,12 @@
   function createHomeLink() {
     const link = document.createElement("a");
 
-    link.href = HOME_URL;
+    link.href = "/";
     link.className = "public-page-home-link";
     link.textContent =
-      language() === "ar" ? "العودة للرئيسية" : "Back to Home";
+      language() === "ar"
+        ? "العودة للرئيسية"
+        : "Back to Home";
 
     return link;
   }
@@ -363,13 +363,20 @@
   }
 
   function renderCurrentPage() {
+    const root = $("#publicPageView");
+    const main = $("#mainContent");
+
+    if (!root || !main || !currentSlug) return;
+
     const page = pages.find(
-      (item) => item.slug === currentSlug
+      item => item.slug === currentSlug
     );
 
     if (!page) {
       showMessage(
-        language() === "ar" ? "الصفحة غير موجودة" : "Page Not Found",
+        language() === "ar"
+          ? "الصفحة غير موجودة"
+          : "Page Not Found",
         language() === "ar"
           ? "الصفحة غير متاحة أو لم يتم نشرها."
           : "This page is unavailable or has not been published."
@@ -383,17 +390,11 @@
       return;
     }
 
-    const root = $("#publicPageView");
-    const main = $("#mainContent");
-
-    if (!root || !main) return;
-
     main.hidden = true;
     root.hidden = false;
     root.replaceChildren();
 
     const lang = language();
-
     root.dir = lang === "ar" ? "rtl" : "ltr";
 
     const wrapper = document.createElement("article");
@@ -403,7 +404,7 @@
     top.className = "public-page-top";
 
     const brand = document.createElement("a");
-    brand.href = HOME_URL;
+    brand.href = "/";
     brand.className = "public-page-brand";
     brand.textContent = SITE_NAME;
 
@@ -416,10 +417,7 @@
     const content = document.createElement("div");
     content.className = "public-page-content";
 
-    renderMarkdown(
-      content,
-      getPageContent(page, lang)
-    );
+    renderMarkdown(content, getPageContent(page, lang));
 
     const bottom = document.createElement("div");
     bottom.className = "public-page-bottom";
@@ -439,7 +437,7 @@
       lang === "ar" ? "صفحات الموقع" : "Website pages"
     );
 
-    pages.forEach((item) => {
+    pages.forEach(item => {
       const link = document.createElement("a");
       link.href = `/${encodeURIComponent(item.slug)}`;
       link.textContent = getPageTitle(item, lang);
@@ -453,28 +451,37 @@
     updateSeo(page);
   }
 
+  function getCurrentSlug() {
+    let path;
+
+    try {
+      path = decodeURIComponent(location.pathname);
+    } catch {
+      return "";
+    }
+
+    path = path.replace(/\/+$/, "");
+
+    if (!path || path === "/index.html") {
+      return "";
+    }
+
+    const match = path.match(/^\/([^/]+)$/);
+
+    if (!match || !SLUG_PATTERN.test(match[1])) {
+      return "";
+    }
+
+    return match[1];
+  }
+
   async function loadPublicPages() {
     const root = $("#publicPageView");
     const main = $("#mainContent");
 
-    if (!root || !main) return;
+    if (!root || !main || loaded) return;
 
-    const path = location.pathname.replace(/\/+$/, "");
-    const match = path.match(/^\/([a-zA-Z0-9_-]+)$/);
-
-    if (!match) return;
-
-    currentSlug = match[1];
-
-    main.hidden = true;
-    root.hidden = false;
-
-    showMessage(
-      language() === "ar" ? "جارٍ تحميل الصفحة" : "Loading page",
-      language() === "ar"
-        ? "يرجى الانتظار..."
-        : "Please wait..."
-    );
+    currentSlug = getCurrentSlug();
 
     try {
       const response = await fetch(
@@ -504,32 +511,51 @@
         throw new Error("Invalid public pages response.");
       }
 
-      pages = result.data.pages.filter(
-        (page) =>
-          page &&
-          typeof page === "object" &&
-          /^[a-zA-Z0-9_-]+$/.test(page.slug || "")
+      pages = result.data.pages.filter(page =>
+        page &&
+        typeof page === "object" &&
+        SLUG_PATTERN.test(page.slug || "")
       );
 
       seoEntries = Array.isArray(result.data.seo)
         ? result.data.seo
         : [];
 
-      createFooterLinks();
-      renderCurrentPage();
+      loaded = true;
 
+      // Links are loaded on the home page too.
+      createFooterLinks();
+
+      if (currentSlug) {
+        renderCurrentPage();
+      } else {
+        root.hidden = true;
+        main.hidden = false;
+      }
     } catch (error) {
       console.error("Public pages error:", error);
 
-      showMessage(
-        language() === "ar"
-          ? "تعذر تحميل الصفحة"
-          : "Unable to Load Page",
-        language() === "ar"
-          ? "حدث خطأ أثناء تحميل المحتوى. حاول مرة أخرى لاحقًا."
-          : "An error occurred while loading this content. Please try again later."
-      );
+      if (currentSlug) {
+        showMessage(
+          language() === "ar"
+            ? "تعذر تحميل الصفحة"
+            : "Unable to Load Page",
+          language() === "ar"
+            ? "حدث خطأ أثناء تحميل المحتوى. حاول مرة أخرى لاحقًا."
+            : "An error occurred while loading this content. Please try again later."
+        );
+      }
     }
+  }
+
+  function refreshLanguageContent() {
+    requestAnimationFrame(() => {
+      createFooterLinks();
+
+      if (currentSlug && loaded) {
+        renderCurrentPage();
+      }
+    });
   }
 
   document.addEventListener(
@@ -538,13 +564,8 @@
     { once: true }
   );
 
-  $("#languageToggle")?.addEventListener("click", () => {
-    requestAnimationFrame(() => {
-      createFooterLinks();
-
-      if (currentSlug) {
-        renderCurrentPage();
-      }
-    });
-  });
+  $("#languageToggle")?.addEventListener(
+    "click",
+    refreshLanguageContent
+  );
 })();
