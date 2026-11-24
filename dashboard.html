@@ -889,47 +889,181 @@
         </section>
 
         <!-- SECURITY -->
-        <section class="dashboard-section" id="section-security">
+<section class="dashboard-section" id="section-security">
 
-          <div class="page-heading">
-            <div>
-              <span class="eyebrow">SECURITY CENTER</span>
-              <h1>الأمان والسجلات</h1>
-              <p>متابعة النشاط الأمني وسجلات لوحة التحكم.</p>
-            </div>
-          </div>
+  <div class="page-heading">
+    <div>
+      <span class="eyebrow">SECURITY CENTER</span>
+      <h1>الأمان والسجلات</h1>
+      <p>مراجعة العمليات الإدارية المسجلة داخل لوحة التحكم.</p>
+    </div>
 
-          <div class="panel-card">
-            <div class="section-placeholder">
-              <span>◇</span>
-              <h2>مركز الأمان</h2>
-              <p>سيتم تفعيل سجلات النشاط وإدارة الجلسات في المرحلة التالية.</p>
-            </div>
-          </div>
+    <button type="button" class="secondary-button" id="refreshAuditLogs">
+      ↻ تحديث السجل
+    </button>
+  </div>
 
-        </section>
+  <div class="stats-grid">
+    <article class="stat-card">
+      <span class="stat-icon">◇</span>
+      <span class="stat-label">إجمالي العمليات المسجلة</span>
+      <strong id="auditTotal">—</strong>
+    </article>
 
+    <article class="stat-card">
+      <span class="stat-icon">◷</span>
+      <span class="stat-label">العمليات المعروضة</span>
+      <strong id="auditVisible">—</strong>
+    </article>
+  </div>
+
+  <div class="panel-card">
+    <div class="panel-header">
+      <div>
+        <h2>سجل النشاط الإداري</h2>
+        <p>لا يتم عرض عناوين IP أو بيانات حساسة في هذه الواجهة.</p>
+      </div>
+    </div>
+
+    <div class="form-field">
+      <label for="auditSearch">البحث في السجل الحالي</label>
+      <input id="auditSearch" type="search" placeholder="ابحث في وصف العملية أو نوعها...">
+    </div>
+
+    <p id="auditStatus" class="form-status" aria-live="polite">جاري تحميل السجل...</p>
+
+    <div class="table-container">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>العملية</th>
+            <th>العنصر</th>
+            <th>الوصف</th>
+            <th>التاريخ</th>
+          </tr>
+        </thead>
+        <tbody id="auditLogsBody">
+          <tr><td colspan="4">جاري التحميل...</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="audit-pagination">
+      <button type="button" class="secondary-button" id="auditPrevious">السابق</button>
+      <span id="auditPageLabel">صفحة 1</span>
+      <button type="button" class="secondary-button" id="auditNext">التالي</button>
+    </div>
+  </div>
+
+  <div class="panel-card">
+    <div class="panel-header">
+      <div>
+        <h2>حالة حماية لوحة التحكم</h2>
+        <p>معلومات عن آليات الحماية المطبقة حاليًا.</p>
+      </div>
+    </div>
+
+    <ul class="security-info-list">
+      <li>جلسة المدير محمية بملف ارتباط HttpOnly وSecure.</li>
+      <li>التحقق من صلاحية المدير مطلوب قبل الوصول إلى واجهات الإدارة.</li>
+      <li>طلبات التعديل تتحقق من مصدر الطلب.</li>
+      <li>محاولات تسجيل الدخول محدودة بمعدل زمني.</li>
+      <li>لا توجد حاليًا قائمة جلسات نشطة قابلة للاستعراض.</li>
+    </ul>
+  </div>
+
+</section>
+        
         <!-- SETTINGS -->
-        <section class="dashboard-section" id="section-settings">
+<section class="dashboard-section" id="section-settings">
 
-          <div class="page-heading">
-            <div>
-              <span class="eyebrow">SYSTEM CONFIGURATION</span>
-              <h1>الإعدادات</h1>
-              <p>إعدادات لوحة التحكم والموقع.</p>
-            </div>
-          </div>
+  <div class="page-heading">
+    <div>
+      <span class="eyebrow">SYSTEM CONFIGURATION</span>
+      <h1>الإعدادات</h1>
+      <p>إدارة بيانات الإعدادات المحفوظة في قاعدة البيانات.</p>
+    </div>
+  </div>
 
-          <div class="panel-card">
-            <div class="section-placeholder">
-              <span>⚙</span>
-              <h2>إعدادات النظام</h2>
-              <p>سيتم تفعيل إعدادات النظام في المرحلة التالية.</p>
-            </div>
-          </div>
+  <div class="panel-card">
+    <div class="panel-header">
+      <div>
+        <h2>الإعدادات العامة</h2>
+        <p>يمكنك تعديل القيم التالية وحفظها.</p>
+      </div>
 
-        </section>
+      <button type="button" class="secondary-button" id="reloadSettings">
+        ↻ إعادة تحميل
+      </button>
+    </div>
 
+    <form id="siteSettingsForm">
+
+      <div class="profile-form-grid">
+
+        <div class="form-field">
+          <label for="settingSiteName">اسم الموقع</label>
+          <input
+            id="settingSiteName"
+            type="text"
+            maxlength="100"
+            required
+          >
+        </div>
+
+        <div class="form-field">
+          <label for="settingContactEmail">بريد التواصل</label>
+          <input
+            id="settingContactEmail"
+            type="email"
+            maxlength="254"
+          >
+        </div>
+
+        <div class="form-field full-width">
+          <label class="checkbox-field" for="settingMaintenance">
+            <input id="settingMaintenance" type="checkbox">
+            <span>تفعيل وضع الصيانة (قيمة محفوظة فقط حاليًا)</span>
+          </label>
+        </div>
+
+      </div>
+
+      <p id="settingsStatus" class="form-status" aria-live="polite"></p>
+
+      <div class="form-footer">
+        <button type="submit" class="primary-button" id="saveSettingsButton">
+          حفظ الإعدادات
+        </button>
+      </div>
+
+    </form>
+  </div>
+
+  <div class="panel-card">
+    <div class="panel-header">
+      <div>
+        <h2>كلمة مرور المدير</h2>
+        <p>إدارة كلمة المرور تتم من إعدادات بيئة الاستضافة.</p>
+      </div>
+    </div>
+
+    <p>
+      كلمة المرور ليست مخزنة في جدول إعدادات الموقع.
+      لتغييرها، حدّث المتغير
+      <code>ADMIN_PASSWORD_HASH</code>
+      في Vercel، ثم غيّر
+      <code>ADMIN_SESSION_VERSION</code>
+      لإبطال الجلسات القديمة.
+    </p>
+
+    <p class="settings-warning">
+      لا تضع كلمة المرور أو قيمة التجزئة أو أي مفتاح سري داخل هذه الصفحة.
+    </p>
+  </div>
+
+</section>
+        
       </div>
 
       <footer class="dashboard-footer">
@@ -947,6 +1081,7 @@
   <script src="social.js?v=2" defer></script>
   <script src="projects.js?v=1" defer></script>
   <script src="seo.js?v=1" defer></script>
+  <script src="security-settings.js?v=1" defer></script>
 
 </body>
 </html>
