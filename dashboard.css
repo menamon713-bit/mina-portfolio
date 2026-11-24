@@ -1251,3 +1251,65 @@ select:focus-visible {
     transition-duration: .01ms !important;
   }
 }
+
+/* =========================================
+   SECURITY & SETTINGS
+========================================= */
+
+.security-info-list {
+  margin: 0;
+  padding: 0 22px 0 0;
+  color: var(--secondary);
+}
+
+.security-info-list li {
+  padding: 7px 0;
+}
+
+.audit-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-top: 22px;
+}
+
+.audit-pagination span {
+  color: var(--secondary);
+  font-weight: 700;
+}
+
+.audit-pagination button:disabled {
+  opacity: .45;
+  cursor: not-allowed;
+}
+
+.settings-warning {
+  color: var(--warning);
+  margin-top: 12px;
+}
+
+#auditStatus.error,
+#settingsStatus.error {
+  color: var(--danger);
+}
+
+#auditStatus,
+#settingsStatus {
+  min-height: 26px;
+}
+
+#auditSearch {
+  width: 100%;
+}
+
+@media (max-width: 600px) {
+  .audit-pagination {
+    gap: 8px;
+  }
+
+  .audit-pagination button {
+    flex: 1;
+  }
+}
