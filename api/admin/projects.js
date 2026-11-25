@@ -1,23 +1,16 @@
 "use strict";
 
-const crypto = require("crypto");
 const { neon } = require("@neondatabase/serverless");
 
 const {
   requireAdmin,
-  checkSameOrigin,
-  getCookie
+  checkSameOrigin
 } = require("../_lib/admin-auth");
 
 const { adminQuery } = require("../_lib/admin-db");
-const { consume } = require("../_lib/rate-limit");
-const { writeAuditLog } = require("../_lib/audit-log");
+const { guardAdminWrite } = require("../_lib/audit-log");
 
 const MAX_BODY_BYTES = 64 * 1024;
-
-// 30 write requests per authenticated session every 10 minutes.
-const WRITE_RATE_LIMIT = 30;
-const WRITE_RATE_WINDOW = 600;
 
 const STRING_FIELDS = {
   title_ar: 200,
@@ -54,27 +47,16 @@ function sendError(res, status, message) {
 }
 
 function isPlainObject(value) {
-  if (
-    value === null ||
-    typeof value !== "object" ||
-    Array.isArray(value)
-  ) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
     return false;
   }
 
   const prototype = Object.getPrototypeOf(value);
-
-  return (
-    prototype === Object.prototype ||
-    prototype === null
-  );
+  return prototype === Object.prototype || prototype === null;
 }
 
 function validId(value) {
-  if (
-    typeof value !== "string" &&
-    typeof value !== "number"
-  ) {
+  if (typeof value !== "string" && typeof value !== "number") {
     return false;
   }
 
@@ -88,7 +70,6 @@ function validId(value) {
 
 function validHttpsUrl(value) {
   if (value === "") return true;
-
   if (typeof value !== "string") return false;
 
   try {
@@ -96,7 +77,7 @@ function validHttpsUrl(value) {
 
     return (
       url.protocol === "https:" &&
-      url.hostname.length > 0 &&
+      Boolean(url.hostname) &&
       !url.username &&
       !url.password
     );
@@ -107,7 +88,6 @@ function validHttpsUrl(value) {
 
 function validImageUrl(value) {
   if (value === "") return true;
-
   if (typeof value !== "string") return false;
 
   if (
@@ -138,23 +118,16 @@ function isSafeJsonObject(value) {
 }
 
 function validateBody(body, options = {}) {
-  const {
-    partial = false,
-    allowId = false
-  } = options;
+  const { partial = false, allowId = false } = options;
 
-  if (!isPlainObject(body)) {
-    return "Invalid request body.";
-  }
+  if (!isPlainObject(body)) return "Invalid request body.";
 
   const allowed = allowId
     ? [...ALLOWED_FIELDS, "id"]
     : ALLOWED_FIELDS;
 
   for (const field of Object.keys(body)) {
-    if (!allowed.includes(field)) {
-      return "Unknown field.";
-    }
+    if (!allowed.includes(field)) return "Unknown field.";
   }
 
   if (!partial) {
@@ -186,9 +159,10 @@ function validateBody(body, options = {}) {
   }
 
   for (const field of JSON_FIELDS) {
-    if (!Object.hasOwn(body, field)) continue;
-
-    if (!isSafeJsonObject(body[field])) {
+    if (
+      Object.hasOwn(body, field) &&
+      !isSafeJsonObject(body[field])
+    ) {
       return `Invalid field: ${field}`;
     }
   }
@@ -217,18 +191,13 @@ function validateBody(body, options = {}) {
     return "Invalid sort_order.";
   }
 
-  if (
-    Object.hasOwn(body, "live_url") &&
-    !validHttpsUrl(body.live_url)
-  ) {
-    return "Invalid live_url.";
-  }
-
-  if (
-    Object.hasOwn(body, "github_url") &&
-    !validHttpsUrl(body.github_url)
-  ) {
-    return "Invalid github_url.";
+  for (const field of ["live_url", "github_url"]) {
+    if (
+      Object.hasOwn(body, field) &&
+      !validHttpsUrl(body[field])
+    ) {
+      return `Invalid ${field}.`;
+    }
   }
 
   if (
@@ -241,155 +210,16 @@ function validateBody(body, options = {}) {
   return null;
 }
 
-function validateContentType(req) {
-  const contentType = req.headers?.["content-type"];
-
-  if (typeof contentType !== "string") {
-    return false;
-  }
-
-  return /^application\/json(?:\s*;\s*charset=utf-8)?$/i.test(
-    contentType.trim()
-  );
+function clean(value) {
+  return typeof value === "string" ? value.trim() : "";
 }
 
-function validateContentLength(req) {
-  const raw = req.headers?.["content-length"];
-
-  if (raw === undefined) {
-    return true;
-  }
-
-  if (
-    typeof raw !== "string" ||
-    !/^\d+$/.test(raw)
-  ) {
-    return false;
-  }
-
-  const length = Number(raw);
-
+function auditCountIsValid(rows) {
   return (
-    Number.isSafeInteger(length) &&
-    length >= 0 &&
-    length <= MAX_BODY_BYTES
+    Array.isArray(rows) &&
+    rows.length === 1 &&
+    Number(rows[0].audit_count) === 1
   );
-}
-
-function validateSerializedBody(body) {
-  try {
-    const serialized = JSON.stringify(body);
-
-    return (
-      typeof serialized === "string" &&
-      Buffer.byteLength(serialized, "utf8") <= MAX_BODY_BYTES
-    );
-  } catch {
-    return false;
-  }
-}
-
-function parseWriteBody(req, res) {
-  if (!validateContentType(req)) {
-    sendError(res, 415, "Content-Type must be application/json.");
-    return null;
-  }
-
-  if (!validateContentLength(req)) {
-    sendError(res, 413, "Request body is too large.");
-    return null;
-  }
-
-  const body = req.body;
-
-  if (!isPlainObject(body)) {
-    sendError(res, 400, "Invalid request body.");
-    return null;
-  }
-
-  if (!validateSerializedBody(body)) {
-    sendError(res, 413, "Request body is too large.");
-    return null;
-  }
-
-  return body;
-}
-
-function getWriteRateLimitKey(req) {
-  const token = getCookie(req);
-
-  if (typeof token !== "string" || !token) {
-    throw new Error("RATE_LIMIT_SESSION_MISSING");
-  }
-
-  const digest = crypto
-    .createHash("sha256")
-    .update(token, "utf8")
-    .digest("hex");
-
-  return `mash:projects:write:${digest}`;
-}
-
-async function enforceWriteRateLimit(req, res) {
-  let result;
-
-  try {
-    result = await consume(
-      getWriteRateLimitKey(req),
-      WRITE_RATE_WINDOW,
-      WRITE_RATE_LIMIT
-    );
-  } catch {
-    console.error("[admin-projects] Rate limit service unavailable.");
-
-    sendError(
-      res,
-      503,
-      "Security service temporarily unavailable."
-    );
-
-    return false;
-  }
-
-  if (!result.allowed) {
-    res.setHeader(
-      "Retry-After",
-      String(result.retryAfter)
-    );
-
-    sendError(
-      res,
-      429,
-      "Too many write requests. Please try again later."
-    );
-
-    return false;
-  }
-
-  return true;
-}
-
-async function recordProjectAudit(
-  sql,
-  action,
-  description,
-  projectId
-) {
-  try {
-    await writeAuditLog(sql, {
-      action,
-      entityType: "site_projects",
-      description,
-      entityId: projectId
-    });
-  } catch (error) {
-    // Do not report a failed write after the database mutation
-    // has already succeeded. Log the audit failure for monitoring.
-    console.error("[admin-projects] Audit log write failed.", {
-      action,
-      code: error?.code || "NO_CODE"
-    });
-  }
 }
 
 module.exports = async function handler(req, res) {
@@ -403,37 +233,26 @@ module.exports = async function handler(req, res) {
     return sendError(res, 405, "Method not allowed.");
   }
 
-  if (!(await requireAdmin(req, res))) {
-    return;
-  }
-
-  if (
-    req.method !== "GET" &&
-    !checkSameOrigin(req)
-  ) {
-    return sendError(res, 403, "Invalid request origin.");
-  }
+  if (!(await requireAdmin(req, res))) return;
 
   let body = null;
 
   if (req.method !== "GET") {
-    if (!(await enforceWriteRateLimit(req, res))) {
-      return;
+    if (!checkSameOrigin(req)) {
+      return sendError(res, 403, "Invalid request origin.");
     }
 
-    body = parseWriteBody(req, res);
+    if (!(await guardAdminWrite(req, res, {
+      namespace: "projects",
+      maxBodyBytes: MAX_BODY_BYTES
+    }))) return;
 
-    if (body === null) {
-      return;
-    }
+    body = req.body;
   }
 
   const databaseUrl = process.env.DATABASE_URL;
 
-  if (
-    typeof databaseUrl !== "string" ||
-    !databaseUrl.trim()
-  ) {
+  if (typeof databaseUrl !== "string" || !databaseUrl.trim()) {
     return sendError(res, 503, "Database is unavailable.");
   }
 
@@ -441,7 +260,7 @@ module.exports = async function handler(req, res) {
     const sql = neon(databaseUrl);
 
     if (req.method === "GET") {
-      const query = sql`
+      const rows = await adminQuery(sql, sql`
         SELECT
           p.*,
           COALESCE(
@@ -461,9 +280,7 @@ module.exports = async function handler(req, res) {
           ) AS tags
         FROM site_projects p
         ORDER BY p.sort_order ASC, p.id ASC
-      `;
-
-      const rows = await adminQuery(sql, query);
+      `);
 
       return res.status(200).json({
         projects: rows,
@@ -474,69 +291,81 @@ module.exports = async function handler(req, res) {
     if (req.method === "POST") {
       const error = validateBody(body);
 
-      if (error) {
-        return sendError(res, 400, error);
+      if (error) return sendError(res, 400, error);
+
+      const rows = await adminQuery(sql, sql`
+        WITH changed AS (
+          INSERT INTO site_projects (
+            title_ar,
+            title_en,
+            description_ar,
+            description_en,
+            category_ar,
+            category_en,
+            image_url,
+            visual_style,
+            live_url,
+            github_url,
+            details_type,
+            details_ar,
+            details_en,
+            is_visible,
+            sort_order
+          )
+          VALUES (
+            ${body.title_ar.trim()},
+            ${body.title_en.trim()},
+            ${body.description_ar ?? ""},
+            ${body.description_en ?? ""},
+            ${body.category_ar ?? ""},
+            ${body.category_en ?? ""},
+            ${body.image_url ?? ""},
+            ${body.visual_style ?? ""},
+            ${body.live_url ?? ""},
+            ${body.github_url ?? ""},
+            ${body.details_type ?? "none"},
+            ${JSON.stringify(body.details_ar)},
+            ${JSON.stringify(body.details_en)},
+            ${body.is_visible ?? true},
+            ${body.sort_order ?? 0}
+          )
+          RETURNING *
+        ),
+        audit AS (
+          INSERT INTO public.admin_activity_logs (
+            action,
+            entity_type,
+            entity_id,
+            description
+          )
+          SELECT
+            'project.created',
+            'site_projects',
+            id,
+            'Created a project.'
+          FROM changed
+          RETURNING id
+        )
+        SELECT
+          changed.*,
+          (SELECT COUNT(*) FROM audit)::integer AS audit_count
+        FROM changed
+      `);
+
+      if (!auditCountIsValid(rows)) {
+        throw new Error("PROJECT_CREATE_AUDIT_FAILED");
       }
 
-      const query = sql`
-        INSERT INTO site_projects (
-          title_ar,
-          title_en,
-          description_ar,
-          description_en,
-          category_ar,
-          category_en,
-          image_url,
-          visual_style,
-          live_url,
-          github_url,
-          details_type,
-          details_ar,
-          details_en,
-          is_visible,
-          sort_order
-        )
-        VALUES (
-          ${body.title_ar.trim()},
-          ${body.title_en.trim()},
-          ${body.description_ar ?? ""},
-          ${body.description_en ?? ""},
-          ${body.category_ar ?? ""},
-          ${body.category_en ?? ""},
-          ${body.image_url ?? ""},
-          ${body.visual_style ?? ""},
-          ${body.live_url ?? ""},
-          ${body.github_url ?? ""},
-          ${body.details_type ?? "none"},
-          ${JSON.stringify(body.details_ar)},
-          ${JSON.stringify(body.details_en)},
-          ${body.is_visible ?? true},
-          ${body.sort_order ?? 0}
-        )
-        RETURNING *
-      `;
-
-      const rows = await adminQuery(sql, query);
-
-      if (!rows.length) {
-        throw new Error("PROJECT_CREATE_FAILED");
-      }
-
-      await recordProjectAudit(
-        sql,
-        "project.created",
-        "Created a project.",
-        rows[0].id
-      );
+      const { audit_count, ...project } = rows[0];
 
       return res.status(201).json({
         message: "Project created successfully.",
-        project: rows[0]
+        project
       });
     }
 
     if (req.method === "PATCH") {
-      if (!validId(body.id)) {
+      if (!isPlainObject(body) || !validId(body.id)) {
         return sendError(res, 400, "Invalid project ID.");
       }
 
@@ -545,98 +374,119 @@ module.exports = async function handler(req, res) {
         allowId: true
       });
 
-      if (error) {
-        return sendError(res, 400, error);
-      }
+      if (error) return sendError(res, 400, error);
 
       const hasUpdates = ALLOWED_FIELDS.some(
-        (field) => Object.hasOwn(body, field)
+        field => Object.hasOwn(body, field)
       );
 
       if (!hasUpdates) {
         return sendError(res, 400, "No fields to update.");
       }
 
-      const query = sql`
-        UPDATE site_projects
-        SET
-          title_ar = COALESCE(
-            ${body.title_ar === undefined ? null : body.title_ar.trim()},
-            title_ar
-          ),
-          title_en = COALESCE(
-            ${body.title_en === undefined ? null : body.title_en.trim()},
-            title_en
-          ),
-          description_ar = COALESCE(${body.description_ar ?? null}, description_ar),
-          description_en = COALESCE(${body.description_en ?? null}, description_en),
-          category_ar = COALESCE(${body.category_ar ?? null}, category_ar),
-          category_en = COALESCE(${body.category_en ?? null}, category_en),
-          image_url = COALESCE(${body.image_url ?? null}, image_url),
-          visual_style = COALESCE(${body.visual_style ?? null}, visual_style),
-          live_url = COALESCE(${body.live_url ?? null}, live_url),
-          github_url = COALESCE(${body.github_url ?? null}, github_url),
-          details_type = COALESCE(${body.details_type ?? null}, details_type),
-          details_ar = COALESCE(
-            ${body.details_ar === undefined ? null : JSON.stringify(body.details_ar)},
-            details_ar
-          ),
-          details_en = COALESCE(
-            ${body.details_en === undefined ? null : JSON.stringify(body.details_en)},
-            details_en
-          ),
-          is_visible = COALESCE(${body.is_visible ?? null}, is_visible),
-          sort_order = COALESCE(${body.sort_order ?? null}, sort_order),
-          updated_at = NOW()
-        WHERE id = ${Number(body.id)}
-        RETURNING *
-      `;
-
-      const rows = await adminQuery(sql, query);
+      const rows = await adminQuery(sql, sql`
+        WITH changed AS (
+          UPDATE site_projects
+          SET
+            title_ar = COALESCE(${body.title_ar === undefined ? null : body.title_ar.trim()}, title_ar),
+            title_en = COALESCE(${body.title_en === undefined ? null : body.title_en.trim()}, title_en),
+            description_ar = COALESCE(${body.description_ar ?? null}, description_ar),
+            description_en = COALESCE(${body.description_en ?? null}, description_en),
+            category_ar = COALESCE(${body.category_ar ?? null}, category_ar),
+            category_en = COALESCE(${body.category_en ?? null}, category_en),
+            image_url = COALESCE(${body.image_url ?? null}, image_url),
+            visual_style = COALESCE(${body.visual_style ?? null}, visual_style),
+            live_url = COALESCE(${body.live_url ?? null}, live_url),
+            github_url = COALESCE(${body.github_url ?? null}, github_url),
+            details_type = COALESCE(${body.details_type ?? null}, details_type),
+            details_ar = COALESCE(${body.details_ar === undefined ? null : JSON.stringify(body.details_ar)}, details_ar),
+            details_en = COALESCE(${body.details_en === undefined ? null : JSON.stringify(body.details_en)}, details_en),
+            is_visible = COALESCE(${body.is_visible ?? null}, is_visible),
+            sort_order = COALESCE(${body.sort_order ?? null}, sort_order),
+            updated_at = NOW()
+          WHERE id = ${Number(body.id)}
+          RETURNING *
+        ),
+        audit AS (
+          INSERT INTO public.admin_activity_logs (
+            action,
+            entity_type,
+            entity_id,
+            description
+          )
+          SELECT
+            'project.updated',
+            'site_projects',
+            id,
+            'Updated a project.'
+          FROM changed
+          RETURNING id
+        )
+        SELECT
+          changed.*,
+          (SELECT COUNT(*) FROM audit)::integer AS audit_count
+        FROM changed
+      `);
 
       if (!rows.length) {
         return sendError(res, 404, "Project not found.");
       }
 
-      await recordProjectAudit(
-        sql,
-        "project.updated",
-        "Updated a project.",
-        rows[0].id
-      );
+      if (!auditCountIsValid(rows)) {
+        throw new Error("PROJECT_UPDATE_AUDIT_FAILED");
+      }
+
+      const { audit_count, ...project } = rows[0];
 
       return res.status(200).json({
         message: "Project updated successfully.",
-        project: rows[0]
+        project
       });
     }
 
     if (req.method === "DELETE") {
       if (
+        !isPlainObject(body) ||
         !validId(body.id) ||
         Object.keys(body).length !== 1
       ) {
         return sendError(res, 400, "Invalid project ID.");
       }
 
-      const query = sql`
-        DELETE FROM site_projects
-        WHERE id = ${Number(body.id)}
-        RETURNING id
-      `;
-
-      const rows = await adminQuery(sql, query);
+      const rows = await adminQuery(sql, sql`
+        WITH changed AS (
+          DELETE FROM site_projects
+          WHERE id = ${Number(body.id)}
+          RETURNING id
+        ),
+        audit AS (
+          INSERT INTO public.admin_activity_logs (
+            action,
+            entity_type,
+            entity_id,
+            description
+          )
+          SELECT
+            'project.deleted',
+            'site_projects',
+            id,
+            'Deleted a project.'
+          FROM changed
+          RETURNING id
+        )
+        SELECT
+          changed.id,
+          (SELECT COUNT(*) FROM audit)::integer AS audit_count
+        FROM changed
+      `);
 
       if (!rows.length) {
         return sendError(res, 404, "Project not found.");
       }
 
-      await recordProjectAudit(
-        sql,
-        "project.deleted",
-        "Deleted a project.",
-        rows[0].id
-      );
+      if (!auditCountIsValid(rows)) {
+        throw new Error("PROJECT_DELETE_AUDIT_FAILED");
+      }
 
       return res.status(200).json({
         message: "Project deleted successfully.",
@@ -648,11 +498,10 @@ module.exports = async function handler(req, res) {
       code: error?.code || "NO_CODE"
     });
 
-    return sendError(
-      res,
-      500,
-      "An internal server error occurred."
-    );
+    if (error?.code === "23505") {
+      return sendError(res, 409, "A project with this key already exists.");
+    }
+
+    return sendError(res, 500, "An internal server error occurred.");
   }
 };
-
