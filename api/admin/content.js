@@ -35,6 +35,12 @@ const SEO_LIMITS = {
 
 const SEO_FIELDS = Object.keys(SEO_LIMITS);
 
+const SETTINGS_KEYS = [
+  "site_name",
+  "contact_email",
+  "maintenance_mode"
+];
+
 function sendError(res, status, message) {
   return res.status(status).json({ error: message });
 }
@@ -45,6 +51,19 @@ function isPlainObject(value) {
     typeof value === "object" &&
     !Array.isArray(value) &&
     Object.getPrototypeOf(value) === Object.prototype
+  );
+}
+
+function validateId(value) {
+  if (typeof value !== "string" && typeof value !== "number") {
+    return false;
+  }
+
+  const text = String(value);
+
+  return (
+    /^[1-9]\d*$/.test(text) &&
+    Number.isSafeInteger(Number(text))
   );
 }
 
@@ -104,19 +123,6 @@ function validateBody(body, allowedFields, requiredFields = []) {
   return null;
 }
 
-function validateId(value) {
-  if (typeof value !== "string" && typeof value !== "number") {
-    return false;
-  }
-
-  const text = String(value);
-
-  return (
-    /^[1-9]\d*$/.test(text) &&
-    Number.isSafeInteger(Number(text))
-  );
-}
-
 function validateSeoBody(body) {
   if (!isPlainObject(body)) {
     return "Invalid request body.";
@@ -172,6 +178,216 @@ function validateSeoBody(body) {
   }
 
   return null;
+}
+
+function validateSettings(body) {
+  if (!isPlainObject(body)) {
+    return "Invalid request body.";
+  }
+
+  if (
+    Object.keys(body).length !== SETTINGS_KEYS.length ||
+    SETTINGS_KEYS.some((key) => !Object.hasOwn(body, key))
+  ) {
+    return "Invalid settings fields.";
+  }
+
+  if (
+    typeof body.site_name !== "string" ||
+    !body.site_name.trim() ||
+    body.site_name.length > 100
+  ) {
+    return "Invalid site name.";
+  }
+
+  if (
+    typeof body.contact_email !== "string" ||
+    body.contact_email.length > 254
+  ) {
+    return "Invalid contact email.";
+  }
+
+  if (
+    body.contact_email &&
+    !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(body.contact_email)
+  ) {
+    return "Invalid contact email.";
+  }
+
+  if (typeof body.maintenance_mode !== "boolean") {
+    return "Invalid maintenance mode.";
+  }
+
+  return null;
+}
+
+async function handleSettings(sql, req, res) {
+  if (req.method === "GET") {
+    const rows = await adminQuery(
+      sql,
+      sql`
+        SELECT setting_key, setting_value
+        FROM public.site_settings
+        WHERE setting_key = ANY(${SETTINGS_KEYS})
+      `
+    );
+
+    const settings = {
+      site_name: "",
+      contact_email: "",
+      maintenance_mode: false
+    };
+
+    for (const row of rows) {
+      const value = row.setting_value;
+
+      if (SETTINGS_KEYS.includes(row.setting_key)) {
+        settings[row.setting_key] = value;
+      }
+    }
+
+    return res.status(200).json({ settings });
+  }
+
+  if (req.method !== "PUT") {
+    res.setHeader("Allow", "GET, PUT");
+    return sendError(res, 405, "Method not allowed.");
+  }
+
+  const error = validateSettings(req.body);
+
+  if (error) {
+    return sendError(res, 400, error);
+  }
+
+  const body = req.body;
+
+  const settingsPayload = JSON.stringify([
+    {
+      setting_key: "site_name",
+      setting_value: body.site_name.trim()
+    },
+    {
+      setting_key: "contact_email",
+      setting_value: body.contact_email.trim()
+    },
+    {
+      setting_key: "maintenance_mode",
+      setting_value: body.maintenance_mode
+    }
+  ]);
+
+  const query = sql`
+    WITH incoming AS (
+      SELECT
+        item.setting_key,
+        item.setting_value
+      FROM jsonb_to_recordset(${settingsPayload}::jsonb)
+      AS item(
+        setting_key text,
+        setting_value jsonb
+      )
+    ),
+    saved AS (
+      INSERT INTO public.site_settings (
+        setting_key,
+        setting_value,
+        updated_at
+      )
+      SELECT
+        setting_key,
+        setting_value,
+        NOW()
+      FROM incoming
+      ON CONFLICT (setting_key)
+      DO UPDATE SET
+        setting_value = EXCLUDED.setting_value,
+        updated_at = NOW()
+      RETURNING setting_key
+    ),
+    audit AS (
+      INSERT INTO public.admin_activity_logs (
+        action,
+        entity_type,
+        description
+      )
+      SELECT
+        'settings.updated',
+        'site_settings',
+        'Updated general site settings.'
+      WHERE (SELECT COUNT(*) FROM saved) = 3
+      RETURNING id
+    )
+    SELECT
+      (SELECT COUNT(*) FROM saved) AS saved_count,
+      (SELECT COUNT(*) FROM audit) AS audit_count
+  `;
+
+  const rows = await adminQuery(sql, query);
+
+  if (
+    !rows.length ||
+    Number(rows[0].saved_count) !== 3 ||
+    Number(rows[0].audit_count) !== 1
+  ) {
+    throw new Error("SETTINGS_TRANSACTION_INCOMPLETE");
+  }
+
+  return res.status(200).json({
+    message: "Settings saved successfully."
+  });
+}
+
+async function handleAuditLogs(sql, req, res) {
+  if (req.method !== "GET") {
+    res.setHeader("Allow", "GET");
+    return sendError(res, 405, "Method not allowed.");
+  }
+
+  const limitValue = req.query?.limit ?? "25";
+  const offsetValue = req.query?.offset ?? "0";
+
+  const limit = Number(limitValue);
+  const offset = Number(offsetValue);
+
+  if (
+    !Number.isInteger(limit) ||
+    limit < 1 ||
+    limit > 100 ||
+    !Number.isInteger(offset) ||
+    offset < 0 ||
+    offset > 1000000
+  ) {
+    return sendError(res, 400, "Invalid pagination parameters.");
+  }
+
+  const query = sql`
+    SELECT
+      id,
+      action,
+      entity_type,
+      description,
+      created_at
+    FROM public.admin_activity_logs
+    ORDER BY created_at DESC, id DESC
+    LIMIT ${limit}
+    OFFSET ${offset}
+  `;
+
+  const countQuery = sql`
+    SELECT COUNT(*)::integer AS total
+    FROM public.admin_activity_logs
+  `;
+
+  const [logs, countRows] = await Promise.all([
+    adminQuery(sql, query),
+    adminQuery(sql, countQuery)
+  ]);
+
+  return res.status(200).json({
+    logs,
+    total: Number(countRows[0]?.total || 0)
+  });
 }
 
 async function handleSeo(sql, req, res) {
@@ -293,7 +509,7 @@ module.exports = async function handler(req, res) {
   res.setHeader("Cache-Control", "no-store");
   res.setHeader("X-Content-Type-Options", "nosniff");
 
-  const allowedMethods = ["GET", "POST", "PATCH", "DELETE"];
+  const allowedMethods = ["GET", "POST", "PATCH", "DELETE", "PUT"];
 
   if (!allowedMethods.includes(req.method)) {
     res.setHeader("Allow", allowedMethods.join(", "));
@@ -324,7 +540,7 @@ module.exports = async function handler(req, res) {
       return sendError(res, 400, "Invalid request body.");
     }
 
-    if (bodySize > 20 * 1024) {
+    if (bodySize > 70 * 1024) {
       return sendError(res, 413, "Request body is too large.");
     }
   }
@@ -340,9 +556,22 @@ module.exports = async function handler(req, res) {
 
   try {
     const sql = neon(databaseUrl);
+    const resource = req.query?.resource;
 
-    if (req.query?.resource === "seo") {
+    if (resource === "seo") {
       return await handleSeo(sql, req, res);
+    }
+
+    if (resource === "settings") {
+      return await handleSettings(sql, req, res);
+    }
+
+    if (resource === "audit-logs") {
+      return await handleAuditLogs(sql, req, res);
+    }
+
+    if (resource) {
+      return sendError(res, 400, "Invalid resource.");
     }
 
     if (req.method === "GET") {
@@ -480,15 +709,14 @@ module.exports = async function handler(req, res) {
       });
     }
   } catch (error) {
-    if (error && error.code === "23505") {
-      return sendError(res, 409, "Content key already exists.");
-    }
-
     console.error("[admin-content] Database operation failed.", {
-  name: error?.name || "UnknownError",
-  code: error?.code || "NO_CODE",
-  message: String(error?.message || "No error message").slice(0, 300)
-});
+      name: error?.name || "UnknownError",
+      code: error?.code || "NO_CODE"
+    });
+
+    if (error?.code === "23505") {
+      return sendError(res, 409, "A record with this key already exists.");
+    }
 
     return sendError(
       res,
