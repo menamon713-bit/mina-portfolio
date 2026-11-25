@@ -5,6 +5,7 @@
 
   let websiteData = null;
 
+  // شاشة الصيانة
   function showMaintenancePage() {
     window.__MASH_MAINTENANCE__ = true;
 
@@ -19,10 +20,10 @@
       document.body.appendChild(screen);
     }
 
-    const style = document.createElement("style");
-    style.id = "maintenanceStyles";
-
     if (!document.getElementById("maintenanceStyles")) {
+      const style = document.createElement("style");
+      style.id = "maintenanceStyles";
+
       style.textContent = `
         #maintenanceView {
           position: fixed;
@@ -125,7 +126,7 @@
   }
 
   window.showMashMaintenance = showMaintenancePage;
-  
+
   const SOCIAL_PLATFORMS = {
     github: {
       label: "GitHub",
@@ -428,7 +429,8 @@
     renderSocialLinks(websiteData.socialLinks);
   }
 
-    async function loadWebsiteData() {
+  // تحميل بيانات الموقع والتحقق من وضع الصيانة
+  async function loadWebsiteData() {
     try {
       const response = await fetch(
         "/api/health?resource=site-data",
@@ -466,31 +468,6 @@
       window.__MASH_MAINTENANCE__ = false;
 
       document.getElementById("maintenanceView")?.remove();
-
-      websiteData = result.data;
-      applyWebsiteData();
-
-    } catch (error) {
-      console.error("Website data loading error:", error);
-    }
-  }
-  
-      if (!response.ok) {
-        throw new Error(
-          `Website data request failed: ${response.status}`
-        );
-      }
-
-      const result = await response.json();
-
-      if (
-        !result ||
-        result.success !== true ||
-        !result.data ||
-        typeof result.data !== "object"
-      ) {
-        throw new Error("Invalid website data response.");
-      }
 
       websiteData = result.data;
       applyWebsiteData();
