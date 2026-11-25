@@ -1,14 +1,12 @@
 "use strict";
 
+const { neon } = require("@neondatabase/serverless");
 const { adminQuery } = require("./_lib/admin-db");
 
 const ALLOWED_WHATSAPP_APPS = Object.freeze({
   business: "com.whatsapp.w4b",
   messenger: "com.whatsapp"
 });
-
-const CACHE_PUBLIC =
-  "public, s-maxage=60, stale-while-revalidate=300";
 
 function sendError(res, status, message) {
   res.setHeader("Cache-Control", "no-store");
@@ -27,11 +25,6 @@ function getDatabaseUrl() {
   }
 
   return value.trim();
-}
-
-function getSqlClient(databaseUrl) {
-  const { neon } = require("@neondatabase/serverless");
-  return neon(databaseUrl);
 }
 
 async function isMaintenanceEnabled(sql) {
@@ -57,91 +50,109 @@ async function getSiteData(sql) {
     pages,
     seo
   ] = await Promise.all([
-    sql`
-      SELECT
-        full_name,
-        job_title,
-        short_bio,
-        about,
-        location,
-        profile_image
-      FROM site_profile
-      ORDER BY id ASC
-      LIMIT 1
-    `,
+    adminQuery(
+      sql,
+      sql`
+        SELECT
+          full_name,
+          job_title,
+          short_bio,
+          about,
+          location,
+          profile_image
+        FROM public.site_profile
+        ORDER BY id ASC
+        LIMIT 1
+      `
+    ),
 
-    sql`
-      SELECT
-        id,
-        name_ar,
-        name_en,
-        icon,
-        progress,
-        category,
-        sort_order
-      FROM site_skills
-      WHERE is_visible = TRUE
-      ORDER BY sort_order ASC, id ASC
-    `,
+    adminQuery(
+      sql,
+      sql`
+        SELECT
+          id,
+          name_ar,
+          name_en,
+          icon,
+          progress,
+          category,
+          sort_order
+        FROM public.site_skills
+        WHERE is_visible = TRUE
+        ORDER BY sort_order ASC, id ASC
+      `
+    ),
 
-    sql`
-      SELECT
-        id,
-        platform,
-        label_ar,
-        label_en,
-        value,
-        url,
-        icon,
-        sort_order
-      FROM site_social_links
-      WHERE is_visible = TRUE
-      ORDER BY sort_order ASC, id ASC
-    `,
+    adminQuery(
+      sql,
+      sql`
+        SELECT
+          id,
+          platform,
+          label_ar,
+          label_en,
+          value,
+          url,
+          icon,
+          sort_order
+        FROM public.site_social_links
+        WHERE is_visible = TRUE
+        ORDER BY sort_order ASC, id ASC
+      `
+    ),
 
-    sql`
-      SELECT
-        content_key,
-        section,
-        title_ar,
-        title_en,
-        content_ar,
-        content_en,
-        sort_order
-      FROM site_content
-      WHERE is_visible = TRUE
-      ORDER BY sort_order ASC, id ASC
-    `,
+    adminQuery(
+      sql,
+      sql`
+        SELECT
+          content_key,
+          section,
+          title_ar,
+          title_en,
+          content_ar,
+          content_en,
+          sort_order
+        FROM public.site_content
+        WHERE is_visible = TRUE
+        ORDER BY sort_order ASC, id ASC
+      `
+    ),
 
-    sql`
-      SELECT
-        slug,
-        title_ar,
-        title_en,
-        content_ar,
-        content_en
-      FROM site_pages
-      WHERE is_published = TRUE
-      ORDER BY slug ASC
-    `,
+    adminQuery(
+      sql,
+      sql`
+        SELECT
+          slug,
+          title_ar,
+          title_en,
+          content_ar,
+          content_en
+        FROM public.site_pages
+        WHERE is_published = TRUE
+        ORDER BY slug ASC
+      `
+    ),
 
-    sql`
-      SELECT
-        site_seo.page_slug,
-        site_seo.title_ar,
-        site_seo.title_en,
-        site_seo.description_ar,
-        site_seo.description_en,
-        site_seo.keywords_ar,
-        site_seo.keywords_en,
-        site_seo.og_image,
-        site_seo.canonical_url
-      FROM site_seo
-      INNER JOIN site_pages
-        ON site_pages.slug = site_seo.page_slug
-      WHERE site_pages.is_published = TRUE
-      ORDER BY site_seo.page_slug ASC
-    `
+    adminQuery(
+      sql,
+      sql`
+        SELECT
+          seo.page_slug,
+          seo.title_ar,
+          seo.title_en,
+          seo.description_ar,
+          seo.description_en,
+          seo.keywords_ar,
+          seo.keywords_en,
+          seo.og_image,
+          seo.canonical_url
+        FROM public.site_seo AS seo
+        INNER JOIN public.site_pages AS pages
+          ON pages.slug = seo.page_slug
+        WHERE pages.is_published = TRUE
+        ORDER BY seo.page_slug ASC
+      `
+    )
   ]);
 
   return {
@@ -155,27 +166,30 @@ async function getSiteData(sql) {
 }
 
 async function getProjects(sql) {
-  return sql`
-    SELECT
-      id,
-      title_ar,
-      title_en,
-      description_ar,
-      description_en,
-      category_ar,
-      category_en,
-      image_url,
-      live_url,
-      github_url,
-      details_type,
-      details_ar,
-      details_en,
-      visual_style,
-      sort_order
-    FROM site_projects
-    WHERE is_visible = TRUE
-    ORDER BY sort_order ASC, id ASC
-  `;
+  return adminQuery(
+    sql,
+    sql`
+      SELECT
+        id,
+        title_ar,
+        title_en,
+        description_ar,
+        description_en,
+        category_ar,
+        category_en,
+        image_url,
+        live_url,
+        github_url,
+        details_type,
+        details_ar,
+        details_en,
+        visual_style,
+        sort_order
+      FROM public.site_projects
+      WHERE is_visible = TRUE
+      ORDER BY sort_order ASC, id ASC
+    `
+  );
 }
 
 function handleWhatsApp(req, res) {
@@ -228,6 +242,7 @@ function handleWhatsApp(req, res) {
 }
 
 module.exports = async function handler(req, res) {
+  res.setHeader("Cache-Control", "no-store");
   res.setHeader("X-Content-Type-Options", "nosniff");
 
   if (req.method !== "GET") {
@@ -254,70 +269,42 @@ module.exports = async function handler(req, res) {
     );
   }
 
-  // Public website data and maintenance status
-  if (resource === "site-data") {
+  if (resource === "site-data" || resource === "projects") {
     const databaseUrl = getDatabaseUrl();
 
     if (!databaseUrl) {
       return sendError(
         res,
         503,
-        "Website data is currently unavailable."
+        resource === "site-data"
+          ? "Website data is currently unavailable."
+          : "Projects are currently unavailable."
       );
     }
 
     try {
-      const sql = getSqlClient(databaseUrl);
-      const maintenanceMode = await isMaintenanceEnabled(sql);
+      const sql = neon(databaseUrl);
 
-      if (maintenanceMode) {
-        res.setHeader("Cache-Control", "no-store");
+      if (resource === "site-data") {
+        const maintenanceMode = await isMaintenanceEnabled(sql);
+
+        if (maintenanceMode) {
+          return res.status(200).json({
+            success: true,
+            maintenanceMode: true
+          });
+        }
+
+        const data = await getSiteData(sql);
 
         return res.status(200).json({
           success: true,
-          maintenanceMode: true
+          maintenanceMode: false,
+          data
         });
       }
 
-      const data = await getSiteData(sql);
-
-      // Cache only public website content.
-      // Never cache admin responses or maintenance state.
-      res.setHeader("Cache-Control", CACHE_PUBLIC);
-
-      return res.status(200).json({
-        success: true,
-        maintenanceMode: false,
-        data
-      });
-    } catch (error) {
-      console.error("Public site data error:", error);
-
-      return sendError(
-        res,
-        503,
-        "Website data is currently unavailable."
-      );
-    }
-  }
-
-  // Public projects
-  if (resource === "projects") {
-    const databaseUrl = getDatabaseUrl();
-
-    if (!databaseUrl) {
-      return sendError(
-        res,
-        503,
-        "Projects are currently unavailable."
-      );
-    }
-
-    try {
-      const sql = getSqlClient(databaseUrl);
       const projects = await getProjects(sql);
-
-      res.setHeader("Cache-Control", CACHE_PUBLIC);
 
       return res.status(200).json({
         success: true,
@@ -325,18 +312,22 @@ module.exports = async function handler(req, res) {
         count: projects.length
       });
     } catch (error) {
-      console.error("Public projects error:", error);
+      console.error(
+        resource === "site-data"
+          ? "Public site data error:"
+          : "Public projects error:",
+        error
+      );
 
       return sendError(
         res,
         503,
-        "Projects are currently unavailable."
+        resource === "site-data"
+          ? "Website data is currently unavailable."
+          : "Projects are currently unavailable."
       );
     }
   }
-
-  // Health check and WhatsApp redirect
-  res.setHeader("Cache-Control", "no-store");
 
   return handleWhatsApp(req, res);
 };
