@@ -8,6 +8,7 @@ const {
 } = require("../_lib/admin-auth");
 
 const { adminQuery } = require("../_lib/admin-db");
+const { guardAdminWrite } = require("../_lib/audit-log");
 
 const FIELDS = [
   "slug",
@@ -33,12 +34,12 @@ function sendError(res, status, message) {
 }
 
 function isPlainObject(value) {
-  return (
-    value !== null &&
-    typeof value === "object" &&
-    !Array.isArray(value) &&
-    Object.getPrototypeOf(value) === Object.prototype
-  );
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return false;
+  }
+
+  const prototype = Object.getPrototypeOf(value);
+  return prototype === Object.prototype || prototype === null;
 }
 
 function validId(value) {
@@ -57,25 +58,25 @@ function validId(value) {
 function validateBody(body, options = {}) {
   const { partial = false, allowId = false } = options;
 
-  if (!isPlainObject(body)) {
-    return "Invalid request body.";
-  }
+  if (!isPlainObject(body)) return "Invalid request body.";
 
   const allowed = allowId ? [...FIELDS, "id"] : FIELDS;
 
   for (const field of Object.keys(body)) {
-    if (!allowed.includes(field)) {
-      return `Unknown field: ${field}`;
-    }
+    if (!allowed.includes(field)) return "Unknown field.";
   }
 
-  const required = partial
-    ? []
-    : ["slug", "title_ar", "title_en", "content_ar", "content_en"];
-
-  for (const field of required) {
-    if (!Object.hasOwn(body, field)) {
-      return `Missing field: ${field}`;
+  if (!partial) {
+    for (const field of [
+      "slug",
+      "title_ar",
+      "title_en",
+      "content_ar",
+      "content_en"
+    ]) {
+      if (!Object.hasOwn(body, field)) {
+        return `Missing field: ${field}`;
+      }
     }
   }
 
@@ -127,28 +128,17 @@ module.exports = async function handler(req, res) {
     return sendError(res, 405, "Method not allowed.");
   }
 
-  if (!(await requireAdmin(req, res))) {
-    return;
-  }
-
-  if (req.method !== "GET" && !checkSameOrigin(req)) {
-    return sendError(res, 403, "Invalid request origin.");
-  }
+  if (!(await requireAdmin(req, res))) return;
 
   if (req.method !== "GET") {
-    if (
-      !req.headers["content-type"] ||
-      !/^application\/json(?:\s*;|$)/i.test(req.headers["content-type"])
-    ) {
-      return sendError(res, 415, "Content-Type must be application/json.");
+    if (!checkSameOrigin(req)) {
+      return sendError(res, 403, "Invalid request origin.");
     }
 
-    if (
-      Buffer.byteLength(JSON.stringify(req.body ?? null), "utf8") >
-      MAX_BODY_BYTES
-    ) {
-      return sendError(res, 413, "Request body is too large.");
-    }
+    if (!(await guardAdminWrite(req, res, {
+      namespace: "pages",
+      maxBodyBytes: MAX_BODY_BYTES
+    }))) return;
   }
 
   const databaseUrl = process.env.DATABASE_URL;
@@ -161,22 +151,19 @@ module.exports = async function handler(req, res) {
     const sql = neon(databaseUrl);
 
     if (req.method === "GET") {
-      const rows = await adminQuery(
-        sql,
-        sql`
-          SELECT
-            id,
-            slug,
-            title_ar,
-            title_en,
-            content_ar,
-            content_en,
-            is_published,
-            updated_at
-          FROM site_pages
-          ORDER BY id DESC
-        `
-      );
+      const rows = await adminQuery(sql, sql`
+        SELECT
+          id,
+          slug,
+          title_ar,
+          title_en,
+          content_ar,
+          content_en,
+          is_published,
+          updated_at
+        FROM site_pages
+        ORDER BY id DESC
+      `);
 
       return res.status(200).json({
         pages: rows,
@@ -184,36 +171,34 @@ module.exports = async function handler(req, res) {
       });
     }
 
+    const body = req.body;
+
     if (req.method === "POST") {
-      const body = req.body;
       const error = validateBody(body);
 
       if (error) return sendError(res, 400, error);
 
-      const rows = await adminQuery(
-        sql,
-        sql`
-          INSERT INTO site_pages (
-            slug,
-            title_ar,
-            title_en,
-            content_ar,
-            content_en,
-            is_published,
-            updated_at
-          )
-          VALUES (
-            ${body.slug.trim()},
-            ${body.title_ar.trim()},
-            ${body.title_en.trim()},
-            ${body.content_ar},
-            ${body.content_en},
-            ${body.is_published ?? false},
-            NOW()
-          )
-          RETURNING *
-        `
-      );
+      const rows = await adminQuery(sql, sql`
+        INSERT INTO site_pages (
+          slug,
+          title_ar,
+          title_en,
+          content_ar,
+          content_en,
+          is_published,
+          updated_at
+        )
+        VALUES (
+          ${body.slug.trim()},
+          ${body.title_ar.trim()},
+          ${body.title_en.trim()},
+          ${body.content_ar},
+          ${body.content_en},
+          ${body.is_published ?? false},
+          NOW()
+        )
+        RETURNING *
+      `);
 
       return res.status(201).json({
         message: "Page created successfully.",
@@ -222,8 +207,6 @@ module.exports = async function handler(req, res) {
     }
 
     if (req.method === "PATCH") {
-      const body = req.body;
-
       if (!isPlainObject(body) || !validId(body.id)) {
         return sendError(res, 400, "Invalid page ID.");
       }
@@ -235,30 +218,23 @@ module.exports = async function handler(req, res) {
 
       if (error) return sendError(res, 400, error);
 
-      const hasUpdates = FIELDS.some(
-        (field) => Object.hasOwn(body, field)
-      );
-
-      if (!hasUpdates) {
+      if (!FIELDS.some(field => Object.hasOwn(body, field))) {
         return sendError(res, 400, "No fields to update.");
       }
 
-      const rows = await adminQuery(
-        sql,
-        sql`
-          UPDATE site_pages
-          SET
-            slug = COALESCE(${body.slug === undefined ? null : body.slug.trim()}, slug),
-            title_ar = COALESCE(${body.title_ar === undefined ? null : body.title_ar.trim()}, title_ar),
-            title_en = COALESCE(${body.title_en === undefined ? null : body.title_en.trim()}, title_en),
-            content_ar = COALESCE(${body.content_ar ?? null}, content_ar),
-            content_en = COALESCE(${body.content_en ?? null}, content_en),
-            is_published = COALESCE(${body.is_published ?? null}, is_published),
-            updated_at = NOW()
-          WHERE id = ${Number(body.id)}
-          RETURNING *
-        `
-      );
+      const rows = await adminQuery(sql, sql`
+        UPDATE site_pages
+        SET
+          slug = COALESCE(${body.slug === undefined ? null : body.slug.trim()}, slug),
+          title_ar = COALESCE(${body.title_ar === undefined ? null : body.title_ar.trim()}, title_ar),
+          title_en = COALESCE(${body.title_en === undefined ? null : body.title_en.trim()}, title_en),
+          content_ar = COALESCE(${body.content_ar ?? null}, content_ar),
+          content_en = COALESCE(${body.content_en ?? null}, content_en),
+          is_published = COALESCE(${body.is_published ?? null}, is_published),
+          updated_at = NOW()
+        WHERE id = ${Number(body.id)}
+        RETURNING *
+      `);
 
       if (!rows.length) {
         return sendError(res, 404, "Page not found.");
@@ -271,8 +247,6 @@ module.exports = async function handler(req, res) {
     }
 
     if (req.method === "DELETE") {
-      const body = req.body;
-
       if (
         !isPlainObject(body) ||
         !validId(body.id) ||
@@ -281,14 +255,11 @@ module.exports = async function handler(req, res) {
         return sendError(res, 400, "Invalid page ID.");
       }
 
-      const rows = await adminQuery(
-        sql,
-        sql`
-          DELETE FROM site_pages
-          WHERE id = ${Number(body.id)}
-          RETURNING id
-        `
-      );
+      const rows = await adminQuery(sql, sql`
+        DELETE FROM site_pages
+        WHERE id = ${Number(body.id)}
+        RETURNING id
+      `);
 
       if (!rows.length) {
         return sendError(res, 404, "Page not found.");
@@ -300,16 +271,14 @@ module.exports = async function handler(req, res) {
       });
     }
   } catch (error) {
-    if (error && error.code === "23505") {
+    console.error("[admin-pages] Database operation failed.", {
+      code: error?.code || "NO_CODE"
+    });
+
+    if (error?.code === "23505") {
       return sendError(res, 409, "Page slug already exists.");
     }
 
-    console.error("[admin-pages] Database operation failed.");
-
-    return sendError(
-      res,
-      500,
-      "An internal server error occurred."
-    );
+    return sendError(res, 500, "An internal server error occurred.");
   }
 };
