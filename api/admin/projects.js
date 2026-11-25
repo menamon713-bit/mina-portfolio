@@ -1,15 +1,23 @@
 "use strict";
 
+const crypto = require("crypto");
 const { neon } = require("@neondatabase/serverless");
 
 const {
   requireAdmin,
-  checkSameOrigin
+  checkSameOrigin,
+  getCookie
 } = require("../_lib/admin-auth");
 
 const { adminQuery } = require("../_lib/admin-db");
+const { consume } = require("../_lib/rate-limit");
+const { writeAuditLog } = require("../_lib/audit-log");
 
 const MAX_BODY_BYTES = 64 * 1024;
+
+// 30 write requests per authenticated session every 10 minutes.
+const WRITE_RATE_LIMIT = 30;
+const WRITE_RATE_WINDOW = 600;
 
 const STRING_FIELDS = {
   title_ar: 200,
@@ -160,9 +168,18 @@ function validateBody(body, options = {}) {
   for (const [field, maxLength] of Object.entries(STRING_FIELDS)) {
     if (!Object.hasOwn(body, field)) continue;
 
+    const value = body[field];
+
     if (
-      typeof body[field] !== "string" ||
-      body[field].length > maxLength
+      typeof value !== "string" ||
+      value.length > maxLength
+    ) {
+      return `Invalid field: ${field}`;
+    }
+
+    if (
+      ["title_ar", "title_en"].includes(field) &&
+      !value.trim()
     ) {
       return `Invalid field: ${field}`;
     }
@@ -298,6 +315,83 @@ function parseWriteBody(req, res) {
   return body;
 }
 
+function getWriteRateLimitKey(req) {
+  const token = getCookie(req);
+
+  if (typeof token !== "string" || !token) {
+    throw new Error("RATE_LIMIT_SESSION_MISSING");
+  }
+
+  const digest = crypto
+    .createHash("sha256")
+    .update(token, "utf8")
+    .digest("hex");
+
+  return `mash:projects:write:${digest}`;
+}
+
+async function enforceWriteRateLimit(req, res) {
+  let result;
+
+  try {
+    result = await consume(
+      getWriteRateLimitKey(req),
+      WRITE_RATE_WINDOW,
+      WRITE_RATE_LIMIT
+    );
+  } catch {
+    console.error("[admin-projects] Rate limit service unavailable.");
+
+    sendError(
+      res,
+      503,
+      "Security service temporarily unavailable."
+    );
+
+    return false;
+  }
+
+  if (!result.allowed) {
+    res.setHeader(
+      "Retry-After",
+      String(result.retryAfter)
+    );
+
+    sendError(
+      res,
+      429,
+      "Too many write requests. Please try again later."
+    );
+
+    return false;
+  }
+
+  return true;
+}
+
+async function recordProjectAudit(
+  sql,
+  action,
+  description,
+  projectId
+) {
+  try {
+    await writeAuditLog(sql, {
+      action,
+      entityType: "site_projects",
+      description,
+      entityId: projectId
+    });
+  } catch (error) {
+    // Do not report a failed write after the database mutation
+    // has already succeeded. Log the audit failure for monitoring.
+    console.error("[admin-projects] Audit log write failed.", {
+      action,
+      code: error?.code || "NO_CODE"
+    });
+  }
+}
+
 module.exports = async function handler(req, res) {
   res.setHeader("Cache-Control", "no-store");
   res.setHeader("X-Content-Type-Options", "nosniff");
@@ -309,13 +403,29 @@ module.exports = async function handler(req, res) {
     return sendError(res, 405, "Method not allowed.");
   }
 
-  if (!(await requireAdmin(req, res))) return;
+  if (!(await requireAdmin(req, res))) {
+    return;
+  }
 
   if (
     req.method !== "GET" &&
     !checkSameOrigin(req)
   ) {
     return sendError(res, 403, "Invalid request origin.");
+  }
+
+  let body = null;
+
+  if (req.method !== "GET") {
+    if (!(await enforceWriteRateLimit(req, res))) {
+      return;
+    }
+
+    body = parseWriteBody(req, res);
+
+    if (body === null) {
+      return;
+    }
   }
 
   const databaseUrl = process.env.DATABASE_URL;
@@ -325,14 +435,6 @@ module.exports = async function handler(req, res) {
     !databaseUrl.trim()
   ) {
     return sendError(res, 503, "Database is unavailable.");
-  }
-
-  let body = null;
-
-  if (req.method !== "GET") {
-    body = parseWriteBody(req, res);
-
-    if (body === null) return;
   }
 
   try {
@@ -372,7 +474,9 @@ module.exports = async function handler(req, res) {
     if (req.method === "POST") {
       const error = validateBody(body);
 
-      if (error) return sendError(res, 400, error);
+      if (error) {
+        return sendError(res, 400, error);
+      }
 
       const query = sql`
         INSERT INTO site_projects (
@@ -414,6 +518,17 @@ module.exports = async function handler(req, res) {
 
       const rows = await adminQuery(sql, query);
 
+      if (!rows.length) {
+        throw new Error("PROJECT_CREATE_FAILED");
+      }
+
+      await recordProjectAudit(
+        sql,
+        "project.created",
+        "Created a project.",
+        rows[0].id
+      );
+
       return res.status(201).json({
         message: "Project created successfully.",
         project: rows[0]
@@ -430,7 +545,9 @@ module.exports = async function handler(req, res) {
         allowId: true
       });
 
-      if (error) return sendError(res, 400, error);
+      if (error) {
+        return sendError(res, 400, error);
+      }
 
       const hasUpdates = ALLOWED_FIELDS.some(
         (field) => Object.hasOwn(body, field)
@@ -443,8 +560,14 @@ module.exports = async function handler(req, res) {
       const query = sql`
         UPDATE site_projects
         SET
-          title_ar = COALESCE(${body.title_ar === undefined ? null : body.title_ar.trim()}, title_ar),
-          title_en = COALESCE(${body.title_en === undefined ? null : body.title_en.trim()}, title_en),
+          title_ar = COALESCE(
+            ${body.title_ar === undefined ? null : body.title_ar.trim()},
+            title_ar
+          ),
+          title_en = COALESCE(
+            ${body.title_en === undefined ? null : body.title_en.trim()},
+            title_en
+          ),
           description_ar = COALESCE(${body.description_ar ?? null}, description_ar),
           description_en = COALESCE(${body.description_en ?? null}, description_en),
           category_ar = COALESCE(${body.category_ar ?? null}, category_ar),
@@ -454,8 +577,14 @@ module.exports = async function handler(req, res) {
           live_url = COALESCE(${body.live_url ?? null}, live_url),
           github_url = COALESCE(${body.github_url ?? null}, github_url),
           details_type = COALESCE(${body.details_type ?? null}, details_type),
-          details_ar = COALESCE(${body.details_ar === undefined ? null : JSON.stringify(body.details_ar)}, details_ar),
-          details_en = COALESCE(${body.details_en === undefined ? null : JSON.stringify(body.details_en)}, details_en),
+          details_ar = COALESCE(
+            ${body.details_ar === undefined ? null : JSON.stringify(body.details_ar)},
+            details_ar
+          ),
+          details_en = COALESCE(
+            ${body.details_en === undefined ? null : JSON.stringify(body.details_en)},
+            details_en
+          ),
           is_visible = COALESCE(${body.is_visible ?? null}, is_visible),
           sort_order = COALESCE(${body.sort_order ?? null}, sort_order),
           updated_at = NOW()
@@ -468,6 +597,13 @@ module.exports = async function handler(req, res) {
       if (!rows.length) {
         return sendError(res, 404, "Project not found.");
       }
+
+      await recordProjectAudit(
+        sql,
+        "project.updated",
+        "Updated a project.",
+        rows[0].id
+      );
 
       return res.status(200).json({
         message: "Project updated successfully.",
@@ -495,13 +631,22 @@ module.exports = async function handler(req, res) {
         return sendError(res, 404, "Project not found.");
       }
 
+      await recordProjectAudit(
+        sql,
+        "project.deleted",
+        "Deleted a project.",
+        rows[0].id
+      );
+
       return res.status(200).json({
         message: "Project deleted successfully.",
         id: rows[0].id
       });
     }
-  } catch {
-    console.error("[admin-projects] Database operation failed.");
+  } catch (error) {
+    console.error("[admin-projects] Database operation failed.", {
+      code: error?.code || "NO_CODE"
+    });
 
     return sendError(
       res,
@@ -510,3 +655,4 @@ module.exports = async function handler(req, res) {
     );
   }
 };
+
