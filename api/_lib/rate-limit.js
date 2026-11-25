@@ -3,7 +3,6 @@
 const TIMEOUT_MS = 3000;
 const MAX_KEY_LENGTH = 200;
 
-// Atomic increment with automatic TTL repair.
 const HIT_SCRIPT = `
   local count = redis.call("INCR", KEYS[1])
   local ttl = redis.call("TTL", KEYS[1])
@@ -15,8 +14,6 @@ const HIT_SCRIPT = `
   return count
 `;
 
-// Atomically checks the limit and reserves one attempt.
-// This prevents concurrent requests from bypassing the limit.
 const CONSUME_SCRIPT = `
   local current = tonumber(redis.call("GET", KEYS[1]) or "0")
   local ttl = redis.call("TTL", KEYS[1])
@@ -104,6 +101,7 @@ async function command(args) {
   const { url, token } = getConfig();
 
   const controller = new AbortController();
+
   const timer = setTimeout(
     () => controller.abort(),
     TIMEOUT_MS
@@ -169,8 +167,6 @@ async function hit(key, windowSeconds) {
   return count;
 }
 
-// Returns:
-// { allowed: boolean, count: number, retryAfter: number }
 async function consume(key, windowSeconds, limit) {
   validateKey(key);
   validateWindow(windowSeconds);
@@ -192,10 +188,7 @@ async function consume(key, windowSeconds, limit) {
     String(limit)
   ]);
 
-  if (
-    !Array.isArray(result) ||
-    result.length !== 3
-  ) {
+  if (!Array.isArray(result) || result.length !== 3) {
     throw new Error("RATE_LIMIT_INVALID_RESPONSE");
   }
 
@@ -223,10 +216,7 @@ async function consume(key, windowSeconds, limit) {
 async function peek(key) {
   validateKey(key);
 
-  const result = await command([
-    "GET",
-    key
-  ]);
+  const result = await command(["GET", key]);
 
   if (result === null || result === undefined) {
     return 0;
@@ -244,15 +234,30 @@ async function peek(key) {
 async function reset(key) {
   validateKey(key);
 
-  await command([
-    "DEL",
-    key
+  await command(["DEL", key]);
+}
+
+// Atomic one-time claim using Redis SET NX.
+async function claimOnce(key, ttlSeconds) {
+  validateKey(key);
+  validateWindow(ttlSeconds);
+
+  const result = await command([
+    "SET",
+    key,
+    "1",
+    "EX",
+    String(ttlSeconds),
+    "NX"
   ]);
+
+  return result === "OK";
 }
 
 module.exports = {
   hit,
   consume,
   peek,
-  reset
+  reset,
+  claimOnce
 };
