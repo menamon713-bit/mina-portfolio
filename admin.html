@@ -1,78 +1,118 @@
-<!DOCTYPE html><html lang="ar" dir="rtl" data-theme="dark">
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-theme="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#080808">  <title>M.A.S.H CYVEX | Admin Login</title>  <meta name="description" content="M.A.S.H CYVEX Secure Administration Portal">
-  <meta name="robots" content="noindex, nofollow">  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <meta name="theme-color" content="#080808">
+
+  <title>M.A.S.H CYVEX | Admin Login</title>
+  <meta name="description" content="M.A.S.H CYVEX Secure Administration Portal">
+  <meta name="robots" content="noindex, nofollow">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">  <link rel="stylesheet" href="admin.css?v=3">  <script src="admin.js?v=3" defer></script></head><body>  <main class="login-screen" id="loginScreen"><section class="login-card">
 
-  <div class="brand">
-    <div class="brand-mark">M</div>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet"
+  >
 
-    <h1>M.A.S.H <span>CYVEX</span></h1>
+  <link rel="stylesheet" href="admin.css?v=4">
+  <script src="admin.js?v=4" defer></script>
+</head>
 
-    <p>SECURE ADMINISTRATION PORTAL</p>
-  </div>
+<body>
 
-  <div class="login-divider"></div>
+  <main class="login-screen" id="loginScreen">
 
-  <div class="login-heading">
-    <h2>تسجيل دخول الإدارة</h2>
-    <p>أدخل كلمة مرور الإدارة للوصول إلى لوحة التحكم.</p>
-  </div>
+    <section class="login-card">
 
-  <form id="loginForm" autocomplete="on">
+      <div class="brand">
+        <div class="brand-mark">M</div>
 
-    <label for="adminPassword">
-      كلمة مرور الإدارة
-    </label>
+        <h1>M.A.S.H <span>CYVEX</span></h1>
 
-    <div class="password-wrapper">
+        <p>SECURE ADMINISTRATION PORTAL</p>
+      </div>
 
-      <input
-        type="password"
-        id="adminPassword"
-        name="password"
-        placeholder="أدخل كلمة المرور"
-        autocomplete="current-password"
-        required
-        minlength="1"
-      >
+      <div class="login-divider"></div>
 
-    </div>
+      <div class="login-heading">
+        <h2>تسجيل دخول الإدارة</h2>
+        <p>أدخل كلمة المرور ورمز المصادقة الثنائية للوصول إلى لوحة التحكم.</p>
+      </div>
 
-    <div
-      id="loginError"
-      class="login-error hidden"
-      role="alert"
-      aria-live="polite"
-    ></div>
+      <form id="loginForm" autocomplete="on">
 
-    <button
-      class="primary-btn"
-      id="loginButton"
-      type="submit"
-    >
-      تسجيل الدخول
-      <span aria-hidden="true">←</span>
-    </button>
+        <label for="adminPassword">
+          كلمة مرور الإدارة
+        </label>
 
-  </form>
+        <div class="password-wrapper">
+          <input
+            type="password"
+            id="adminPassword"
+            name="password"
+            placeholder="أدخل كلمة المرور"
+            autocomplete="current-password"
+            required
+            minlength="1"
+            maxlength="512"
+          >
+        </div>
 
-  <div class="login-footer">
-    <span class="security-dot"></span>
-    <span>SECURE CONNECTION</span>
-  </div>
+        <label for="totpCode" style="margin-top: 17px;">
+          رمز المصادقة الثنائية
+        </label>
 
-  <p class="copyright">
-    © <span id="currentYear"></span> M.A.S.H CYVEX
-  </p>
+        <input
+          type="text"
+          id="totpCode"
+          name="totpCode"
+          placeholder="000000"
+          inputmode="numeric"
+          autocomplete="one-time-code"
+          pattern="[0-9]{6}"
+          minlength="6"
+          maxlength="6"
+          dir="ltr"
+          required
+        >
 
-</section>
+        <p style="margin-top: 7px; color: #929baa; font-size: 11px; line-height: 1.8;">
+          افتح تطبيق المصادقة وأدخل الرمز المكوّن من 6 أرقام.
+        </p>
 
-  </main> 
- 
-  </body>
-  
+        <div
+          id="loginError"
+          class="login-error hidden"
+          role="alert"
+          aria-live="polite"
+        ></div>
+
+        <button
+          class="primary-btn"
+          id="loginButton"
+          type="submit"
+        >
+          تسجيل الدخول
+          <span aria-hidden="true">←</span>
+        </button>
+
+      </form>
+
+      <div class="login-footer">
+        <span class="security-dot"></span>
+        <span>SECURE CONNECTION · MFA ENABLED</span>
+      </div>
+
+      <p class="copyright">
+        © <span id="currentYear"></span> M.A.S.H CYVEX
+      </p>
+
+    </section>
+
+  </main>
+
+</body>
 </html>
