@@ -540,7 +540,15 @@
       }
 
       const result = await response.json();
+if (result && result.maintenanceMode === true) {
+  window.__MASH_MAINTENANCE__ = true;
+  window.showMashMaintenance?.();
+  return;
+}
 
+if (window.__MASH_MAINTENANCE__ === true) {
+  return;
+} 
       if (
         !result ||
         result.success !== true ||
