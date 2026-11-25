@@ -28,6 +28,8 @@ function getDatabaseUrl() {
 }
 
 async function isMaintenanceEnabled(sql) {
+  // This setting is administrative, so it is read through
+  // the short-lived, HMAC-authorized database transaction.
   const rows = await adminQuery(
     sql,
     sql`
@@ -42,6 +44,8 @@ async function isMaintenanceEnabled(sql) {
 }
 
 async function getSiteData(sql) {
+  // Public data is deliberately queried WITHOUT adminQuery.
+  // PostgreSQL RLS must decide which rows are publicly readable.
   const [
     profile,
     skills,
@@ -50,109 +54,91 @@ async function getSiteData(sql) {
     pages,
     seo
   ] = await Promise.all([
-    adminQuery(
-      sql,
-      sql`
-        SELECT
-          full_name,
-          job_title,
-          short_bio,
-          about,
-          location,
-          profile_image
-        FROM public.site_profile
-        ORDER BY id ASC
-        LIMIT 1
-      `
-    ),
+    sql`
+      SELECT
+        full_name,
+        job_title,
+        short_bio,
+        about,
+        location,
+        profile_image
+      FROM public.site_profile
+      ORDER BY id ASC
+      LIMIT 1
+    `,
 
-    adminQuery(
-      sql,
-      sql`
-        SELECT
-          id,
-          name_ar,
-          name_en,
-          icon,
-          progress,
-          category,
-          sort_order
-        FROM public.site_skills
-        WHERE is_visible = TRUE
-        ORDER BY sort_order ASC, id ASC
-      `
-    ),
+    sql`
+      SELECT
+        id,
+        name_ar,
+        name_en,
+        icon,
+        progress,
+        category,
+        sort_order
+      FROM public.site_skills
+      WHERE is_visible = TRUE
+      ORDER BY sort_order ASC, id ASC
+    `,
 
-    adminQuery(
-      sql,
-      sql`
-        SELECT
-          id,
-          platform,
-          label_ar,
-          label_en,
-          value,
-          url,
-          icon,
-          sort_order
-        FROM public.site_social_links
-        WHERE is_visible = TRUE
-        ORDER BY sort_order ASC, id ASC
-      `
-    ),
+    sql`
+      SELECT
+        id,
+        platform,
+        label_ar,
+        label_en,
+        value,
+        url,
+        icon,
+        sort_order
+      FROM public.site_social_links
+      WHERE is_visible = TRUE
+      ORDER BY sort_order ASC, id ASC
+    `,
 
-    adminQuery(
-      sql,
-      sql`
-        SELECT
-          content_key,
-          section,
-          title_ar,
-          title_en,
-          content_ar,
-          content_en,
-          sort_order
-        FROM public.site_content
-        WHERE is_visible = TRUE
-        ORDER BY sort_order ASC, id ASC
-      `
-    ),
+    sql`
+      SELECT
+        content_key,
+        section,
+        title_ar,
+        title_en,
+        content_ar,
+        content_en,
+        sort_order
+      FROM public.site_content
+      WHERE is_visible = TRUE
+      ORDER BY sort_order ASC, id ASC
+    `,
 
-    adminQuery(
-      sql,
-      sql`
-        SELECT
-          slug,
-          title_ar,
-          title_en,
-          content_ar,
-          content_en
-        FROM public.site_pages
-        WHERE is_published = TRUE
-        ORDER BY slug ASC
-      `
-    ),
+    sql`
+      SELECT
+        slug,
+        title_ar,
+        title_en,
+        content_ar,
+        content_en
+      FROM public.site_pages
+      WHERE is_published = TRUE
+      ORDER BY slug ASC
+    `,
 
-    adminQuery(
-      sql,
-      sql`
-        SELECT
-          seo.page_slug,
-          seo.title_ar,
-          seo.title_en,
-          seo.description_ar,
-          seo.description_en,
-          seo.keywords_ar,
-          seo.keywords_en,
-          seo.og_image,
-          seo.canonical_url
-        FROM public.site_seo AS seo
-        INNER JOIN public.site_pages AS pages
-          ON pages.slug = seo.page_slug
-        WHERE pages.is_published = TRUE
-        ORDER BY seo.page_slug ASC
-      `
-    )
+    sql`
+      SELECT
+        seo.page_slug,
+        seo.title_ar,
+        seo.title_en,
+        seo.description_ar,
+        seo.description_en,
+        seo.keywords_ar,
+        seo.keywords_en,
+        seo.og_image,
+        seo.canonical_url
+      FROM public.site_seo AS seo
+      INNER JOIN public.site_pages AS pages
+        ON pages.slug = seo.page_slug
+      WHERE pages.is_published = TRUE
+      ORDER BY seo.page_slug ASC
+    `
   ]);
 
   return {
@@ -166,30 +152,28 @@ async function getSiteData(sql) {
 }
 
 async function getProjects(sql) {
-  return adminQuery(
-    sql,
-    sql`
-      SELECT
-        id,
-        title_ar,
-        title_en,
-        description_ar,
-        description_en,
-        category_ar,
-        category_en,
-        image_url,
-        live_url,
-        github_url,
-        details_type,
-        details_ar,
-        details_en,
-        visual_style,
-        sort_order
-      FROM public.site_projects
-      WHERE is_visible = TRUE
-      ORDER BY sort_order ASC, id ASC
-    `
-  );
+  // No administrative token is used for public project reads.
+  return sql`
+    SELECT
+      id,
+      title_ar,
+      title_en,
+      description_ar,
+      description_en,
+      category_ar,
+      category_en,
+      image_url,
+      live_url,
+      github_url,
+      details_type,
+      details_ar,
+      details_en,
+      visual_style,
+      sort_order
+    FROM public.site_projects
+    WHERE is_visible = TRUE
+    ORDER BY sort_order ASC, id ASC
+  `;
 }
 
 function handleWhatsApp(req, res) {
@@ -312,11 +296,15 @@ module.exports = async function handler(req, res) {
         count: projects.length
       });
     } catch (error) {
+      // Do not return database details to public clients.
       console.error(
         resource === "site-data"
-          ? "Public site data error:"
-          : "Public projects error:",
-        error
+          ? "Public site data query failed."
+          : "Public projects query failed.",
+        {
+          name: error?.name || "UnknownError",
+          code: error?.code || "NO_CODE"
+        }
       );
 
       return sendError(
