@@ -281,7 +281,9 @@ module.exports = async function handler(req, res) {
 
       const data = await getSiteData(sql);
 
-      res.setHeader("Cache-Control", "no-store");
+      // Cache only public website content.
+      // Never cache admin responses or maintenance state.
+      res.setHeader("Cache-Control", CACHE_PUBLIC);
 
       return res.status(200).json({
         success: true,
