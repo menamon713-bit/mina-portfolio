@@ -11,6 +11,7 @@ const {
 
 const { getClientKey } = require("../_lib/client-ip");
 const { consume, reset } = require("../_lib/rate-limit");
+const { verifyAndConsumeTotp } = require("../_lib/totp");
 
 const scrypt = promisify(crypto.scrypt);
 
@@ -129,12 +130,15 @@ module.exports = async function handler(req, res) {
     typeof body !== "object" ||
     Array.isArray(body) ||
     Object.getPrototypeOf(body) !== Object.prototype ||
-    Object.keys(body).length !== 1 ||
+    Object.keys(body).length !== 2 ||
     !Object.prototype.hasOwnProperty.call(body, "password") ||
+    !Object.prototype.hasOwnProperty.call(body, "totpCode") ||
     typeof body.password !== "string" ||
     body.password.length === 0 ||
     body.password.length > MAX_PASSWORD_LENGTH ||
-    Buffer.byteLength(body.password, "utf8") > 2048
+    Buffer.byteLength(body.password, "utf8") > 2048 ||
+    typeof body.totpCode !== "string" ||
+    !/^\d{6}$/.test(body.totpCode)
   ) {
     return send(res, 400, { error: "Invalid request." });
   }
@@ -145,6 +149,7 @@ module.exports = async function handler(req, res) {
     passwordConfig = getPasswordConfig();
   } catch {
     console.error("[admin-login] Authentication configuration error.");
+
     return send(res, 503, {
       error: "Admin authentication is not configured."
     });
@@ -168,10 +173,7 @@ module.exports = async function handler(req, res) {
     );
 
     if (!result.allowed) {
-      res.setHeader(
-        "Retry-After",
-        String(result.retryAfter)
-      );
+      res.setHeader("Retry-After", String(result.retryAfter));
 
       return send(res, 429, {
         error: "Too many login attempts. Try again later."
@@ -185,10 +187,13 @@ module.exports = async function handler(req, res) {
     });
   }
 
-  let valid;
+  let validPassword;
 
   try {
-    valid = await verifyPassword(body.password, passwordConfig);
+    validPassword = await verifyPassword(
+      body.password,
+      passwordConfig
+    );
   } catch {
     console.error("[admin-login] Password verification failed.");
 
@@ -197,9 +202,27 @@ module.exports = async function handler(req, res) {
     });
   }
 
-  if (!valid) {
+  if (!validPassword) {
     return send(res, 401, {
-      error: "Incorrect password."
+      error: "Invalid password or authentication code."
+    });
+  }
+
+  let validTotp;
+
+  try {
+    validTotp = await verifyAndConsumeTotp(body.totpCode);
+  } catch {
+    console.error("[admin-login] MFA verification service unavailable.");
+
+    return send(res, 503, {
+      error: "MFA service is not configured or temporarily unavailable."
+    });
+  }
+
+  if (!validTotp) {
+    return send(res, 401, {
+      error: "Invalid password or authentication code."
     });
   }
 
