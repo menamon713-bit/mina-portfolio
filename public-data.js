@@ -5,6 +5,127 @@
 
   let websiteData = null;
 
+  function showMaintenancePage() {
+    window.__MASH_MAINTENANCE__ = true;
+
+    document.getElementById("mainContent")?.setAttribute("hidden", "");
+    document.getElementById("publicPageView")?.setAttribute("hidden", "");
+
+    let screen = document.getElementById("maintenanceView");
+
+    if (!screen) {
+      screen = document.createElement("main");
+      screen.id = "maintenanceView";
+      document.body.appendChild(screen);
+    }
+
+    const style = document.createElement("style");
+    style.id = "maintenanceStyles";
+
+    if (!document.getElementById("maintenanceStyles")) {
+      style.textContent = `
+        #maintenanceView {
+          position: fixed;
+          inset: 0;
+          z-index: 999999;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 24px;
+          background: #050505;
+          color: #fff;
+          text-align: center;
+          font-family: Arial, sans-serif;
+          direction: rtl;
+        }
+
+        #maintenanceView .maintenance-card {
+          width: 100%;
+          max-width: 650px;
+          padding: 45px 25px;
+          border: 1px solid rgba(255, 0, 60, .55);
+          border-radius: 18px;
+          background: linear-gradient(145deg, #101010, #080808);
+          box-shadow: 0 0 20px rgba(255, 0, 60, .18),
+                      inset 0 0 20px rgba(255, 0, 60, .04);
+        }
+
+        #maintenanceView .maintenance-brand {
+          color: #ff1744;
+          font-size: 17px;
+          font-weight: 800;
+          letter-spacing: 4px;
+          margin-bottom: 35px;
+          text-shadow: 0 0 12px #ff1744;
+        }
+
+        #maintenanceView .maintenance-icon {
+          font-size: 55px;
+          color: #ff1744;
+          margin-bottom: 22px;
+          text-shadow: 0 0 20px rgba(255, 23, 68, .8);
+        }
+
+        #maintenanceView h1 {
+          color: #ff1744;
+          font-size: clamp(25px, 5vw, 38px);
+          margin: 0 0 20px;
+          text-shadow: 0 0 14px rgba(255, 23, 68, .45);
+        }
+
+        #maintenanceView p {
+          color: #ccc;
+          font-size: 16px;
+          line-height: 2;
+          margin: 0;
+        }
+
+        #maintenanceView .maintenance-line {
+          width: 90px;
+          height: 3px;
+          margin: 30px auto 0;
+          border-radius: 5px;
+          background: #ff1744;
+          box-shadow: 0 0 15px #ff1744;
+        }
+      `;
+
+      document.head.appendChild(style);
+    }
+
+    screen.hidden = false;
+    screen.dir = "rtl";
+    screen.replaceChildren();
+
+    const card = document.createElement("section");
+    card.className = "maintenance-card";
+
+    const brand = document.createElement("div");
+    brand.className = "maintenance-brand";
+    brand.textContent = "M.A.S.H CYVEX";
+
+    const icon = document.createElement("div");
+    icon.className = "maintenance-icon";
+    icon.textContent = "⚙";
+
+    const heading = document.createElement("h1");
+    heading.textContent = "الموقع تحت الصيانة";
+
+    const message = document.createElement("p");
+    message.textContent =
+      "الموقع تحت الصيانة حالياً، الرجاء المحاولة مرة أخرى بعد تنفيذ الصيانة.";
+
+    const line = document.createElement("div");
+    line.className = "maintenance-line";
+
+    card.append(brand, icon, heading, message, line);
+    screen.appendChild(card);
+
+    document.title = "الموقع تحت الصيانة | M.A.S.H CYVEX";
+  }
+
+  window.showMashMaintenance = showMaintenancePage;
+  
   const SOCIAL_PLATFORMS = {
     github: {
       label: "GitHub",
@@ -307,7 +428,7 @@
     renderSocialLinks(websiteData.socialLinks);
   }
 
-  async function loadWebsiteData() {
+    async function loadWebsiteData() {
     try {
       const response = await fetch(
         "/api/health?resource=site-data",
@@ -316,10 +437,44 @@
           headers: {
             Accept: "application/json"
           },
-          credentials: "same-origin"
+          credentials: "same-origin",
+          cache: "no-store"
         }
       );
 
+      if (!response.ok) {
+        throw new Error(
+          `Website data request failed: ${response.status}`
+        );
+      }
+
+      const result = await response.json();
+
+      if (!result || result.success !== true) {
+        throw new Error("Invalid website data response.");
+      }
+
+      if (result.maintenanceMode === true) {
+        showMaintenancePage();
+        return;
+      }
+
+      if (!result.data || typeof result.data !== "object") {
+        throw new Error("Invalid website data response.");
+      }
+
+      window.__MASH_MAINTENANCE__ = false;
+
+      document.getElementById("maintenanceView")?.remove();
+
+      websiteData = result.data;
+      applyWebsiteData();
+
+    } catch (error) {
+      console.error("Website data loading error:", error);
+    }
+  }
+  
       if (!response.ok) {
         throw new Error(
           `Website data request failed: ${response.status}`
