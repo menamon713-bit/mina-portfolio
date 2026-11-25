@@ -9,6 +9,8 @@ const {
 
 const { adminQuery } = require("../_lib/admin-db");
 
+const MAX_BODY_BYTES = 64 * 1024;
+
 const STRING_FIELDS = {
   title_ar: 200,
   title_en: 200,
@@ -44,16 +46,27 @@ function sendError(res, status, message) {
 }
 
 function isPlainObject(value) {
+  if (
+    value === null ||
+    typeof value !== "object" ||
+    Array.isArray(value)
+  ) {
+    return false;
+  }
+
+  const prototype = Object.getPrototypeOf(value);
+
   return (
-    value !== null &&
-    typeof value === "object" &&
-    !Array.isArray(value) &&
-    Object.getPrototypeOf(value) === Object.prototype
+    prototype === Object.prototype ||
+    prototype === null
   );
 }
 
 function validId(value) {
-  if (typeof value !== "string" && typeof value !== "number") {
+  if (
+    typeof value !== "string" &&
+    typeof value !== "number"
+  ) {
     return false;
   }
 
@@ -68,11 +81,14 @@ function validId(value) {
 function validHttpsUrl(value) {
   if (value === "") return true;
 
+  if (typeof value !== "string") return false;
+
   try {
     const url = new URL(value);
 
     return (
       url.protocol === "https:" &&
+      url.hostname.length > 0 &&
       !url.username &&
       !url.password
     );
@@ -83,6 +99,8 @@ function validHttpsUrl(value) {
 
 function validImageUrl(value) {
   if (value === "") return true;
+
+  if (typeof value !== "string") return false;
 
   if (
     value.startsWith("/") &&
@@ -112,7 +130,10 @@ function isSafeJsonObject(value) {
 }
 
 function validateBody(body, options = {}) {
-  const { partial = false, allowId = false } = options;
+  const {
+    partial = false,
+    allowId = false
+  } = options;
 
   if (!isPlainObject(body)) {
     return "Invalid request body.";
@@ -124,14 +145,14 @@ function validateBody(body, options = {}) {
 
   for (const field of Object.keys(body)) {
     if (!allowed.includes(field)) {
-      return `Unknown field: ${field}`;
+      return "Unknown field.";
     }
   }
 
   if (!partial) {
     for (const field of CREATE_REQUIRED) {
       if (!Object.hasOwn(body, field)) {
-        return `Missing field: ${field}`;
+        return "Missing required field.";
       }
     }
   }
@@ -203,6 +224,80 @@ function validateBody(body, options = {}) {
   return null;
 }
 
+function validateContentType(req) {
+  const contentType = req.headers?.["content-type"];
+
+  if (typeof contentType !== "string") {
+    return false;
+  }
+
+  return /^application\/json(?:\s*;\s*charset=utf-8)?$/i.test(
+    contentType.trim()
+  );
+}
+
+function validateContentLength(req) {
+  const raw = req.headers?.["content-length"];
+
+  if (raw === undefined) {
+    return true;
+  }
+
+  if (
+    typeof raw !== "string" ||
+    !/^\d+$/.test(raw)
+  ) {
+    return false;
+  }
+
+  const length = Number(raw);
+
+  return (
+    Number.isSafeInteger(length) &&
+    length >= 0 &&
+    length <= MAX_BODY_BYTES
+  );
+}
+
+function validateSerializedBody(body) {
+  try {
+    const serialized = JSON.stringify(body);
+
+    return (
+      typeof serialized === "string" &&
+      Buffer.byteLength(serialized, "utf8") <= MAX_BODY_BYTES
+    );
+  } catch {
+    return false;
+  }
+}
+
+function parseWriteBody(req, res) {
+  if (!validateContentType(req)) {
+    sendError(res, 415, "Content-Type must be application/json.");
+    return null;
+  }
+
+  if (!validateContentLength(req)) {
+    sendError(res, 413, "Request body is too large.");
+    return null;
+  }
+
+  const body = req.body;
+
+  if (!isPlainObject(body)) {
+    sendError(res, 400, "Invalid request body.");
+    return null;
+  }
+
+  if (!validateSerializedBody(body)) {
+    sendError(res, 413, "Request body is too large.");
+    return null;
+  }
+
+  return body;
+}
+
 module.exports = async function handler(req, res) {
   res.setHeader("Cache-Control", "no-store");
   res.setHeader("X-Content-Type-Options", "nosniff");
@@ -216,7 +311,10 @@ module.exports = async function handler(req, res) {
 
   if (!(await requireAdmin(req, res))) return;
 
-  if (req.method !== "GET" && !checkSameOrigin(req)) {
+  if (
+    req.method !== "GET" &&
+    !checkSameOrigin(req)
+  ) {
     return sendError(res, 403, "Invalid request origin.");
   }
 
@@ -227,6 +325,14 @@ module.exports = async function handler(req, res) {
     !databaseUrl.trim()
   ) {
     return sendError(res, 503, "Database is unavailable.");
+  }
+
+  let body = null;
+
+  if (req.method !== "GET") {
+    body = parseWriteBody(req, res);
+
+    if (body === null) return;
   }
 
   try {
@@ -264,7 +370,6 @@ module.exports = async function handler(req, res) {
     }
 
     if (req.method === "POST") {
-      const body = req.body;
       const error = validateBody(body);
 
       if (error) return sendError(res, 400, error);
@@ -316,9 +421,7 @@ module.exports = async function handler(req, res) {
     }
 
     if (req.method === "PATCH") {
-      const body = req.body;
-
-      if (!isPlainObject(body) || !validId(body.id)) {
+      if (!validId(body.id)) {
         return sendError(res, 400, "Invalid project ID.");
       }
 
@@ -373,10 +476,7 @@ module.exports = async function handler(req, res) {
     }
 
     if (req.method === "DELETE") {
-      const body = req.body;
-
       if (
-        !isPlainObject(body) ||
         !validId(body.id) ||
         Object.keys(body).length !== 1
       ) {
