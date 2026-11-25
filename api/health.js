@@ -1,5 +1,7 @@
 "use strict";
 
+const { adminQuery } = require("./_lib/admin-db");
+
 const ALLOWED_WHATSAPP_APPS = Object.freeze({
   business: "com.whatsapp.w4b",
   messenger: "com.whatsapp"
@@ -30,6 +32,20 @@ function getDatabaseUrl() {
 function getSqlClient(databaseUrl) {
   const { neon } = require("@neondatabase/serverless");
   return neon(databaseUrl);
+}
+
+async function isMaintenanceEnabled(sql) {
+  const rows = await adminQuery(
+    sql,
+    sql`
+      SELECT setting_value
+      FROM public.site_settings
+      WHERE setting_key = 'maintenance_mode'
+      LIMIT 1
+    `
+  );
+
+  return rows[0]?.setting_value === true;
 }
 
 async function getSiteData(sql) {
@@ -238,7 +254,7 @@ module.exports = async function handler(req, res) {
     );
   }
 
-  // Public website data
+  // Public website data and maintenance status
   if (resource === "site-data") {
     const databaseUrl = getDatabaseUrl();
 
@@ -252,12 +268,24 @@ module.exports = async function handler(req, res) {
 
     try {
       const sql = getSqlClient(databaseUrl);
+      const maintenanceMode = await isMaintenanceEnabled(sql);
+
+      if (maintenanceMode) {
+        res.setHeader("Cache-Control", "no-store");
+
+        return res.status(200).json({
+          success: true,
+          maintenanceMode: true
+        });
+      }
+
       const data = await getSiteData(sql);
 
-      res.setHeader("Cache-Control", CACHE_PUBLIC);
+      res.setHeader("Cache-Control", "no-store");
 
       return res.status(200).json({
         success: true,
+        maintenanceMode: false,
         data
       });
     } catch (error) {
