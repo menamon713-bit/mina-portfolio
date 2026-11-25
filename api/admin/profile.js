@@ -8,6 +8,7 @@ const {
 } = require("../_lib/admin-auth");
 
 const { adminQuery } = require("../_lib/admin-db");
+const { guardAdminWrite } = require("../_lib/audit-log");
 
 const FIELDS = Object.freeze({
   full_name: 120,
@@ -25,12 +26,11 @@ function sendError(res, status, message) {
 }
 
 function isPlainObject(value) {
-  if (value === null || typeof value !== "object" || Array.isArray(value)) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
     return false;
   }
 
   const prototype = Object.getPrototypeOf(value);
-
   return prototype === Object.prototype || prototype === null;
 }
 
@@ -61,16 +61,14 @@ function validImageUrl(value) {
 }
 
 function validateProfile(body) {
-  if (!isPlainObject(body)) {
-    return "Invalid request body.";
-  }
+  if (!isPlainObject(body)) return "Invalid request body.";
 
   const fields = Object.keys(FIELDS);
   const received = Object.keys(body);
 
   if (
     received.length !== fields.length ||
-    received.some((field) => !Object.hasOwn(FIELDS, field))
+    received.some(field => !Object.hasOwn(FIELDS, field))
   ) {
     return "Invalid request fields.";
   }
@@ -107,38 +105,23 @@ module.exports = async function handler(req, res) {
     return sendError(res, 405, "Method not allowed.");
   }
 
-  if (!(await requireAdmin(req, res))) {
-    return;
-  }
+  if (!(await requireAdmin(req, res))) return;
 
   if (req.method === "POST") {
     if (!checkSameOrigin(req)) {
       return sendError(res, 403, "Invalid request origin.");
     }
 
-    if (
-      !req.headers["content-type"] ||
-      !/^application\/json(?:\s*;|$)/i.test(req.headers["content-type"])
-    ) {
-      return sendError(res, 415, "Content-Type must be application/json.");
-    }
-
-    if (
-      Buffer.byteLength(
-        JSON.stringify(req.body ?? null),
-        "utf8"
-      ) > MAX_BODY_BYTES
-    ) {
-      return sendError(res, 413, "Request body is too large.");
-    }
+    if (!(await guardAdminWrite(req, res, {
+      namespace: "profile",
+      maxBodyBytes: MAX_BODY_BYTES,
+      limit: 15
+    }))) return;
   }
 
   const databaseUrl = process.env.DATABASE_URL;
 
-  if (
-    typeof databaseUrl !== "string" ||
-    !databaseUrl.trim()
-  ) {
+  if (typeof databaseUrl !== "string" || !databaseUrl.trim()) {
     return sendError(res, 503, "Database is unavailable.");
   }
 
@@ -146,7 +129,7 @@ module.exports = async function handler(req, res) {
     const sql = neon(databaseUrl);
 
     if (req.method === "GET") {
-      const query = sql`
+      const rows = await adminQuery(sql, sql`
         SELECT
           full_name,
           job_title,
@@ -158,11 +141,9 @@ module.exports = async function handler(req, res) {
         FROM site_profile
         ORDER BY id ASC
         LIMIT 1
-      `;
+      `);
 
-      const rows = await adminQuery(sql, query);
-
-      if (rows.length === 0) {
+      if (!rows.length) {
         return sendError(res, 404, "Profile not found.");
       }
 
@@ -178,13 +159,13 @@ module.exports = async function handler(req, res) {
     }
 
     const values = Object.fromEntries(
-      Object.keys(FIELDS).map((field) => [
+      Object.keys(FIELDS).map(field => [
         field,
         req.body[field].trim()
       ])
     );
 
-    const query = sql`
+    const rows = await adminQuery(sql, sql`
       UPDATE site_profile
       SET
         full_name = ${values.full_name},
@@ -208,11 +189,9 @@ module.exports = async function handler(req, res) {
         location,
         profile_image AS image,
         updated_at
-    `;
+    `);
 
-    const rows = await adminQuery(sql, query);
-
-    if (rows.length === 0) {
+    if (!rows.length) {
       return sendError(res, 404, "Profile not found.");
     }
 
@@ -220,13 +199,11 @@ module.exports = async function handler(req, res) {
       message: "Profile updated successfully.",
       profile: rows[0]
     });
-  } catch {
-    console.error("[admin-profile] Database operation failed.");
+  } catch (error) {
+    console.error("[admin-profile] Database operation failed.", {
+      code: error?.code || "NO_CODE"
+    });
 
-    return sendError(
-      res,
-      500,
-      "An internal server error occurred."
-    );
+    return sendError(res, 500, "An internal server error occurred.");
   }
 };
