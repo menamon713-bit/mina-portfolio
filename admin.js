@@ -5,6 +5,7 @@
 
   const loginForm = $("#loginForm");
   const adminPassword = $("#adminPassword");
+  const totpCode = $("#totpCode");
   const loginButton = $("#loginButton");
   const loginError = $("#loginError");
 
@@ -93,8 +94,7 @@
           loginButton.textContent;
       }
 
-      loginButton.textContent =
-        "جاري تسجيل الدخول...";
+      loginButton.textContent = "جاري التحقق...";
     } else {
       loginButton.textContent =
         loginButton.dataset.originalText ||
@@ -120,7 +120,7 @@
     }
   }
 
-  async function login(password) {
+  async function login(password, code) {
     if (isSubmitting) return;
 
     isSubmitting = true;
@@ -131,12 +131,14 @@
     try {
       await apiRequest(API.login, {
         method: "POST",
-        body: JSON.stringify({ password })
+        body: JSON.stringify({
+          password,
+          totpCode: code
+        })
       });
 
-      if (adminPassword) {
-        adminPassword.value = "";
-      }
+      if (adminPassword) adminPassword.value = "";
+      if (totpCode) totpCode.value = "";
 
       redirectToDashboard();
 
@@ -149,6 +151,8 @@
 
       setLoading(false);
       isSubmitting = false;
+
+      totpCode?.focus();
     }
   }
 
@@ -156,20 +160,28 @@
     event.preventDefault();
 
     const password = adminPassword?.value || "";
+    const code = totpCode?.value || "";
 
     if (!password.trim()) {
-      showError("من فضلك أدخل كلمة المرور");
+      showError("من فضلك أدخل كلمة المرور.");
       adminPassword?.focus();
       return;
     }
 
-    login(password);
+    if (!/^\d{6}$/.test(code)) {
+      showError("أدخل رمز المصادقة المكوّن من 6 أرقام.");
+      totpCode?.focus();
+      return;
+    }
+
+    login(password, code);
   });
 
-  adminPassword?.addEventListener(
-    "input",
-    hideError
-  );
+  adminPassword?.addEventListener("input", hideError);
+  totpCode?.addEventListener("input", () => {
+    totpCode.value = totpCode.value.replace(/\D/g, "").slice(0, 6);
+    hideError();
+  });
 
   checkSession();
 
