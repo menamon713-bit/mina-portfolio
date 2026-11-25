@@ -3,6 +3,7 @@
 const net = require("net");
 
 const MAX_IP_LENGTH = 64;
+const MAX_HEADER_LENGTH = 1024;
 
 function normalizeIPv4(ip) {
   if (net.isIP(ip) !== 4) return null;
@@ -14,7 +15,9 @@ function normalizeIPv4(ip) {
 }
 
 function expandIPv6(input) {
-  let address = input.split("%")[0].toLowerCase();
+  let address = input.toLowerCase();
+
+  if (address.includes("%")) return null;
 
   if (address.includes(".")) {
     const index = address.lastIndexOf(":");
@@ -60,7 +63,7 @@ function expandIPv6(input) {
   }
 
   return groups.map((group) =>
-    group.padStart(4, "0").toLowerCase()
+    group.padStart(4, "0")
   );
 }
 
@@ -103,27 +106,38 @@ function normalizeIP(ip) {
 }
 
 function getClientKey(req) {
-  const headerName = (
-    process.env.CLIENT_IP_HEADER || "x-forwarded-for"
-  ).toLowerCase();
-
   const headers = req?.headers;
-  if (!headers || typeof headers !== "object") return null;
 
-  const value = headers[headerName];
+  if (!headers || typeof headers !== "object") {
+    return null;
+  }
 
-  // Reject missing, array, or malformed header values.
+  const value = headers["x-forwarded-for"];
+
   if (
     typeof value !== "string" ||
-    value.length > MAX_IP_LENGTH ||
-    /[\r\n,]/.test(value)
+    value.length > MAX_HEADER_LENGTH ||
+    /[\r\n]/.test(value)
   ) {
     return null;
   }
 
-  const normalized = normalizeIP(value);
+  // Reject proxy chains instead of trusting an arbitrary first entry.
+  if (value.includes(",")) {
+    return null;
+  }
 
-  if (!normalized) return null;
+  const ip = value.trim();
+
+  if (!ip || ip.length > MAX_IP_LENGTH) {
+    return null;
+  }
+
+  const normalized = normalizeIP(ip);
+
+  if (!normalized) {
+    return null;
+  }
 
   return `ip:${normalized}`;
 }
