@@ -3,11 +3,15 @@
 const { adminQuery } = require("./admin-db");
 
 const ALLOWED_ACTIONS = new Set([
-  "settings.updated"
+  "settings.updated",
+  "project.created",
+  "project.updated",
+  "project.deleted"
 ]);
 
 const ALLOWED_ENTITIES = new Set([
-  "site_settings"
+  "site_settings",
+  "site_projects"
 ]);
 
 async function writeAuditLog(sql, {
@@ -20,7 +24,14 @@ async function writeAuditLog(sql, {
     !ALLOWED_ACTIONS.has(action) ||
     !ALLOWED_ENTITIES.has(entityType) ||
     typeof description !== "string" ||
-    description.length > 300
+    description.length > 300 ||
+    (
+      entityId !== null &&
+      (
+        !Number.isSafeInteger(Number(entityId)) ||
+        Number(entityId) < 1
+      )
+    )
   ) {
     throw new Error("INVALID_AUDIT_LOG");
   }
