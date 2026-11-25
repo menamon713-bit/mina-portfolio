@@ -8,6 +8,7 @@ const {
 } = require("../_lib/admin-auth");
 
 const { adminQuery } = require("../_lib/admin-db");
+const { guardAdminWrite } = require("../_lib/audit-log");
 
 const MAX_BODY_BYTES = 12 * 1024;
 
@@ -31,22 +32,16 @@ function sendError(res, status, message) {
 }
 
 function isPlainObject(value) {
-  return (
-    value !== null &&
-    typeof value === "object" &&
-    !Array.isArray(value) &&
-    (
-      Object.getPrototypeOf(value) === Object.prototype ||
-      Object.getPrototypeOf(value) === null
-    )
-  );
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return false;
+  }
+
+  const prototype = Object.getPrototypeOf(value);
+  return prototype === Object.prototype || prototype === null;
 }
 
 function validId(value) {
-  if (
-    typeof value !== "string" &&
-    typeof value !== "number"
-  ) {
+  if (typeof value !== "string" && typeof value !== "number") {
     return false;
   }
 
@@ -76,33 +71,26 @@ function validUrl(value) {
 }
 
 function validateBody(body, options = {}) {
-  const {
-    partial = false,
-    allowId = false
-  } = options;
+  const { partial = false, allowId = false } = options;
 
-  if (!isPlainObject(body)) {
-    return "Invalid request body.";
-  }
+  if (!isPlainObject(body)) return "Invalid request body.";
 
-  const allowedFields = allowId
+  const allowed = allowId
     ? ["id", ...PATCH_FIELDS]
     : PATCH_FIELDS;
 
   for (const field of Object.keys(body)) {
-    if (!allowedFields.includes(field)) {
+    if (!allowed.includes(field)) {
       return `Unknown field: ${field}`;
     }
   }
 
   for (const [field, maxLength] of Object.entries(FIELDS)) {
     if (!Object.hasOwn(body, field)) {
-      if (!partial && [
-        "platform",
-        "label_ar",
-        "label_en",
-        "url"
-      ].includes(field)) {
+      if (
+        !partial &&
+        ["platform", "label_ar", "label_en", "url"].includes(field)
+      ) {
         return `Missing field: ${field}`;
       }
 
@@ -161,40 +149,8 @@ function validateBody(body, options = {}) {
   return null;
 }
 
-function validateRequest(req, res) {
-  if (
-    !req.headers["content-type"] ||
-    !/^application\/json(?:\s*;|$)/i.test(
-      req.headers["content-type"]
-    )
-  ) {
-    sendError(
-      res,
-      415,
-      "Content-Type must be application/json."
-    );
-
-    return false;
-  }
-
-  let bodySize;
-
-  try {
-    bodySize = Buffer.byteLength(
-      JSON.stringify(req.body ?? null),
-      "utf8"
-    );
-  } catch {
-    sendError(res, 400, "Invalid request body.");
-    return false;
-  }
-
-  if (bodySize > MAX_BODY_BYTES) {
-    sendError(res, 413, "Request body is too large.");
-    return false;
-  }
-
-  return true;
+function clean(value) {
+  return typeof value === "string" ? value.trim() : "";
 }
 
 module.exports = async function handler(req, res) {
@@ -208,26 +164,22 @@ module.exports = async function handler(req, res) {
     return sendError(res, 405, "Method not allowed.");
   }
 
-  if (!(await requireAdmin(req, res))) {
-    return;
-  }
+  if (!(await requireAdmin(req, res))) return;
 
   if (req.method !== "GET") {
     if (!checkSameOrigin(req)) {
       return sendError(res, 403, "Invalid request origin.");
     }
 
-    if (!validateRequest(req, res)) {
-      return;
-    }
+    if (!(await guardAdminWrite(req, res, {
+      namespace: "social",
+      maxBodyBytes: MAX_BODY_BYTES
+    }))) return;
   }
 
   const databaseUrl = process.env.DATABASE_URL;
 
-  if (
-    typeof databaseUrl !== "string" ||
-    !databaseUrl.trim()
-  ) {
+  if (typeof databaseUrl !== "string" || !databaseUrl.trim()) {
     return sendError(res, 503, "Database is unavailable.");
   }
 
@@ -235,7 +187,7 @@ module.exports = async function handler(req, res) {
     const sql = neon(databaseUrl);
 
     if (req.method === "GET") {
-      const query = sql`
+      const rows = await adminQuery(sql, sql`
         SELECT
           id,
           platform,
@@ -248,9 +200,7 @@ module.exports = async function handler(req, res) {
           sort_order
         FROM site_social_links
         ORDER BY sort_order ASC, id ASC
-      `;
-
-      const rows = await adminQuery(sql, query);
+      `);
 
       return res.status(200).json({
         socialLinks: rows,
@@ -258,16 +208,14 @@ module.exports = async function handler(req, res) {
       });
     }
 
-    if (req.method === "POST") {
-      const body = req.body;
+    const body = req.body;
 
+    if (req.method === "POST") {
       const error = validateBody(body);
 
-      if (error) {
-        return sendError(res, 400, error);
-      }
+      if (error) return sendError(res, 400, error);
 
-      const query = sql`
+      const rows = await adminQuery(sql, sql`
         INSERT INTO site_social_links (
           platform,
           label_ar,
@@ -282,16 +230,14 @@ module.exports = async function handler(req, res) {
           ${body.platform.trim()},
           ${body.label_ar.trim()},
           ${body.label_en.trim()},
-          ${(body.value ?? "").trim()},
+          ${clean(body.value)},
           ${body.url.trim()},
-          ${(body.icon ?? "").trim()},
+          ${clean(body.icon)},
           ${body.is_visible ?? true},
           ${body.sort_order ?? 0}
         )
         RETURNING *
-      `;
-
-      const rows = await adminQuery(sql, query);
+      `);
 
       return res.status(201).json({
         message: "Social link created successfully.",
@@ -300,8 +246,6 @@ module.exports = async function handler(req, res) {
     }
 
     if (req.method === "PATCH") {
-      const body = req.body;
-
       if (!isPlainObject(body) || !validId(body.id)) {
         return sendError(res, 400, "Invalid social link ID.");
       }
@@ -311,70 +255,26 @@ module.exports = async function handler(req, res) {
         allowId: true
       });
 
-      if (error) {
-        return sendError(res, 400, error);
-      }
+      if (error) return sendError(res, 400, error);
 
-      const hasUpdates = PATCH_FIELDS.some(
-        (field) => Object.hasOwn(body, field)
-      );
-
-      if (!hasUpdates) {
+      if (!PATCH_FIELDS.some(field => Object.hasOwn(body, field))) {
         return sendError(res, 400, "No fields to update.");
       }
 
-      const query = sql`
+      const rows = await adminQuery(sql, sql`
         UPDATE site_social_links
         SET
-          platform = COALESCE(
-            ${body.platform !== undefined
-              ? body.platform.trim()
-              : null},
-            platform
-          ),
-          label_ar = COALESCE(
-            ${body.label_ar !== undefined
-              ? body.label_ar.trim()
-              : null},
-            label_ar
-          ),
-          label_en = COALESCE(
-            ${body.label_en !== undefined
-              ? body.label_en.trim()
-              : null},
-            label_en
-          ),
-          value = COALESCE(
-            ${body.value !== undefined
-              ? body.value.trim()
-              : null},
-            value
-          ),
-          url = COALESCE(
-            ${body.url !== undefined
-              ? body.url.trim()
-              : null},
-            url
-          ),
-          icon = COALESCE(
-            ${body.icon !== undefined
-              ? body.icon.trim()
-              : null},
-            icon
-          ),
-          is_visible = COALESCE(
-            ${body.is_visible ?? null},
-            is_visible
-          ),
-          sort_order = COALESCE(
-            ${body.sort_order ?? null},
-            sort_order
-          )
+          platform = COALESCE(${body.platform === undefined ? null : body.platform.trim()}, platform),
+          label_ar = COALESCE(${body.label_ar === undefined ? null : body.label_ar.trim()}, label_ar),
+          label_en = COALESCE(${body.label_en === undefined ? null : body.label_en.trim()}, label_en),
+          value = COALESCE(${body.value === undefined ? null : body.value.trim()}, value),
+          url = COALESCE(${body.url === undefined ? null : body.url.trim()}, url),
+          icon = COALESCE(${body.icon === undefined ? null : body.icon.trim()}, icon),
+          is_visible = COALESCE(${body.is_visible ?? null}, is_visible),
+          sort_order = COALESCE(${body.sort_order ?? null}, sort_order)
         WHERE id = ${Number(body.id)}
         RETURNING *
-      `;
-
-      const rows = await adminQuery(sql, query);
+      `);
 
       if (!rows.length) {
         return sendError(res, 404, "Social link not found.");
@@ -387,8 +287,6 @@ module.exports = async function handler(req, res) {
     }
 
     if (req.method === "DELETE") {
-      const body = req.body;
-
       if (
         !isPlainObject(body) ||
         !validId(body.id) ||
@@ -397,13 +295,11 @@ module.exports = async function handler(req, res) {
         return sendError(res, 400, "Invalid social link ID.");
       }
 
-      const query = sql`
+      const rows = await adminQuery(sql, sql`
         DELETE FROM site_social_links
         WHERE id = ${Number(body.id)}
         RETURNING id
-      `;
-
-      const rows = await adminQuery(sql, query);
+      `);
 
       if (!rows.length) {
         return sendError(res, 404, "Social link not found.");
@@ -414,13 +310,11 @@ module.exports = async function handler(req, res) {
         id: rows[0].id
       });
     }
-  } catch {
-    console.error("[admin-social] Database operation failed.");
+  } catch (error) {
+    console.error("[admin-social] Database operation failed.", {
+      code: error?.code || "NO_CODE"
+    });
 
-    return sendError(
-      res,
-      500,
-      "An internal server error occurred."
-    );
+    return sendError(res, 500, "An internal server error occurred.");
   }
 };
