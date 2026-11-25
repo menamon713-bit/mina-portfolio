@@ -2,50 +2,70 @@
 
 const { neon } = require("@neondatabase/serverless");
 const { adminQuery } = require("./_lib/admin-db");
+const { getClientKey } = require("./_lib/client-ip");
+const { consume } = require("./_lib/rate-limit");
 
 const ALLOWED_WHATSAPP_APPS = Object.freeze({
   business: "com.whatsapp.w4b",
   messenger: "com.whatsapp"
 });
 
+const RATE_LIMIT = 120;
+const RATE_WINDOW = 60;
+
 function sendError(res, status, message) {
   res.setHeader("Cache-Control", "no-store");
+  return res.status(status).json({ success: false, message });
+}
 
-  return res.status(status).json({
-    success: false,
-    message
-  });
+async function enforceRateLimit(req, res) {
+  const clientKey = getClientKey(req);
+
+  if (!clientKey) {
+    sendError(res, 400, "Invalid client address.");
+    return false;
+  }
+
+  try {
+    const result = await consume(
+      `mash:public-api:${clientKey}`,
+      RATE_WINDOW,
+      RATE_LIMIT
+    );
+
+    if (!result.allowed) {
+      res.setHeader("Retry-After", String(result.retryAfter));
+      sendError(res, 429, "Too many requests. Please try again later.");
+      return false;
+    }
+
+    return true;
+  } catch {
+    console.error("[health] Rate limit service unavailable.");
+    sendError(res, 503, "Service temporarily unavailable.");
+    return false;
+  }
 }
 
 function getDatabaseUrl() {
   const value = process.env.DATABASE_URL;
-
-  if (typeof value !== "string" || !value.trim()) {
-    return null;
-  }
-
-  return value.trim();
+  return typeof value === "string" && value.trim()
+    ? value.trim()
+    : null;
 }
 
 async function isMaintenanceEnabled(sql) {
-  // This setting is administrative, so it is read through
-  // the short-lived, HMAC-authorized database transaction.
-  const rows = await adminQuery(
-    sql,
-    sql`
-      SELECT setting_value
-      FROM public.site_settings
-      WHERE setting_key = 'maintenance_mode'
-      LIMIT 1
-    `
-  );
+  const rows = await adminQuery(sql, sql`
+    SELECT setting_value
+    FROM public.site_settings
+    WHERE setting_key = 'maintenance_mode'
+    LIMIT 1
+  `);
 
   return rows[0]?.setting_value === true;
 }
 
 async function getSiteData(sql) {
-  // Public data is deliberately queried WITHOUT adminQuery.
-  // PostgreSQL RLS must decide which rows are publicly readable.
   const [
     profile,
     skills,
@@ -56,72 +76,43 @@ async function getSiteData(sql) {
   ] = await Promise.all([
     sql`
       SELECT
-        full_name,
-        job_title,
-        short_bio,
-        about,
-        location,
-        profile_image
+        full_name, job_title, short_bio,
+        about, location, profile_image
       FROM public.site_profile
       ORDER BY id ASC
       LIMIT 1
     `,
-
     sql`
       SELECT
-        id,
-        name_ar,
-        name_en,
-        icon,
-        progress,
-        category,
-        sort_order
+        id, name_ar, name_en, icon,
+        progress, category, sort_order
       FROM public.site_skills
       WHERE is_visible = TRUE
       ORDER BY sort_order ASC, id ASC
     `,
-
     sql`
       SELECT
-        id,
-        platform,
-        label_ar,
-        label_en,
-        value,
-        url,
-        icon,
-        sort_order
+        id, platform, label_ar, label_en,
+        value, url, icon, sort_order
       FROM public.site_social_links
       WHERE is_visible = TRUE
       ORDER BY sort_order ASC, id ASC
     `,
-
     sql`
       SELECT
-        content_key,
-        section,
-        title_ar,
-        title_en,
-        content_ar,
-        content_en,
-        sort_order
+        content_key, section, title_ar, title_en,
+        content_ar, content_en, sort_order
       FROM public.site_content
       WHERE is_visible = TRUE
       ORDER BY sort_order ASC, id ASC
     `,
-
     sql`
       SELECT
-        slug,
-        title_ar,
-        title_en,
-        content_ar,
-        content_en
+        slug, title_ar, title_en, content_ar, content_en
       FROM public.site_pages
       WHERE is_published = TRUE
       ORDER BY slug ASC
     `,
-
     sql`
       SELECT
         seo.page_slug,
@@ -152,7 +143,6 @@ async function getSiteData(sql) {
 }
 
 async function getProjects(sql) {
-  // No administrative token is used for public project reads.
   return sql`
     SELECT
       id,
@@ -188,16 +178,9 @@ function handleWhatsApp(req, res) {
 
   if (
     typeof app !== "string" ||
-    !Object.prototype.hasOwnProperty.call(
-      ALLOWED_WHATSAPP_APPS,
-      app
-    )
+    !Object.prototype.hasOwnProperty.call(ALLOWED_WHATSAPP_APPS, app)
   ) {
-    return sendError(
-      res,
-      400,
-      "Invalid WhatsApp application."
-    );
+    return sendError(res, 400, "Invalid WhatsApp application.");
   }
 
   const phone = process.env.WHATSAPP_PHONE;
@@ -206,11 +189,7 @@ function handleWhatsApp(req, res) {
     typeof phone !== "string" ||
     !/^[1-9]\d{7,14}$/.test(phone)
   ) {
-    return sendError(
-      res,
-      503,
-      "WhatsApp is currently unavailable."
-    );
+    return sendError(res, 503, "WhatsApp is currently unavailable.");
   }
 
   const packageName = ALLOWED_WHATSAPP_APPS[app];
@@ -231,13 +210,10 @@ module.exports = async function handler(req, res) {
 
   if (req.method !== "GET") {
     res.setHeader("Allow", "GET");
-
-    return sendError(
-      res,
-      405,
-      "Method not allowed."
-    );
+    return sendError(res, 405, "Method not allowed.");
   }
+
+  if (!(await enforceRateLimit(req, res))) return;
 
   const resource = req.query?.resource;
 
@@ -246,24 +222,14 @@ module.exports = async function handler(req, res) {
     resource !== "site-data" &&
     resource !== "projects"
   ) {
-    return sendError(
-      res,
-      400,
-      "Invalid resource."
-    );
+    return sendError(res, 400, "Invalid resource.");
   }
 
   if (resource === "site-data" || resource === "projects") {
     const databaseUrl = getDatabaseUrl();
 
     if (!databaseUrl) {
-      return sendError(
-        res,
-        503,
-        resource === "site-data"
-          ? "Website data is currently unavailable."
-          : "Projects are currently unavailable."
-      );
+      return sendError(res, 503, "Website data is currently unavailable.");
     }
 
     try {
@@ -296,16 +262,10 @@ module.exports = async function handler(req, res) {
         count: projects.length
       });
     } catch (error) {
-      // Do not return database details to public clients.
-      console.error(
-        resource === "site-data"
-          ? "Public site data query failed."
-          : "Public projects query failed.",
-        {
-          name: error?.name || "UnknownError",
-          code: error?.code || "NO_CODE"
-        }
-      );
+      console.error("[health] Public query failed.", {
+        name: error?.name || "UnknownError",
+        code: error?.code || "NO_CODE"
+      });
 
       return sendError(
         res,
