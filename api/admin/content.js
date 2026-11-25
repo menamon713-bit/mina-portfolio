@@ -8,6 +8,9 @@ const {
 } = require("../_lib/admin-auth");
 
 const { adminQuery } = require("../_lib/admin-db");
+const { guardAdminWrite } = require("../_lib/audit-log");
+
+const MAX_BODY_BYTES = 70 * 1024;
 
 const MAX_LENGTH = {
   content_key: 150,
@@ -46,12 +49,12 @@ function sendError(res, status, message) {
 }
 
 function isPlainObject(value) {
-  return (
-    value !== null &&
-    typeof value === "object" &&
-    !Array.isArray(value) &&
-    Object.getPrototypeOf(value) === Object.prototype
-  );
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return false;
+  }
+
+  const prototype = Object.getPrototypeOf(value);
+  return prototype === Object.prototype || prototype === null;
 }
 
 function validateId(value) {
@@ -68,9 +71,7 @@ function validateId(value) {
 }
 
 function validateBody(body, allowedFields, requiredFields = []) {
-  if (!isPlainObject(body)) {
-    return "Invalid request body.";
-  }
+  if (!isPlainObject(body)) return "Invalid request body.";
 
   for (const field of Object.keys(body)) {
     if (!allowedFields.includes(field)) {
@@ -87,12 +88,11 @@ function validateBody(body, allowedFields, requiredFields = []) {
   for (const field of FIELDS) {
     if (!Object.hasOwn(body, field)) continue;
 
-    if (typeof body[field] !== "string") {
+    if (
+      typeof body[field] !== "string" ||
+      body[field].length > MAX_LENGTH[field]
+    ) {
       return `Invalid field: ${field}`;
-    }
-
-    if (body[field].length > MAX_LENGTH[field]) {
-      return `${field} exceeds the maximum length.`;
     }
   }
 
@@ -124,9 +124,7 @@ function validateBody(body, allowedFields, requiredFields = []) {
 }
 
 function validateSeoBody(body) {
-  if (!isPlainObject(body)) {
-    return "Invalid request body.";
-  }
+  if (!isPlainObject(body)) return "Invalid request body.";
 
   for (const field of Object.keys(body)) {
     if (!SEO_FIELDS.includes(field)) {
@@ -169,7 +167,12 @@ function validateSeoBody(body) {
     try {
       const url = new URL(value);
 
-      if (!["http:", "https:"].includes(url.protocol)) {
+      if (
+        url.protocol !== "https:" ||
+        !url.hostname ||
+        url.username ||
+        url.password
+      ) {
         return `Invalid ${field}.`;
       }
     } catch {
@@ -181,13 +184,11 @@ function validateSeoBody(body) {
 }
 
 function validateSettings(body) {
-  if (!isPlainObject(body)) {
-    return "Invalid request body.";
-  }
+  if (!isPlainObject(body)) return "Invalid request body.";
 
   if (
     Object.keys(body).length !== SETTINGS_KEYS.length ||
-    SETTINGS_KEYS.some((key) => !Object.hasOwn(body, key))
+    SETTINGS_KEYS.some(key => !Object.hasOwn(body, key))
   ) {
     return "Invalid settings fields.";
   }
@@ -223,14 +224,11 @@ function validateSettings(body) {
 
 async function handleSettings(sql, req, res) {
   if (req.method === "GET") {
-    const rows = await adminQuery(
-      sql,
-      sql`
-        SELECT setting_key, setting_value
-        FROM public.site_settings
-        WHERE setting_key = ANY(${SETTINGS_KEYS})
-      `
-    );
+    const rows = await adminQuery(sql, sql`
+      SELECT setting_key, setting_value
+      FROM public.site_settings
+      WHERE setting_key = ANY(${SETTINGS_KEYS})
+    `);
 
     const settings = {
       site_name: "",
@@ -239,10 +237,8 @@ async function handleSettings(sql, req, res) {
     };
 
     for (const row of rows) {
-      const value = row.setting_value;
-
       if (SETTINGS_KEYS.includes(row.setting_key)) {
-        settings[row.setting_key] = value;
+        settings[row.setting_key] = row.setting_value;
       }
     }
 
@@ -256,9 +252,7 @@ async function handleSettings(sql, req, res) {
 
   const error = validateSettings(req.body);
 
-  if (error) {
-    return sendError(res, 400, error);
-  }
+  if (error) return sendError(res, 400, error);
 
   const body = req.body;
 
@@ -277,16 +271,11 @@ async function handleSettings(sql, req, res) {
     }
   ]);
 
-  const query = sql`
+  const rows = await adminQuery(sql, sql`
     WITH incoming AS (
-      SELECT
-        item.setting_key,
-        item.setting_value
+      SELECT item.setting_key, item.setting_value
       FROM jsonb_to_recordset(${settingsPayload}::jsonb)
-      AS item(
-        setting_key text,
-        setting_value jsonb
-      )
+      AS item(setting_key text, setting_value jsonb)
     ),
     saved AS (
       INSERT INTO public.site_settings (
@@ -294,10 +283,7 @@ async function handleSettings(sql, req, res) {
         setting_value,
         updated_at
       )
-      SELECT
-        setting_key,
-        setting_value,
-        NOW()
+      SELECT setting_key, setting_value, NOW()
       FROM incoming
       ON CONFLICT (setting_key)
       DO UPDATE SET
@@ -319,11 +305,9 @@ async function handleSettings(sql, req, res) {
       RETURNING id
     )
     SELECT
-      (SELECT COUNT(*) FROM saved) AS saved_count,
-      (SELECT COUNT(*) FROM audit) AS audit_count
-  `;
-
-  const rows = await adminQuery(sql, query);
+      (SELECT COUNT(*) FROM saved)::integer AS saved_count,
+      (SELECT COUNT(*) FROM audit)::integer AS audit_count
+  `);
 
   if (
     !rows.length ||
@@ -347,6 +331,20 @@ async function handleAuditLogs(sql, req, res) {
   const limitValue = req.query?.limit ?? "25";
   const offsetValue = req.query?.offset ?? "0";
 
+  if (
+    typeof limitValue !== "string" &&
+    typeof limitValue !== "number"
+  ) {
+    return sendError(res, 400, "Invalid pagination parameters.");
+  }
+
+  if (
+    typeof offsetValue !== "string" &&
+    typeof offsetValue !== "number"
+  ) {
+    return sendError(res, 400, "Invalid pagination parameters.");
+  }
+
   const limit = Number(limitValue);
   const offset = Number(offsetValue);
 
@@ -361,27 +359,18 @@ async function handleAuditLogs(sql, req, res) {
     return sendError(res, 400, "Invalid pagination parameters.");
   }
 
-  const query = sql`
-    SELECT
-      id,
-      action,
-      entity_type,
-      description,
-      created_at
-    FROM public.admin_activity_logs
-    ORDER BY created_at DESC, id DESC
-    LIMIT ${limit}
-    OFFSET ${offset}
-  `;
-
-  const countQuery = sql`
-    SELECT COUNT(*)::integer AS total
-    FROM public.admin_activity_logs
-  `;
-
   const [logs, countRows] = await Promise.all([
-    adminQuery(sql, query),
-    adminQuery(sql, countQuery)
+    adminQuery(sql, sql`
+      SELECT id, action, entity_type, description, created_at
+      FROM public.admin_activity_logs
+      ORDER BY created_at DESC, id DESC
+      LIMIT ${limit}
+      OFFSET ${offset}
+    `),
+    adminQuery(sql, sql`
+      SELECT COUNT(*)::integer AS total
+      FROM public.admin_activity_logs
+    `)
   ]);
 
   return res.status(200).json({
@@ -392,25 +381,22 @@ async function handleAuditLogs(sql, req, res) {
 
 async function handleSeo(sql, req, res) {
   if (req.method === "GET") {
-    const rows = await adminQuery(
-      sql,
-      sql`
-        SELECT
-          id,
-          page_slug,
-          title_ar,
-          title_en,
-          description_ar,
-          description_en,
-          keywords_ar,
-          keywords_en,
-          og_image,
-          canonical_url,
-          updated_at
-        FROM site_seo
-        ORDER BY page_slug ASC
-      `
-    );
+    const rows = await adminQuery(sql, sql`
+      SELECT
+        id,
+        page_slug,
+        title_ar,
+        title_en,
+        description_ar,
+        description_en,
+        keywords_ar,
+        keywords_en,
+        og_image,
+        canonical_url,
+        updated_at
+      FROM site_seo
+      ORDER BY page_slug ASC
+    `);
 
     return res.status(200).json({
       seo: rows,
@@ -424,47 +410,44 @@ async function handleSeo(sql, req, res) {
 
     if (error) return sendError(res, 400, error);
 
-    const rows = await adminQuery(
-      sql,
-      sql`
-        INSERT INTO site_seo (
-          page_slug,
-          title_ar,
-          title_en,
-          description_ar,
-          description_en,
-          keywords_ar,
-          keywords_en,
-          og_image,
-          canonical_url,
-          updated_at
-        )
-        VALUES (
-          ${body.page_slug.trim()},
-          ${body.title_ar.trim()},
-          ${body.title_en.trim()},
-          ${body.description_ar || ""},
-          ${body.description_en || ""},
-          ${body.keywords_ar || ""},
-          ${body.keywords_en || ""},
-          ${body.og_image || ""},
-          ${body.canonical_url || ""},
-          NOW()
-        )
-        ON CONFLICT (page_slug)
-        DO UPDATE SET
-          title_ar = EXCLUDED.title_ar,
-          title_en = EXCLUDED.title_en,
-          description_ar = EXCLUDED.description_ar,
-          description_en = EXCLUDED.description_en,
-          keywords_ar = EXCLUDED.keywords_ar,
-          keywords_en = EXCLUDED.keywords_en,
-          og_image = EXCLUDED.og_image,
-          canonical_url = EXCLUDED.canonical_url,
-          updated_at = NOW()
-        RETURNING *
-      `
-    );
+    const rows = await adminQuery(sql, sql`
+      INSERT INTO site_seo (
+        page_slug,
+        title_ar,
+        title_en,
+        description_ar,
+        description_en,
+        keywords_ar,
+        keywords_en,
+        og_image,
+        canonical_url,
+        updated_at
+      )
+      VALUES (
+        ${body.page_slug.trim()},
+        ${body.title_ar.trim()},
+        ${body.title_en.trim()},
+        ${body.description_ar || ""},
+        ${body.description_en || ""},
+        ${body.keywords_ar || ""},
+        ${body.keywords_en || ""},
+        ${body.og_image || ""},
+        ${body.canonical_url || ""},
+        NOW()
+      )
+      ON CONFLICT (page_slug)
+      DO UPDATE SET
+        title_ar = EXCLUDED.title_ar,
+        title_en = EXCLUDED.title_en,
+        description_ar = EXCLUDED.description_ar,
+        description_en = EXCLUDED.description_en,
+        keywords_ar = EXCLUDED.keywords_ar,
+        keywords_en = EXCLUDED.keywords_en,
+        og_image = EXCLUDED.og_image,
+        canonical_url = EXCLUDED.canonical_url,
+        updated_at = NOW()
+      RETURNING *
+    `);
 
     return res.status(200).json({
       message: "SEO settings saved successfully.",
@@ -483,14 +466,11 @@ async function handleSeo(sql, req, res) {
       return sendError(res, 400, "Invalid SEO record ID.");
     }
 
-    const rows = await adminQuery(
-      sql,
-      sql`
-        DELETE FROM site_seo
-        WHERE id = ${Number(body.id)}
-        RETURNING id
-      `
-    );
+    const rows = await adminQuery(sql, sql`
+      DELETE FROM site_seo
+      WHERE id = ${Number(body.id)}
+      RETURNING id
+    `);
 
     if (!rows.length) {
       return sendError(res, 404, "SEO record not found.");
@@ -518,39 +498,21 @@ module.exports = async function handler(req, res) {
 
   if (!(await requireAdmin(req, res))) return;
 
-  if (req.method !== "GET" && !checkSameOrigin(req)) {
-    return sendError(res, 403, "Invalid request origin.");
-  }
-
   if (req.method !== "GET") {
-    const contentType = req.headers["content-type"] || "";
-
-    if (!/^application\/json(?:\s*;|$)/i.test(contentType)) {
-      return sendError(res, 415, "Content-Type must be application/json.");
+    if (!checkSameOrigin(req)) {
+      return sendError(res, 403, "Invalid request origin.");
     }
 
-    let bodySize;
-
-    try {
-      bodySize = Buffer.byteLength(
-        JSON.stringify(req.body ?? null),
-        "utf8"
-      );
-    } catch {
-      return sendError(res, 400, "Invalid request body.");
-    }
-
-    if (bodySize > 70 * 1024) {
-      return sendError(res, 413, "Request body is too large.");
-    }
+    if (!(await guardAdminWrite(req, res, {
+      namespace: "content",
+      maxBodyBytes: MAX_BODY_BYTES,
+      limit: 20
+    }))) return;
   }
 
   const databaseUrl = process.env.DATABASE_URL;
 
-  if (
-    typeof databaseUrl !== "string" ||
-    !databaseUrl.trim()
-  ) {
+  if (typeof databaseUrl !== "string" || !databaseUrl.trim()) {
     return sendError(res, 503, "Database is unavailable.");
   }
 
@@ -570,12 +532,12 @@ module.exports = async function handler(req, res) {
       return await handleAuditLogs(sql, req, res);
     }
 
-    if (resource) {
+    if (resource !== undefined && resource !== "") {
       return sendError(res, 400, "Invalid resource.");
     }
 
     if (req.method === "GET") {
-      const query = sql`
+      const rows = await adminQuery(sql, sql`
         SELECT
           id,
           content_key,
@@ -589,9 +551,7 @@ module.exports = async function handler(req, res) {
           updated_at
         FROM site_content
         ORDER BY section ASC, sort_order ASC, id ASC
-      `;
-
-      const rows = await adminQuery(sql, query);
+      `);
 
       return res.status(200).json({
         content: rows,
@@ -605,7 +565,7 @@ module.exports = async function handler(req, res) {
 
       if (error) return sendError(res, 400, error);
 
-      const query = sql`
+      const rows = await adminQuery(sql, sql`
         INSERT INTO site_content (
           content_key,
           section,
@@ -623,9 +583,7 @@ module.exports = async function handler(req, res) {
           ${body.content_en}
         )
         RETURNING *
-      `;
-
-      const rows = await adminQuery(sql, query);
+      `);
 
       return res.status(201).json({
         message: "Content created successfully.",
@@ -644,15 +602,11 @@ module.exports = async function handler(req, res) {
 
       if (error) return sendError(res, 400, error);
 
-      const hasUpdates = PATCH_FIELDS.some(
-        (field) => Object.hasOwn(body, field)
-      );
-
-      if (!hasUpdates) {
+      if (!PATCH_FIELDS.some(field => Object.hasOwn(body, field))) {
         return sendError(res, 400, "No fields to update.");
       }
 
-      const query = sql`
+      const rows = await adminQuery(sql, sql`
         UPDATE site_content
         SET
           content_key = COALESCE(${body.content_key ?? null}, content_key),
@@ -666,9 +620,7 @@ module.exports = async function handler(req, res) {
           updated_at = NOW()
         WHERE id = ${Number(body.id)}
         RETURNING *
-      `;
-
-      const rows = await adminQuery(sql, query);
+      `);
 
       if (!rows.length) {
         return sendError(res, 404, "Content not found.");
@@ -691,13 +643,11 @@ module.exports = async function handler(req, res) {
         return sendError(res, 400, "Invalid content ID.");
       }
 
-      const query = sql`
+      const rows = await adminQuery(sql, sql`
         DELETE FROM site_content
         WHERE id = ${Number(body.id)}
         RETURNING id
-      `;
-
-      const rows = await adminQuery(sql, query);
+      `);
 
       if (!rows.length) {
         return sendError(res, 404, "Content not found.");
@@ -718,10 +668,6 @@ module.exports = async function handler(req, res) {
       return sendError(res, 409, "A record with this key already exists.");
     }
 
-    return sendError(
-      res,
-      500,
-      "An internal server error occurred."
-    );
+    return sendError(res, 500, "An internal server error occurred.");
   }
 };
