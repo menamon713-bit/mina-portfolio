@@ -51,6 +51,7 @@ function createSession() {
     iat: now,
     exp: now + SESSION_SECONDS * 1000,
     v: getVersion(),
+    mfa: true,
     nonce: crypto.randomBytes(32).toString("hex")
   };
 
@@ -120,6 +121,7 @@ function verifySession(token) {
       data.iat <= now + CLOCK_SKEW_MS &&
       data.exp - data.iat <= SESSION_SECONDS * 1000 &&
       data.v === getVersion() &&
+      data.mfa === true &&
       typeof data.nonce === "string" &&
       /^[a-f0-9]{64}$/.test(data.nonce)
     );
@@ -142,6 +144,7 @@ function getCookie(req) {
 
   for (const item of header.split(";")) {
     const index = item.indexOf("=");
+
     if (index === -1) continue;
 
     const name = item.slice(0, index).trim();
