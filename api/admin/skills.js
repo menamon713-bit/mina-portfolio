@@ -8,6 +8,7 @@ const {
 } = require("../_lib/admin-auth");
 
 const { adminQuery } = require("../_lib/admin-db");
+const { guardAdminWrite } = require("../_lib/audit-log");
 
 const MAX_BODY_BYTES = 8 * 1024;
 
@@ -33,19 +34,16 @@ function sendError(res, status, message) {
 }
 
 function isPlainObject(value) {
-  return (
-    value !== null &&
-    typeof value === "object" &&
-    !Array.isArray(value) &&
-    Object.getPrototypeOf(value) === Object.prototype
-  );
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return false;
+  }
+
+  const prototype = Object.getPrototypeOf(value);
+  return prototype === Object.prototype || prototype === null;
 }
 
 function validId(value) {
-  if (
-    typeof value !== "string" &&
-    typeof value !== "number"
-  ) {
+  if (typeof value !== "string" && typeof value !== "number") {
     return false;
   }
 
@@ -57,19 +55,17 @@ function validId(value) {
   );
 }
 
-function validateBody(body, options = {}) {
-  const {
-    partial = false,
-    allowId = false
-  } = options;
+function cleanString(value) {
+  return typeof value === "string" ? value.trim() : "";
+}
 
-  if (!isPlainObject(body)) {
-    return "Invalid request body.";
-  }
+function validateBody(body, options = {}) {
+  const { partial = false, allowId = false } = options;
+
+  if (!isPlainObject(body)) return "Invalid request body.";
 
   for (const field of Object.keys(body)) {
     if (field === "id" && allowId) continue;
-
     if (!ALLOWED_FIELDS.includes(field)) {
       return `Unknown field: ${field}`;
     }
@@ -79,7 +75,7 @@ function validateBody(body, options = {}) {
     if (!Object.hasOwn(body, field)) {
       if (
         !partial &&
-        (field === "name_ar" || field === "name_en")
+        ["name_ar", "name_en"].includes(field)
       ) {
         return `Missing field: ${field}`;
       }
@@ -98,30 +94,32 @@ function validateBody(body, options = {}) {
     }
 
     if (
-      (field === "name_ar" || field === "name_en") &&
+      ["name_ar", "name_en"].includes(field) &&
       value.length === 0
     ) {
       return `Field ${field} cannot be empty.`;
     }
   }
 
-  if (Object.hasOwn(body, "progress")) {
-    if (
+  if (
+    Object.hasOwn(body, "progress") &&
+    (
       !Number.isInteger(body.progress) ||
       body.progress < 0 ||
       body.progress > 100
-    ) {
-      return "Progress must be an integer between 0 and 100.";
-    }
+    )
+  ) {
+    return "Progress must be an integer between 0 and 100.";
   }
 
-  if (Object.hasOwn(body, "sort_order")) {
-    if (
+  if (
+    Object.hasOwn(body, "sort_order") &&
+    (
       !Number.isSafeInteger(body.sort_order) ||
       body.sort_order < 0
-    ) {
-      return "Invalid sort_order.";
-    }
+    )
+  ) {
+    return "Invalid sort_order.";
   }
 
   if (
@@ -132,49 +130,6 @@ function validateBody(body, options = {}) {
   }
 
   return null;
-}
-
-function cleanString(value) {
-  return typeof value === "string"
-    ? value.trim()
-    : "";
-}
-
-function validateRequestBody(req, res) {
-  const contentType = req.headers["content-type"] || "";
-
-  if (!/^application\/json(?:\s*;|$)/i.test(contentType)) {
-    sendError(
-      res,
-      415,
-      "Content-Type must be application/json."
-    );
-
-    return false;
-  }
-
-  let serialized;
-
-  try {
-    serialized = JSON.stringify(req.body ?? null);
-  } catch {
-    sendError(res, 400, "Invalid request body.");
-    return false;
-  }
-
-  if (typeof serialized !== "string") {
-    sendError(res, 400, "Invalid request body.");
-    return false;
-  }
-
-  const bodySize = Buffer.byteLength(serialized, "utf8");
-
-  if (bodySize > MAX_BODY_BYTES) {
-    sendError(res, 413, "Request body is too large.");
-    return false;
-  }
-
-  return true;
 }
 
 module.exports = async function handler(req, res) {
@@ -188,27 +143,22 @@ module.exports = async function handler(req, res) {
     return sendError(res, 405, "Method not allowed.");
   }
 
-  if (!(await requireAdmin(req, res))) {
-    return;
-  }
-
-  if (
-    req.method !== "GET" &&
-    !checkSameOrigin(req)
-  ) {
-    return sendError(res, 403, "Invalid request origin.");
-  }
+  if (!(await requireAdmin(req, res))) return;
 
   if (req.method !== "GET") {
-    if (!validateRequestBody(req, res)) return;
+    if (!checkSameOrigin(req)) {
+      return sendError(res, 403, "Invalid request origin.");
+    }
+
+    if (!(await guardAdminWrite(req, res, {
+      namespace: "skills",
+      maxBodyBytes: MAX_BODY_BYTES
+    }))) return;
   }
 
   const databaseUrl = process.env.DATABASE_URL;
 
-  if (
-    typeof databaseUrl !== "string" ||
-    !databaseUrl.trim()
-  ) {
+  if (typeof databaseUrl !== "string" || !databaseUrl.trim()) {
     return sendError(res, 503, "Database is unavailable.");
   }
 
@@ -216,7 +166,7 @@ module.exports = async function handler(req, res) {
     const sql = neon(databaseUrl);
 
     if (req.method === "GET") {
-      const query = sql`
+      const rows = await adminQuery(sql, sql`
         SELECT
           id,
           name_ar,
@@ -230,9 +180,7 @@ module.exports = async function handler(req, res) {
           updated_at
         FROM site_skills
         ORDER BY sort_order ASC, id ASC
-      `;
-
-      const rows = await adminQuery(sql, query);
+      `);
 
       return res.status(200).json({
         skills: rows,
@@ -240,15 +188,14 @@ module.exports = async function handler(req, res) {
       });
     }
 
+    const body = req.body;
+
     if (req.method === "POST") {
-      const body = req.body;
       const error = validateBody(body);
 
-      if (error) {
-        return sendError(res, 400, error);
-      }
+      if (error) return sendError(res, 400, error);
 
-      const query = sql`
+      const rows = await adminQuery(sql, sql`
         INSERT INTO site_skills (
           name_ar,
           name_en,
@@ -268,9 +215,7 @@ module.exports = async function handler(req, res) {
           ${body.sort_order ?? 0}
         )
         RETURNING *
-      `;
-
-      const rows = await adminQuery(sql, query);
+      `);
 
       return res.status(201).json({
         message: "Skill created successfully.",
@@ -279,8 +224,6 @@ module.exports = async function handler(req, res) {
     }
 
     if (req.method === "PATCH") {
-      const body = req.body;
-
       if (!isPlainObject(body) || !validId(body.id)) {
         return sendError(res, 400, "Invalid skill ID.");
       }
@@ -290,63 +233,26 @@ module.exports = async function handler(req, res) {
         allowId: true
       });
 
-      if (error) {
-        return sendError(res, 400, error);
-      }
+      if (error) return sendError(res, 400, error);
 
-      const hasUpdates = ALLOWED_FIELDS.some(
-        (field) => Object.hasOwn(body, field)
-      );
-
-      if (!hasUpdates) {
+      if (!ALLOWED_FIELDS.some(field => Object.hasOwn(body, field))) {
         return sendError(res, 400, "No fields to update.");
       }
 
-      const query = sql`
+      const rows = await adminQuery(sql, sql`
         UPDATE site_skills
         SET
-          name_ar = COALESCE(
-            ${Object.hasOwn(body, "name_ar")
-              ? cleanString(body.name_ar)
-              : null},
-            name_ar
-          ),
-          name_en = COALESCE(
-            ${Object.hasOwn(body, "name_en")
-              ? cleanString(body.name_en)
-              : null},
-            name_en
-          ),
-          icon = COALESCE(
-            ${Object.hasOwn(body, "icon")
-              ? cleanString(body.icon)
-              : null},
-            icon
-          ),
-          progress = COALESCE(
-            ${body.progress ?? null},
-            progress
-          ),
-          category = COALESCE(
-            ${Object.hasOwn(body, "category")
-              ? cleanString(body.category)
-              : null},
-            category
-          ),
-          is_visible = COALESCE(
-            ${body.is_visible ?? null},
-            is_visible
-          ),
-          sort_order = COALESCE(
-            ${body.sort_order ?? null},
-            sort_order
-          ),
+          name_ar = COALESCE(${body.name_ar === undefined ? null : cleanString(body.name_ar)}, name_ar),
+          name_en = COALESCE(${body.name_en === undefined ? null : cleanString(body.name_en)}, name_en),
+          icon = COALESCE(${body.icon === undefined ? null : cleanString(body.icon)}, icon),
+          progress = COALESCE(${body.progress ?? null}, progress),
+          category = COALESCE(${body.category === undefined ? null : cleanString(body.category)}, category),
+          is_visible = COALESCE(${body.is_visible ?? null}, is_visible),
+          sort_order = COALESCE(${body.sort_order ?? null}, sort_order),
           updated_at = NOW()
         WHERE id = ${Number(body.id)}
         RETURNING *
-      `;
-
-      const rows = await adminQuery(sql, query);
+      `);
 
       if (!rows.length) {
         return sendError(res, 404, "Skill not found.");
@@ -359,8 +265,6 @@ module.exports = async function handler(req, res) {
     }
 
     if (req.method === "DELETE") {
-      const body = req.body;
-
       if (
         !isPlainObject(body) ||
         !validId(body.id) ||
@@ -369,13 +273,11 @@ module.exports = async function handler(req, res) {
         return sendError(res, 400, "Invalid skill ID.");
       }
 
-      const query = sql`
+      const rows = await adminQuery(sql, sql`
         DELETE FROM site_skills
         WHERE id = ${Number(body.id)}
         RETURNING id
-      `;
-
-      const rows = await adminQuery(sql, query);
+      `);
 
       if (!rows.length) {
         return sendError(res, 404, "Skill not found.");
@@ -391,10 +293,6 @@ module.exports = async function handler(req, res) {
       code: error?.code || "NO_CODE"
     });
 
-    return sendError(
-      res,
-      500,
-      "An internal server error occurred."
-    );
+    return sendError(res, 500, "An internal server error occurred.");
   }
 };
