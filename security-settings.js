@@ -11,6 +11,8 @@
     auditLoading: false
   };
 
+  const CONTENT_API = "/api/admin/content";
+
   async function request(url, options = {}) {
     let response;
 
@@ -94,10 +96,6 @@
     }, 3500);
   }
 
-  // =====================================
-  // AUDIT LOGS
-  // =====================================
-
   function renderAuditLogs() {
     const body = $("#auditLogsBody");
     const search = ($("#auditSearch")?.value || "").trim().toLowerCase();
@@ -144,12 +142,13 @@
 
     try {
       const params = new URLSearchParams({
+        resource: "audit-logs",
         limit: String(state.auditLimit),
         offset: String(state.auditOffset)
       });
 
       const data = await request(
-        `/api/admin/audit-logs?${params.toString()}`
+        `${CONTENT_API}?${params.toString()}`
       );
 
       state.auditLogs = Array.isArray(data.logs) ? data.logs : [];
@@ -185,15 +184,13 @@
     }
   }
 
-  // =====================================
-  // SETTINGS
-  // =====================================
-
   async function loadSettings() {
     setStatus("#settingsStatus", "جاري تحميل الإعدادات...");
 
     try {
-      const data = await request("/api/admin/settings");
+      const data = await request(
+        `${CONTENT_API}?resource=settings`
+      );
 
       const settings = data.settings || {};
 
@@ -227,10 +224,13 @@
     setStatus("#settingsStatus", "جاري حفظ الإعدادات...");
 
     try {
-      const data = await request("/api/admin/settings", {
-        method: "PUT",
-        body: JSON.stringify(payload)
-      });
+      const data = await request(
+        `${CONTENT_API}?resource=settings`,
+        {
+          method: "PUT",
+          body: JSON.stringify(payload)
+        }
+      );
 
       setStatus("#settingsStatus", data.message || "تم الحفظ.");
       showToast("تم حفظ الإعدادات وتسجيل العملية.");
@@ -243,10 +243,6 @@
       button.textContent = "حفظ الإعدادات";
     }
   }
-
-  // =====================================
-  // INITIALIZATION
-  // =====================================
 
   function initialize() {
     $("#refreshAuditLogs")?.addEventListener("click", () => {
